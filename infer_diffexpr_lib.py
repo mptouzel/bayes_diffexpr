@@ -285,12 +285,11 @@ def get_Pn1n2_s(paras, svec, unicountvals_1, unicountvals_2, NreadsI, NreadsII, 
         f2s_step=int(round(s_step/logf_step)) #rounded number of f-steps in one s-step
         logfmin=logfvec[0 ]-f2s_step*smaxind*logf_step
         logfmax=logfvec[-1]+f2s_step*smaxind*logf_step
-        logfvecwide=np.linspace(logfmin,logfmax,len(logfvec)+2*smaxind*f2s_step)
+        logfvecwide=np.linspace(logfmin,logfmax,len(logfvec)+2*smaxind*f2s_step) #a wider domain for the second frequency f2=f1*exp(s)
         
-    #compute P(n1|f) and P(n2|f) (note P(n2|f) unused for diffexpr model)
+    #compute P(n1|f) and P(n2|f), each in an iteration of the following loop
     Nreadsvec=(NreadsI,NreadsII)
     r_cvec=(r_c1,r_c2)
-    
     for it in range(2):
         if it==0:
             unicounts=unicountvals_1
@@ -300,7 +299,7 @@ def get_Pn1n2_s(paras, svec, unicountvals_1, unicountvals_2, NreadsI, NreadsII, 
             if isinstance(svec,np.ndarray): #for diff expr with shift use shifted range for wide f2
                 logfvec_tmp=deepcopy(logfvecwide) #contains s-shift for sampled data method
         if case<2:
-            #compute range of m values (number of cells) over which to compute given the n values (reads) in the data 
+            #compute range of m values (number of cells) over which to sum for a given n value (reads) in the data 
             nsigma=5.
             nmin=300.
             #for each n, get actual range of m to compute around n-dependent mean m
@@ -355,7 +354,7 @@ def get_Pn1n2_s(paras, svec, unicountvals_1, unicountvals_2, NreadsI, NreadsII, 
             logPn2_f=Pn_f
             logPn2_f=np.log(logPn2_f) #throws warning  
             
-    #compute P(n1,n2)
+    
     if isinstance(svec,np.ndarray):  #diffexpr model
 
         print('computing P(n1,n2|f,s)')
@@ -386,16 +385,7 @@ def get_Pn1n2_s(paras, svec, unicountvals_1, unicountvals_2, NreadsI, NreadsII, 
         return -np.dot(countpaircounts_d,np.where(Pn1n2_s>0,np.log(Pn1n2_s),0))/float(np.sum(countpaircounts_d))
     
     else: #s=0 (null model)        
-        print('running Null Model, ')
-        #Poisvec2=PoisPar(m2vec*r_c2,unicountvals_2) #overwrite. some duplication computation here, but fast enough so leave it.  
-        #mean_cell_counts_2=m_total*np.exp(fvec)
-        #var_cell_counts_2=mean_cell_counts_2+beta_mv*np.power(mean_cell_counts_2,alpha_mv)
-        #Pn2_f=np.zeros((len(logfvec)-1,len(unicountvals_2)))
-        #for f2_it in range(len(logfvec)-1):
-            #NBvec=NegBinPar(mean_cell_counts_2[f2_it],var_cell_counts_2[f2_it],m2vec)
-            #for n2_it in n2itvec:
-                #Pn2_f[f2_it,n2_it]=np.dot(NBvec[m2_low[n2_it]:m2_high[n2_it]+1],Poisvec2[m2_low[n2_it]:m2_high[n2_it]+1,n2_it]) 
-            
+        print('running Null Model, ')        
         Pn1n2_s=np.zeros((len(unicountvals_1),len(unicountvals_2))) #2D representation 
         for n2_it,n2 in enumerate(unicountvals_2): 
             for n1_it,n1 in enumerate(unicountvals_1):

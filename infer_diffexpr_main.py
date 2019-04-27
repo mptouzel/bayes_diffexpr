@@ -100,7 +100,7 @@ def main(null_pair_1,null_pair_2,test_pair_1,test_pair_2,run_index,input_data_pa
             # import and structure data into a dataframe:
             Nclones_samp,subset=import_data(input_data_path,dataset_pair[0]+'_.txt',dataset_pair[1]+'_.txt',mincount,maxcount,colnames1,colnames2)
             
-            #transform to sparse representation
+            #transform to sparse representation adn store
             indn1_d,indn2_d,countpaircounts_d,unicountvals_1_d,unicountvals_2_d,NreadsI_d,NreadsII_d=get_sparserep(subset.loc[:,['Clone_count_1','Clone_count_2']])       
             Nsamp=np.sum(countpaircounts_d)
             np.save(outpath+"NreadsI_d.npy",NreadsI_d)
@@ -171,23 +171,23 @@ def main(null_pair_1,null_pair_2,test_pair_1,test_pair_2,run_index,input_data_pa
                     paras=optparas
                     
                     np.save(outpath + 'paras', paras) #null paras to use from here on
-                print("elapsed " + str(np.round(time.time() - st))+'\n')
-                    
-            outputtxtfile.close()
+                outputtxtfile.write("elapsed " + str(np.round(time.time() - st))+'\n')
+                outputtxtfile.close()
         else:
             datasetstr_null=datasetstr
             runstr = it_label[it]+'_'+parvernull+'_case'+str(case) +'_min' + str(mincount) + '_max' + str(maxcount)
             outpath = output_data_path + dataset_pair[0] + '_' + dataset_pair[1] + '/' + runstr + '/'
             paras=  np.load(outpath+'optparas.npy')
             print('loading learned null paras for '+str(dataset_pair[0]) + ' ' + str(dataset_pair[1])+' : '+str(paras))
+            outputtxtfile.write('loading learned null paras for '+str(dataset_pair[0]) + ' ' + str(dataset_pair[1])+' : '+str(paras))
             
     ################################diffexpr learning
     diffexpr=True
     if diffexpr:
         
         #get Pn1n2_s
-        #biuld discrete domain of s
         logrhofvec,logfvec = get_rhof(paras[0],nfbins,np.power(10,paras[-1]),freq_dtype)
+        #biuld discrete domain of s
         s_step_old=s_step
         logf_step=logfvec[1] - logfvec[0] #use natural log here since f2 increments in increments in exp().  
         f2s_step=int(round(s_step/logf_step)) #rounded number of f-steps in one s-step
@@ -196,7 +196,7 @@ def main(null_pair_1,null_pair_2,test_pair_1,test_pair_2,run_index,input_data_pa
         svec=s_step*np.arange(0,int(round(smax/s_step)+1))   
         svec=np.append(-svec[1:][::-1],svec)
  
-        #compute conditional P(n1,n2|s) and P(n1=0,n2=0)
+        #compute conditional P(n1,n2|s) and P(n1=0,n2=0|s)
         print('calc Pn1n2_s: ')
         st = time.time()
         if os.path.exists(outpath+'Pn1n2_s_d.npy'):
@@ -209,8 +209,9 @@ def main(null_pair_1,null_pair_2,test_pair_1,test_pair_2,run_index,input_data_pa
             np.save(outpath + 'Pn0n0',Pn0n0_s)
             np.save(outpath + 'Pn1_f',Pn1_f)
             logPn1_f=np.log(Pn1_f)
-        print("elapsed " + str(np.round(time.time() - st))+'\n')
-            
+            outputtxtfile.write("calc Pn1n2_s elapsed " + str(np.round(time.time() - st))+'\n')
+        
+        #flags for 3 remaining code blocks:
         learn_surface=True
         polish_estimate=False
         output_table=False
@@ -232,7 +233,7 @@ def main(null_pair_1,null_pair_2,test_pair_1,test_pair_2,run_index,input_data_pa
                     Ps=get_Ps(alp,sbar,smax,s_step)
                     Pn0n0=np.dot(Pn0n0_s,Ps)
                     Pn1n2_ps=np.sum(Pn1n2_s*Ps[:,np.newaxis,np.newaxis],0)
-                    Pn1n2_ps/=1-Pn0n0
+                    Pn1n2_ps/=1-Pn0n0  #renormalize
                     LSurface[sit,ait]=np.dot(countpaircounts_d/float(Nsamp),np.where(Pn1n2_ps[indn1_d,indn2_d]>0,np.log(Pn1n2_ps[indn1_d,indn2_d]),0))
 
             maxinds=np.unravel_index(np.argmax(LSurface),np.shape(LSurface))
@@ -247,14 +248,15 @@ def main(null_pair_1,null_pair_2,test_pair_1,test_pair_2,run_index,input_data_pa
             np.save(outpath + 'alpvec', alpvec)
             np.save(outpath + 'optPs', optPs)
             print("optalp="+str(optalp)+" ("+str(alpvec[0])+","+str(alpvec[-1])+"),optsbar="+str(optsbar)+", ("+str(sbarvec[0])+","+str(sbarvec[-1])+") \n")
-            
-            print("elapsed " + str(np.round(time.time() - st))+'\n')
+            outputtxtfile.write("optalp="+str(optalp)+" ("+str(alpvec[0])+","+str(alpvec[-1])+"),optsbar="+str(optsbar)+", ("+str(sbarvec[0])+","+str(sbarvec[-1])+") \n")
+            outputtxtfile.write("surface elapsed " + str(np.round(time.time() - st))+'\n')
             
         if polish_estimate:
             
             optsbar=np.load(outpath + 'optsbar.npy')
             optalp=np.load(outpath + 'optalp.npy')
             print('polish parameter estimate from '+str(optalp)+' '+str(optsbar))
+            
             init_shift=0
             initparas=(optalp,optsbar,init_shift)   #(alpha,sbar,shift)
             NreadsI=NreadsI_d 
