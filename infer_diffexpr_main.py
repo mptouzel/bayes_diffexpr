@@ -17,8 +17,8 @@ print(str(num_threads)+' cores available')
 
 def main(null_pair_1,null_pair_2,test_pair_1,test_pair_2,run_index,input_data_path,output_data_path):
   
-    parvernull = 'v1_2yr_code_check' #prefix for null model data path
-    parvertest = 'v1_2yr_code_check' #prefix for diff expr model data path
+    parvernull = 'v1_2yr_code_check' #prefix label for null model data path
+    parvertest = 'v1_2yr_code_check' #prefix label for diff expr model data path
 
 
 ######################################Preprocessing###########################################3
@@ -58,7 +58,7 @@ def main(null_pair_1,null_pair_2,test_pair_1,test_pair_2,run_index,input_data_pa
         #input path    
         datasetstr=dataset_pair[0]+'_'+dataset_pair[1] 
         
-        loadnull=True #set to True to skip 1st iteration that learns null model, once learned null model parameters, optparas.py, already exist.
+        loadnull=False #set to True to skip 1st iteration that learns null model, once learned null model parameters, optparas.py, already exist.
         if (not loadnull and it==0) or it==1:
           
             if it==0:
@@ -154,10 +154,6 @@ def main(null_pair_1,null_pair_2,test_pair_1,test_pair_2,run_index,input_data_pa
                     print(initparas)
                     outstruct = minimize(partialobjfunc, initparas, method='SLSQP', callback=callbackFnull, constraints=condict,tol=1e-6,options={'ftol':1e-8 ,'disp': True,'maxiter':300})
                     
-                    #print(initparas)
-                    #outstruct = minimize(partialobjfunc, initparas, method='SLSQP', callback=callbackF, tol=1e-6,options={'ftol':1e-8 ,'disp': True,'maxiter':300})
-                    
-                    
                     for key,value in outstruct.items():
                         outputtxtfile.write(key+':'+str(value)+'\n')
                     if not outstruct.success:
@@ -187,7 +183,7 @@ def main(null_pair_1,null_pair_2,test_pair_1,test_pair_2,run_index,input_data_pa
         
         #get Pn1n2_s
         logrhofvec,logfvec = get_rhof(paras[0],nfbins,np.power(10,paras[-1]),freq_dtype)
-        #biuld discrete domain of s
+        #biuld discrete domain of s, centered on s=0
         s_step_old=s_step
         logf_step=logfvec[1] - logfvec[0] #use natural log here since f2 increments in increments in exp().  
         f2s_step=int(round(s_step/logf_step)) #rounded number of f-steps in one s-step
@@ -249,7 +245,7 @@ def main(null_pair_1,null_pair_2,test_pair_1,test_pair_2,run_index,input_data_pa
             np.save(outpath + 'optPs', optPs)
             print("optalp="+str(optalp)+" ("+str(alpvec[0])+","+str(alpvec[-1])+"),optsbar="+str(optsbar)+", ("+str(sbarvec[0])+","+str(sbarvec[-1])+") \n")
             outputtxtfile.write("optalp="+str(optalp)+" ("+str(alpvec[0])+","+str(alpvec[-1])+"),optsbar="+str(optsbar)+", ("+str(sbarvec[0])+","+str(sbarvec[-1])+") \n")
-            outputtxtfile.write("surface elapsed " + str(np.round(time.time() - st))+'\n')
+            outputtxtfile.write("surface learning elapsed " + str(np.round(time.time() - st))+'\n')
             
         if polish_estimate:
             

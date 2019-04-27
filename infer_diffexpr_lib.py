@@ -316,7 +316,6 @@ def get_Pn1n2_s(paras, svec, unicountvals_1, unicountvals_2, NreadsI, NreadsII, 
             nvec=range(len(unicounts))
             for nit in nvec:
                 mvec_bool[m_low[nit]:m_high[nit]+1]=True  #mask vector
-            print(m_cellmax)
             mvec=np.arange(m_cellmax+1)[mvec_bool]                
             #transform to in-range index
             for nit in nvec:
