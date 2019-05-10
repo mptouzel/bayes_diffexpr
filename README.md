@@ -1,6 +1,8 @@
 # bayes_diffexpr
 ## Bayesian Inference of Differential Expression
 
+##!!!Warning: still in development!!!
+
 `infer_diffexpr_main.py` takes 2 pairs of `.txt` files as input. 
 
 Each file is a table with each row referring to one observed clone. What is pulled from these files is the nucleotide and amino acid sequence as well as the observed clone count (n.b. file header information, e.g. column order, as well as the paths to these files, has been hard-coded to work with a particular dataset; any application to another dataset with require changing this information). Each pair is merged into a data set of pair counts, one sample for each observed clone.

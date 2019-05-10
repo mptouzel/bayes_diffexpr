@@ -3,10 +3,12 @@ import math
 import pandas as pd
 from functools import partial
 from copy import deepcopy
-import ctypes
-mkl_rt = ctypes.CDLL('libmkl_rt.so')
-num_threads=4
-mkl_set_num_threads = mkl_rt.MKL_Set_Num_Threads(num_threads)
+import matplotlib.pyplot as ppl
+
+#import ctypes
+#mkl_rt = ctypes.CDLL('libmkl_rt.so')
+#num_threads=4
+#mkl_set_num_threads = mkl_rt.MKL_Set_Num_Threads(num_threads)
 
 def NegBinParMtr(m,v,nvec): #speed up only insofar as the log and exp are called once on array instead of multiple times on rows
     ''' 
@@ -747,3 +749,71 @@ def constr_fn_diffexpr(paras,null_paras,svec,smax,s_step,indn1_d,indn2_d,fvec,fv
     Zdash = np.exp(logNclones + logPnn0 + log_avgfexps_n0n0) + np.exp(log_avgfexps)
 
     return np.log(Zdash)-np.log(Z)
+
+#--------------------------------plotting-----------------------------
+def plot_n1_vs_n2(df,savename,savepath,save):
+    indn1_d,indn2_d,countpaircounts_d,unicountvals_1_d,unicountvals_2_d,NreadsI_d,NreadsII_d=get_sparserep(df)
+    fig1,ax1=ppl.subplots(1,1,figsize=(3.5/3,3.5/3))
+
+    vals = ( np.log(countpaircounts_d)-np.log(np.min(countpaircounts_d)) )/ ( np.log(np.sum(countpaircounts_d))-np.log(np.min(countpaircounts_d)))
+    smallinds=(vals<0.05)
+    unicountvals_1_dt=np.asarray(unicountvals_1_d, dtype=float)
+    unicountvals_2_dt=np.asarray(unicountvals_2_d, dtype=float)
+    zeroval=10**-0.5
+    unicountvals_1_dt[unicountvals_1_dt==0]=zeroval
+    unicountvals_2_dt[unicountvals_2_dt==0]=zeroval
+    ax1.plot(unicountvals_1_dt[indn1_d[smallinds]],unicountvals_2_dt[indn2_d[smallinds]],'.',mew=0,mfc='k',markersize=2)
+    smallind1=indn1_d[~smallinds]
+    smallind2=indn2_d[~smallinds]
+    for vit,val in enumerate(vals[~smallinds]): 
+        ax1.plot(unicountvals_1_dt[smallind1[vit]],unicountvals_2_dt[smallind2[vit]],'.',mew=0.,color=str(val*0.9),markersize=15*val)
+
+    ax1.set_yscale('log')
+    ax1.set_xscale('log')
+    ax1.set_xlabel(r'$n_1$',fontsize=10)
+    ax1.set_ylabel(r'$n_2$',fontsize=10)
+    maxcount=1e4#1e6
+    ax1.set_aspect(1)
+    ax1.set_xlim([1.5e-1,maxcount])
+    ax1.set_ylim([1.5e-1,maxcount])
+    add_ticks(ax1,[zeroval],['0'],'x')
+    add_ticks(ax1,[zeroval],['0'],'y')
+        
+    ax1.set_xlim([1.5e-1,maxcount])
+    ax1.set_ylim([1.5e-1,maxcount])
+    if save:
+        fig1.savefig(savepath+savename+'.pdf',format= 'pdf',dpi=1000, bbox_inches='tight')
+        
+def add_ticks(ax,newLocs,newLabels,pos='x'):
+    # Draw to get ticks
+    ppl.draw()
+
+    # Get existing ticks
+    if pos=='x':
+        locs = ax.get_xticks().tolist()
+        labels=[x.get_text() for x in ax.get_xticklabels()]
+    elif pos =='y':
+        locs = ax.get_yticks().tolist()
+        labels=[x.get_text() for x in ax.get_yticklabels()]
+    else:
+        print("WRONG pos. Use 'x' or 'y'")
+        return
+
+    # Build dictionary of ticks
+    Dticks=dict(zip(locs,labels))
+
+    # Add/Replace new ticks
+    for Loc,Lab in zip(newLocs,newLabels):
+        Dticks[Loc]=Lab
+
+    # Get back tick lists
+    locs=list(Dticks.keys())
+    labels=list(Dticks.values())
+
+    # Generate new ticks
+    if pos=='x':
+        ax.set_xticks(locs)
+        ax.set_xticklabels(labels,fontsize=8)
+    elif pos =='y':
+        ax.set_yticks(locs)
+        ax.set_yticklabels(labels,fontsize=8)
