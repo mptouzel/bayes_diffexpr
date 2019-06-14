@@ -1,0 +1,149 @@
+\documentclass[letterpaper,english,prl,reprint,longbibliography]{revtex4-1}
+\setcounter{secnumdepth}{3}
+\usepackage{babel}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{graphicx} 
+\usepackage{epstopdf} %add for pdflatex, nut don't compile because of invisible character copied from .bbl file?
+\usepackage[T1]{fontenc}
+\usepackage[utf8x]{inputenc} 
+\usepackage{esint}
+\usepackage{verbatim}
+%\usepackage[hyphens]{url}
+\usepackage[unicode=true]{hyperref}
+\usepackage[table]{xcolor}
+\newcommand{\re}[1]{\textcolor{red}{#1}}
+%\loadpackage{url}
+%\usepackage[unicode=true]{hyperref}
+%\setcounter{biburllcpenalty}{7000}
+%\setcounter{biburlucpenalty}{8000}
+%\usepackage{breakurl}
+%\hypersetup{breaklinks=true}
+%\usepackage[hyperref,eprint=false]{biblatex}
+\makeatletter
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% LyX specific LaTeX commands.
+\pdfpageheight\paperheight
+\pdfpagewidth\paperwidth
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% User specified LaTeX commands.
+\usepackage{bbold}
+\newcommand{\overbar}[1]{\mkern 1.5mu\overline{\mkern-1.5mu#1\mkern-1.5mu}\mkern 1.5mu}
+\usepackage{xcolor}
+\hypersetup{
+    colorlinks,
+    linkcolor={red!50!black},
+    citecolor={blue!50!black},
+    urlcolor={blue!80!black}
+}
+% Additional Options
+\begin{document}
+\section*{Model family}
+We consider a family of generative models of pair count statistics of observed immune receptor RNA molecules obtained by sequencing blood samples taken in a reference and test pair of conditions, respectively. 
+For our purpose, an immune repertoire is a finite set of $N$ clones with frequencies $\vec{f}=(f_1,\dots,f_N)$, over the domain $f_i\in[f_{\textrm{min}},1]$, where $f_{\textrm{min}}$ is the minimum allowed frequency of corresponding to a single lymphocyte. A prior density over clone frequencies is given by $\rho(f)$. $N$ and $f_{\textrm{min}}$ must be determined self-consistently when defining the corresponding joint density, 
+\begin{eqnarray}
+	\rho_N(\vec{f})\propto \prod_{i=1}^N\rho(f_i)\delta(Z_f-1)\;,\label{eq:jointf}
+\end{eqnarray}
+where the Dirac delta-function, $\delta(x)$, is used to impose a normalization constraint on the sum of frequencies, $Z_f=\sum_{i=1}^N f_i$, 
+\begin{align}
+  Z_f=1\;. \label{eq:norm_constr}
+\end{align}
+
+Each clone's frequency pair from the reference and test conditions impacts its chance of being picked up in a realization of the acquisition process consisting of pair sampling and sequencing. 
+We present a model, $P(n,n',f,f')$, based on the priors $\rho(f)$ and $\rho(f')$, with $f$ and $f'$ and $n$ and $n'$ denoting a clone's frequencies and receptor molecule counts in the reference and test condition, respectively. In general, repertoires are dominated in number by small clones missed in the acquisition process. Thus, in any realization, $n+n'>0$ for only a relatively small number, $N_{\textrm{\textrm{obs}}}\ll N$, of clones, which can still be large since $N$ is typically $ 10^6$ ($10^9$) for mouse (human). These \emph{observed} clones are those captured in the blood sample and amplified above detection levels in the sequencer in at least one of the test and reference conditions. We have no experimental access to the \emph{unobserved} clones that realize with $n+n'=0$. Marginalizing over $f$ and $f'$ and conditioning on $n+n'>0$, we obtain the model prediction for what we observe, 
+\begin{align}
+	P(n,n'|n+n'>0)=\frac{1-\delta_{n0}\delta_{n'0}}{1-P(0,0)}P(n,n')\;,
+\end{align} 
+i.e. the distribution of pair counts from observed clones. The model estimate for the total number of clones is then $N=N_{\textrm{\textrm{obs}}}/(1-P(0,0))$. 
+%These are the union of two sets of \emph{observed} clones, i.e. clones that are captured in the blood sample and amplified in the sequencer in either of the two conditions, providing a finite number of molecules in at least one of the reference-test pair.
+%The unobserved frequencies of these observed clones directly impact the model's observed distribution, $P(n,n')$, of molecule count pairs, $n$ and $n'$, in the reference and test condition, respectively (Fig.\ref{fig:nullstats}A; see Methods section for details). 
+
+The $N-N_{\textrm{\textrm{obs}}}$ \emph{unobserved} clones influence the count statistics only via the presence of their frequencies in the two normalization constraints, $Z_f=1$ and $Z_{f'}=1$, so far unaccounted for in the model.
+In the Methods, we show that $Z_f=1$ is implicitly satisfied if 
+\begin{equation}
+	N\langle f\rangle=1\;,\label{eq:orignorm}
+\end{equation}
+which also imposes the desired self-consistency between $f_\textrm{min}$ and $N$. We employ this constraint in our clone model. Equivalently, it is expressed using the frequency posteriors, which we separate into unobserved and observed contributions,
+\begin{align*}
+	%1&=\langle Z\rangle_{\prod_i^N\rho(f_i|\mathcal{D})}\\
+	%&=\sum_i^N \langle f_i\rangle_{\rho(f_i|\mathcal{D})}\\
+	1&= NP(0,0) \langle f\rangle_{\rho(f|n+n'=0)}+	N\sum_{n+n'>0}P(n,n')\langle f\rangle_{\rho(f|n,n')}\;.
+\end{align*}
+
+$Z_f$ and $Z_{f'}$ are insensitive to the precise values of a realized set of unobserved clones, and their average frequency is well approximated as the ensemble average in first term above. In contrast, the sum of frequencies of the observed clones might depend on the realization, especially in the case of large, outlying clones arising from power-law distributed clone sizes. This sensitivity can nevertheless be incorporated into the model by using the approximation $\sum_{n+n'>0}P(n,n')\approx \frac{1}{N}\sum_{i=1}^{N_\textrm{obs}}$ so that the second term is $\sum_{i=1}^{N_{\textrm{obs}}}\langle f\rangle_{\rho(f|n_i,n'_i)}$. We define the right-hand side of this realization-dependent constraint 
+\begin{align}
+	%1&=\langle Z\rangle_{\prod_i^N\rho(f_i|\mathcal{D})}\\
+	%&=\sum_i^N \langle f_i\rangle_{\rho(f_i|\mathcal{D})}\\
+	Z^\mathcal{D}_f&= N	P(0,0)\langle f\rangle_{\rho(f|n+n'=0)} + \sum_{i=1}^{N_{\textrm{obs}}}\langle f\rangle_{\rho(f|n_i,n'_i)}\;.\label{eq:postnorm}
+\end{align}
+and impose that $Z^\mathcal{D}_f=1$, in addition to $N\langle f\rangle=1$. We note that while not equivalent, differences in values of parameters learned with each constraint separately were small, suggesting there is a high overlap in the respective regions of the parameter space satisfying the original  \ref{eq:orignorm} and realization-dependent \ref{eq:postnorm} constraints (Supp.Fig.X). We impose an equivalent constraint for $\vec{f}'$, via the equivalent condition, 
+\begin{align}
+	Z^\mathcal{D}_{f'}=Z^\mathcal{D}_f\;.
+\end{align}
+
+% Sampling from the models would be more aligned with the inference if $N_{\textrm{obs}}$ was a parameter. In that case, we need only sample the observable clones.
+%$\langle Z \rangle_{\rho(\vec{f})}}$
+%As a result the joint frequency factorizes and $\langle Z\rangle_{\rho(f)}\approx N\langle f\rangle_{\rho(f)}$ (same for $Z'$).
+%Thus, in addition to these two constraints, choosing $N$, and the parameters of $\rho(f)$, and $\rho(f')$ to be mutually consistent demands the constraint that $N\langle f\rangle_{\rho(f)}=1$ and $ N\langle f'\rangle_{\rho(f')}=1$, respectively (the latter can be equivalently expressed as $\langle f'\rangle_{\rho(f')}=\langle f\rangle_{\rho(f)}$). For arbitrary test condition, the latter average isn't necessarily defined. implies that $Z$ and $Z'$ are near unity. When sampling differential expression models, we must also normalize $f'$ by $Z'$.
+%As a result, 
+%When inferring models, we impose the constraint $N\langle f\rangle_{\rho(f)}=1$ the same normalization, but conditioned on the observed data 
+%\begin{equation}
+%	1=N\langle f\rangle_{\rho(f|\mathcal{D})}
+%							   = P(0,0)N\langle f\rangle_{\rho(f|n+n'=0)} + \sum_{i}^{N_{\textrm{obs}}}\langle f\rangle_{\rho(f|n_i,n'_i)}\;.
+%\end{equation}
+%and similarly for $f'$. Does this reduce to $N\langle f\rangle_{\rho(f)}=1$?
+
+%sampling section:
+%Sampling from the models would be more aligned with the inference if $N_{\textrm{obs}}$ was a parameter. In that case, we need only sample the observable clones.
+%For differential expression models With $N$ a fixed input parameter to the sampling procedure, sampled frequencies are simply normalized by dividing by $Z$. For the differential expression model, we in addition impose that $\langle f\rangle=\langle f'\rangle$.
+
+
+%In this case, the normalization when sampling from the model is implementation of the normalization depends on whether sampling from or inferring the parameters of the model, and also whether we are considering the null or differential expression model.
+%We present each form of the normalization used in its respective section.
+
+Finally, we take the `common dispersion' approach \citep{Robinson2008}, in which we assume that $n$ and $n'$ are conditionally independent once the reference and test frequency are given, and that their statistics depend only implicitly on clone identity (\emph{i.e.} clonal sequence) via these frequencies.
+Defined models were fit using using a pair count dataset, $\mathcal{D}=\{(n_i,n'_i)\}_{i=1}^{N_{\textrm{\textrm{obs}}}}$, by maximizing the $\log$ marginal likelihood of the data, $\sum_{i=1}^{N_{\textrm{\textrm{obs}}}} \log P(n_i,n'_i|\theta)$, over the free parameters, $\theta$, subject to the above constraints.
+%See Appendix for the derivation of this single clone model from the full density over the entire repertoire of all clones. \textcolor{red}{(include this?)}. 
+
+Our method to determine differential expression proceeds in two steps, where in each we define, learn, and analyze an instance of this model family.
+In the first step, we consider a null model in which a replicate, e.g. same-day sample, is given for the test condition. 
+In this case, the reference and test frequency are the same and no additional constraint for $\vec{f'}$ is needed.
+The learned parameters of $\rho(f)$ and the acquisition model from this pair serves to define the baseline, e.g. pre-vaccination statistics.
+In the second step, we consider a model for differential expression in which a differentially expressed condition serves as the test, e.g. the reference and test condition being pre- and post-vaccination, respectively. 
+The parameters of $\rho(f)$ and the acquisition model here are set to those of the null model.
+What is different here is $\rho(f')$: the test frequency, $f'$, is obtained from a transformation of the reference frequency, $f$.  
+This transformation summarizes the effect of the dynamics assumed to act on clone sizes during the time period between the two samples. 
+In the absence of a strong perturbation such as a vaccine or acute infection, this dynamics is dominated by the diffusive behavior of some stochastic population dynamics for which the transformation is given by the corresponding Green's function.  
+For a strong, transient perturbation, in contrast, time-translation invariance is broken and a transformation tailored to the properties of the transient perturbation must be specified. 
+In the context of immune response to yellow fever vaccination, we focus on the latter. 
+
+\subsection*{Normalization}
+Here we derive the condition for which the normalization in the joint density is implicitly satisfied. The normalization constant of the joint density is
+\begin{equation}
+	\mathcal{Z}=\int_{f_\textrm{min}}^1\cdots\int_{f_\textrm{min}}^1\prod_{i=1}^N \rho(f_i)\delta(Z-1)\textrm{d}^N\vec{f} \;,
+\end{equation}
+with $\delta(Z-1)$ being the only factor preventing factorization and explicit normalization. Writing the delta function in its Fourier representation factorizes the single constraint on $\vec{f}$ into $N$ Lagrange multipliers, one for each $f_i$,
+\begin{align}
+	\delta(Z-1)&=\int_{-i\infty}^{i\infty} \frac{\textrm{d} \mu}{2 \pi}e^{\mu(Z-1)}  \\
+	&=\int_{-i\infty}^{i\infty} \frac{\textrm{d} \mu}{2 \pi}e^{-\mu}\prod_{i=1}^N e^{\mu f_i} \;.
+\end{align}
+Crucially, the integral over $\vec{f}$ then factorizes. Exchanging the order of the integrations and omitting the clone subscript without loss of generality,
+\begin{equation}
+	\mathcal{Z}=\int_{-i\infty}^{i\infty} \frac{\textrm{d} \mu}{2 \pi} e^{-\mu} \prod_{i=1}^N \langle e^{\mu f}\rangle\;,\label{eq:bigZ}
+\end{equation}
+with $\langle e^{\mu f}\rangle=\int_{f_\textrm{min}}^1\rho(f)e^{\mu f}\textrm{d}f$. Now define the large deviation function, $I(\mu):=-\frac{\mu}{N}+\log \langle e^{\mu f}\rangle$, so that 
+\begin{equation}
+	\mathcal{Z}=\int_{-i\infty}^{i\infty} \frac{\textrm{d} \mu}{2 \pi} e^{-N I(\mu)}\;.\label{eq:largedev}
+\end{equation}
+Note that $I(0)=0$. With $N$ large, this integral is well-approximated by the integrand's value at its saddle point, located at $\mu^*$ with $I'(\mu^*)=0$.  Evaluating the latter gives
+\begin{align}
+	\frac{1}{N}&=\frac{\langle f e^{\mu f}\rangle}{\langle e^{\mu f}\rangle}\;.
+\end{align} 
+If the left-hand side is equal to $\langle f\rangle$, the equality holds only for $\mu^*=0$ since expectations of products of correlated random variables are not generally products of their expectations. Thus we see from eq.\ref{eq:largedev} that $\mathcal{Z}=1$, and so the constraint $N\langle f\rangle=1$ imposes normalization.
+% \begin{align}
+% 	\langle g(\vec{f})\rangle_{\rho_N(\vec{f})}&=\int_{f_\textrm{min}}^1\cdots\int_{f_\textrm{min}}^1\prod_{i=1}^N \rho(f)\frac{1}{2 \pi} \int_{-i\infty}^{i\infty} e^{i \mu(Z-1)} \textrm{d} \mu \textrm{d}^N\vec{f} g(\vec{f})\\
+% 	\int_{f_\textrm{min}}^1\cdots\int_{f_\textrm{min}}^1\prod_{i=1}^N \rho(f)\frac{1}{2 \pi} \int_{-i\infty}^{i\infty} e^{i \mu(Z-1)} \textrm{d} \mu \textrm{d}^N\vec{f} g(\vec{f})\;.
+% \end{align}
+
+
+\end{document}

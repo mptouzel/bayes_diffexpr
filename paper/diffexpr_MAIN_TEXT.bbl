@@ -1,0 +1,86 @@
+%merlin.mbs apsrev4-1.bst 2010-07-25 4.21a (PWD, AO, DPC) hacked
+%Control: key (0)
+%Control: author (0) dotless jnrlst
+%Control: editor formatted (1) identically to author
+%Control: production of article title (0) allowed
+%Control: page (1) range
+%Control: year (0) verbatim
+%Control: production of eprint (0) enabled
+\begin{thebibliography}{3}%
+\makeatletter
+\providecommand \@ifxundefined [1]{%
+ \@ifx{#1\undefined}
+}%
+\providecommand \@ifnum [1]{%
+ \ifnum #1\expandafter \@firstoftwo
+ \else \expandafter \@secondoftwo
+ \fi
+}%
+\providecommand \@ifx [1]{%
+ \ifx #1\expandafter \@firstoftwo
+ \else \expandafter \@secondoftwo
+ \fi
+}%
+\providecommand \natexlab [1]{#1}%
+\providecommand \enquote  [1]{``#1''}%
+\providecommand \bibnamefont  [1]{#1}%
+\providecommand \bibfnamefont [1]{#1}%
+\providecommand \citenamefont [1]{#1}%
+\providecommand \href@noop [0]{\@secondoftwo}%
+\providecommand \href [0]{\begingroup \@sanitize@url \@href}%
+\providecommand \@href[1]{\@@startlink{#1}\@@href}%
+\providecommand \@@href[1]{\endgroup#1\@@endlink}%
+\providecommand \@sanitize@url [0]{\catcode `\\12\catcode `\$12\catcode
+  `\&12\catcode `\#12\catcode `\^12\catcode `\_12\catcode `\%12\relax}%
+\providecommand \@@startlink[1]{}%
+\providecommand \@@endlink[0]{}%
+\providecommand \url  [0]{\begingroup\@sanitize@url \@url }%
+\providecommand \@url [1]{\endgroup\@href {#1}{\urlprefix }}%
+\providecommand \urlprefix  [0]{URL }%
+\providecommand \Eprint [0]{\href }%
+\providecommand \doibase [0]{http://dx.doi.org/}%
+\providecommand \selectlanguage [0]{\@gobble}%
+\providecommand \bibinfo  [0]{\@secondoftwo}%
+\providecommand \bibfield  [0]{\@secondoftwo}%
+\providecommand \translation [1]{[#1]}%
+\providecommand \BibitemOpen [0]{}%
+\providecommand \bibitemStop [0]{}%
+\providecommand \bibitemNoStop [0]{.\EOS\space}%
+\providecommand \EOS [0]{\spacefactor3000\relax}%
+\providecommand \BibitemShut  [1]{\csname bibitem#1\endcsname}%
+\let\auto@bib@innerbib\@empty
+%</preamble>
+\bibitem [{\citenamefont {Robinson}\ and\ \citenamefont
+  {Smyth}(2008)}]{Robinson2008}%
+  \BibitemOpen
+  \bibfield  {author} {\bibinfo {author} {\bibfnamefont {Mark~D}\ \bibnamefont
+  {Robinson}}\ and\ \bibinfo {author} {\bibfnamefont {Gordon~K}\ \bibnamefont
+  {Smyth}},\ }\bibfield  {title} {\enquote {\bibinfo {title} {{Small-sample
+  estimation of negative binomial dispersion , with applications to SAGE
+  data}},}\ }\href {\doibase 10.1093/biostatistics/kxm030} {\ ,\ \bibinfo
+  {pages} {321--332} (\bibinfo {year} {2008})}\BibitemShut {NoStop}%
+\bibitem [{\citenamefont {Best}\ \emph {et~al.}(2015)\citenamefont {Best},
+  \citenamefont {Oakes}, \citenamefont {Heather}, \citenamefont
+  {Shawe-Taylor},\ and\ \citenamefont {Chain}}]{Best2015a}%
+  \BibitemOpen
+  \bibfield  {author} {\bibinfo {author} {\bibfnamefont {Katharine}\
+  \bibnamefont {Best}}, \bibinfo {author} {\bibfnamefont {Theres}\ \bibnamefont
+  {Oakes}}, \bibinfo {author} {\bibfnamefont {James~M}\ \bibnamefont
+  {Heather}}, \bibinfo {author} {\bibfnamefont {John}\ \bibnamefont
+  {Shawe-Taylor}}, \ and\ \bibinfo {author} {\bibfnamefont {Benny}\
+  \bibnamefont {Chain}},\ }\bibfield  {title} {\enquote {\bibinfo {title}
+  {{Computational analysis of stochastic heterogeneity in PCR amplification
+  efficiency revealed by single molecule barcoding.}}}\ }\href {\doibase
+  10.1038/srep14629} {\bibfield  {journal} {\bibinfo  {journal} {Scientific
+  reports}\ }\textbf {\bibinfo {volume} {5}},\ \bibinfo {pages} {14629}
+  (\bibinfo {year} {2015})}\BibitemShut {NoStop}%
+\bibitem [{\citenamefont {Mora}\ and\ \citenamefont
+  {Walczak}(2016)}]{Mora2016}%
+  \BibitemOpen
+  \bibfield  {author} {\bibinfo {author} {\bibfnamefont {Thierry}\ \bibnamefont
+  {Mora}}\ and\ \bibinfo {author} {\bibfnamefont {Aleksandra}\ \bibnamefont
+  {Walczak}},\ }\bibfield  {title} {\enquote {\bibinfo {title} {{Quantifying
+  lymphocyte receptor diversity}},}\ }\href {\doibase 10.1101/046870} {\ ,\
+  \bibinfo {pages} {1--10} (\bibinfo {year} {2016})},\ \Eprint
+  {http://arxiv.org/abs/1604.00487} {arXiv:1604.00487} \BibitemShut {NoStop}%
+\end{thebibliography}%

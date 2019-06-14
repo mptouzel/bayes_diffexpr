@@ -1,0 +1,141 @@
+\documentclass[letterpaper,english,prl,reprint,onecolumn,longbibliography]{revtex4-1} %twocolumn,
+
+%\usepackage[latin9]{inputenc}
+\setcounter{secnumdepth}{3}
+\usepackage{babel}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{graphicx} 
+\usepackage{epstopdf} %add for pdflatex, nut don't compile because of invisible character copied from .bbl file?
+\usepackage[T1]{fontenc}
+\usepackage[utf8x]{inputenc} 
+\usepackage{esint}
+\usepackage{verbatim}
+%\usepackage[hyphens]{url}
+\usepackage[unicode=true]{hyperref}
+\usepackage[table]{xcolor}
+%\loadpackage{url}
+%\usepackage[unicode=true]{hyperref}
+%\setcounter{biburllcpenalty}{7000}
+%\setcounter{biburlucpenalty}{8000}
+%\usepackage{breakurl}
+%\hypersetup{breaklinks=true}
+%\usepackage[hyperref,eprint=false]{biblatex}
+\makeatletter
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% LyX specific LaTeX commands.
+\pdfpageheight\paperheight
+\pdfpagewidth\paperwidth
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% User specified LaTeX commands.
+\usepackage{bbold}
+\newcommand{\overbar}[1]{\mkern 1.5mu\overline{\mkern-1.5mu#1\mkern-1.5mu}\mkern 1.5mu}
+\usepackage{xcolor}
+\hypersetup{
+    colorlinks,
+    linkcolor={red!50!black},
+    citecolor={blue!50!black},
+    urlcolor={blue!80!black}
+}
+
+\makeatother
+
+\begin{document}
+
+
+\preprint{APS/123-QED}
+
+\title{Inferring repertoire dynamics and using them to identify responsive clones}
+
+\author{Maximilian Puelma Touzel}
+%\email[]{puelma@lpt.ens.fr}
+
+\affiliation{Laboratoire de Physique Théorique, ENS-PSL Research University, Paris, France}
+
+\author{Aleksandra Walczak}
+
+\affiliation{Laboratoire de Physique Théorique, ENS-PSL Research University, Paris, France}
+
+\author{Thierry Mora}
+
+\affiliation{Laboratoire de Physique Statistique, ENS-PSL Research University, Paris, France,}
+
+\vspace{0.5cm}
+
+
+\begin{abstract}
+Abridged: Here, we present a method to infer repertoire dynamics from repertoire-sequenced receptor RNA. We analyze the structure of the model used, justifying the ingredients and apply it to answer questions regarding the repertoire dynamics of yellow fever.
+
+
+
+\end{abstract}
+
+\keywords{keywords}
+
+\pacs{}
+
+\maketitle
+%\section{Introduction} 
+
+\textbf{Null model ($\mathcal{M}_f$) sampling procedure:}
+
+$\mathcal{M}_f$: $P(n,n',f)\propto P(n|f)P(n'|f'=f)\rho(f)\textrm{d}f\delta(Z_{f(\mathcal{M}_f)}-1)$
+\begin{itemize}
+	\item  fix $N$, total number of clones in repertoire
+	\item  fix $M$, total number of cells in sample
+	\item  fix $\epsilon$, sampling efficiency (mapping cells to reads, equivalent to specifying an effective number of reads via $N^{\textrm{eff}}_{\textrm{reads}}=\epsilon M$; but since $N^{\textrm{eff}}_{\textrm{reads}}$ will differ from the actual number of reads, I prefer to define $\epsilon$)
+	\item  fix remaining parameters: $\alpha$, $a$ and $\gamma$.
+	\item  set $f_\textrm{min}$ via normalization, $Z_{f(\mathcal{M}_f)}=1$ with
+	\begin{align}
+		Z_{f(\mathcal{M}_f)}=\langle \sum_{i=1}^N f_i \rangle=N\langle f \rangle_{\mathcal{M}_{f}}=N\langle f \rangle_{\rho(f)}
+	\end{align}
+	\item  compute $P(0,0)$ from model with which $N_\textrm{samp}=N(1-P(0,0))$ 
+	\item  sample $N_\textrm{samp}$ frequencies. In order to be able to sample $n$ and $n'$ independently, sample in the 3 regions of finite counts proportional to their probabilities, e.g. sample $P_{0x}/Z_x N_\textrm{samp}$ frequencies according to $\rho(f|0x)=\rho(f)P(n=0|f)(1-P(n'=0|f))/P_{0x}$ with $P_{0x}=\int \textrm{d}f\rho(f)P(n=0|f)(1-P(n'=0|f))$ and $Z_x=P_{0x}+P_{x0}+P_{xx}$. Similarly for the two other regions $0x$ and $xx$, where $x$ denotes $n>0$.
+\end{itemize}
+\textbf{Null model inference procedure:}
+\begin{itemize}
+	\item  get $N_\textrm{samp}$, $N_{\textrm{reads}}$, $N'_{\textrm{reads}}$ from dataset
+	\item  maximize marginal likelihood over $(\alpha,M,a,\gamma,f_\textrm{min})$ subject to constraint that the normalization conditioned on the dataset, $\mathcal{D}$, $Z_{f(\mathcal{M}_f|\mathcal{D})}=1$ with
+	\begin{align}
+		Z_{f(\mathcal{M}_f|\mathcal{D})}=\frac{N_{\textrm{samp}}}{1-P(0,0)} P(0,0)\langle f\rangle_{\rho(f|0,0)}+\sum_{i=1}^{N_{\textrm{samp}}}\langle f\rangle_{\rho(f|n_i,n'_i)}
+	\end{align}
+\end{itemize}
+\textbf{Differential expression model ($\mathcal{M}_{f'}$) sampling procedure:}
+
+$\mathcal{M}_{f'}$: $P(n,n',f,s)\propto P(n|f)\;P(n'|f'=fe^s/Z_{f'(\mathcal{M}_{f'})})\;\rho(f)\textrm{d}f\;P(s)\;\delta(Z_{f'(\mathcal{M}_{f'})}-1)\;\delta(Z_{f(\mathcal{M}_{f'})}-1)\;$
+\begin{itemize}
+	\item  repeat steps of null model sampling up to the last step (n.b. $Z_{f(\mathcal{M}_{f'})}=Z_{f(\mathcal{M}_{f})}$ so step 5 gives us $Z_{f(\mathcal{M}_{f'})}=1$, however, $P(0,0)$ depends on $P(s)$ here and can therefore give a different $N_\textrm{samp}$).
+	\item  Note that, unlike $\langle f \rangle_{\mathcal{M}_{f}} $, $\langle fe^s \rangle_{\mathcal{M}_{f'}} $ diverges. We thus normalize instead on a realized repertoire. Sample $f$ and $s$ from $\rho(f)$ and $P(s)$ respectively $N$ times.
+	%\item Set $Z_{f'(\mathcal{M}_{f'})}=\sum_{i=1}^N f_i e^{s_i}$
+	%$N_\textrm{samp}=N(1-P(0,0))$ times, distributed in the three regions, e.g. sample $P_{0x}N_\textrm{samp}$ frequencies according to $\rho(f,s|0x)=P(s)\rho(f)P(n=0|f)(1-P(n'=0|f,s))/P_{0x}$ with $P_{0x}=\int \textrm{d}f\rho(f)P(n=0|f)\sum_s P(s)(1-P(n'=0|f,s))$, where $Z_x=P_{0x}+P_{x0}+P_{xx}$. Similarly for $0x$ and $xx$.
+	%\item Similarly to $Z_{f(\mathcal{M}_f)}$, calculate 
+	%\begin{eqnarray}
+	%	Z_{f'(\mathcal{M}_{f'})}=N P(0,0)\langle fe^s\rangle_{\rho(f,s|0,0)}+\sum_{i=1}^{N_{\textrm{samp}}}f_i e^{s_i}
+	%\end{eqnarray}
+	\item  renormalize by $Z=\left(\sum_{i=1}^N f_i e^{s_i}\right)\bigg/\left(\sum_{i=1}^N f_i \right)$ so $f'_i=f_ie^{s_i}/Z$
+	\item  sample $P(n_i|f_i)$ and $P(n'_i|f'_i)$ and discard clones with $n+n'=0$. 
+\end{itemize}
+\textbf{Differential expression inference procedure:}
+\begin{itemize}
+	\item  get $N_\textrm{samp}$, $N_{\textrm{reads}}$, $N'_{\textrm{reads}}$ from dataset
+	\item  use parameters from null inference (n.b. doesn't satisfy the $Z_{f(\mathcal{M}_{f'}|\mathcal{D})}=1$ constraint).
+	\item  maximize marginal likelihood over parameters of $P(s)$, e.g. $\bar{s}$, subject to constraint, $Z_{f'(\mathcal{M}_{f'}|\mathcal{D})}=Z_{f(\mathcal{M}_{f'}|\mathcal{D})}$, with
+	\begin{eqnarray}
+		Z_{f'(\mathcal{M}_{f'}|\mathcal{D})}=\frac{N_{\textrm{samp}}}{1-P(0,0)} P(0,0)\langle fe^s\rangle_{\rho(f,s|0,0)}+\sum_{i=1}^{N_{\textrm{samp}}}\langle fe^s\rangle_{\rho(f,s|n_i,n'_i)}
+	\end{eqnarray}
+	which we satisfy by adding a shift, $s_0$, to $P(s)$. This is achieved with a recursive shift-finding procedure.
+	%So, we have 1 degree of freedom still to fix. Instead, we consider another constraint problem entirely and set $Z_{f'(\mathcal{M}_{f'}|\mathcal{D})}$ and $Z_{f(\mathcal{M}_{f'}|\mathcal{D})}$ equal to each other using $s_0$, leaving no degrees of freedom. 
+\end{itemize}
+\end{document}  
+
+
+
+
+
+
+
+
+
+
+
+
