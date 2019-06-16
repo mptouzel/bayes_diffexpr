@@ -81,7 +81,7 @@ def learn_null_model(sparse_rep,acq_model_type,init_paras,constr_type=2,prtfn=pr
     prtfn(outstruct)
     return outstruct,constr_value
    
-#-------fucntions for polishing P(s) parameter estimates----------
+#-------fucntions for polishing P(s) parameter estimates after grid search----------
 
 def get_likelihood(paras,null_paras,svec,smax,s_step,indn1_d,indn2_d,fvec,fvecwide,rhofvec,\
                                  unicountvals_1_d,unicountvals_2_d,countpaircounts_d,\

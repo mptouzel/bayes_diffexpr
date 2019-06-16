@@ -215,7 +215,7 @@ def get_Pn1n2_s(paras, svec, sparse_rep,acq_model_type,  s_step=0):    #changed 
     logPn2_f=get_logPn_f(unicountvals_2,NreadsII,logfvecwide if isinstance(svec,np.ndarray) else logfvec,acq_model_type,paras) #for diff expr with shift use shifted range for wide f2, #contains s-shift for sampled data method
   
     dlogfby2=np.diff(logfvec)/2. #for later integration via trapezoid method
-    if isinstance(svec,np.ndarray):  #diffexpr model
+    if isinstance(svec,np.ndarray):  #P(n1,n2|s)
         print('computing P(n1,n2|f,s)')
         Pn1n2_s=np.zeros((len(svec),len(unicountvals_1),len(unicountvals_2))) 
         for s_it,s in enumerate(svec):
@@ -370,7 +370,7 @@ def get_model_sample_obs(paras,Nsamp,Nreads):
         q0x_samples[f_start_ind[it]:f_start_ind[it]+f_counts[it]]=Pn_f[find].ppf(samples)
     q0x_pair_samples=np.hstack((np.zeros((num_q0x,1)),q0x_samples[:,np.newaxis]))
 
-    #f,s,n1,n2 in xx\
+    #f,s,n1,n2 in xx
     integ=np.exp(logPf_qxx+logfvec)
     f_samples_inds=get_distsample((dlogfby2*(integ[1:] + integ[:-1])),num_qxx).flatten() 
     f_samples_inds=np.sort(f_samples_inds)

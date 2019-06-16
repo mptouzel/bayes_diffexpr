@@ -60,28 +60,33 @@ plot_n1_vs_n2(sparse_rep,'','joint_histogram_effective',0)
 
 # ## Reinference
 
+# +
 output=[]
 fsamplesS=[]
 pair_samplesS=[]
 constr_storeS=[]
-for constr_type in range(3):
-    N_trials=1
-    paras_store=list()
-    f_samples_store=list()
-    pair_samples_store=list()
-    constr_store=list()
+N_trials=20
+paras_store=list()
+f_samples_store=list()
+pair_samples_store=list()
+constr_store=list()
 
-    initparas = paras#*(1+0.001*(np.random.random(size=len(paras))-1))
-    logPn1_f=np.zeros((1,))
-    logPn2_f=np.zeros((1,))
-    case_output=[]
-    for nit in range(N_trials):
-        np.random.seed(1+nit)
-        #this method only samples in the observed domain
-        f_samples, pair_samples=get_model_sample_obs(paras,Nsamp,Nreads)
+initparas = paras#*(1+0.001*(np.random.random(size=len(paras))-1))
+logPn1_f=np.zeros((1,))
+logPn2_f=np.zeros((1,))
+case_output=[]
+for nit in range(N_trials):
+    tmpdict={}
+    np.random.seed(1+nit)
+    #this method only samples in the observed domain
+    f_samples, pair_samples=get_model_sample_obs(paras,Nsamp,Nreads)
+    tmpdict['f']=f_samples
+    tmpdict['n1n2']=pair_samples
+    #transform to sparse representation
+    sparse_rep=get_sparserep(pair_samples)
 
-        #transform to sparse representation
-        sparse_rep=get_sparserep(pair_samples)
+    for constr_type in range(3):
+        
         #learn
         init_paras=paras
         st=time.time()
@@ -106,6 +111,99 @@ data['n1n2']=pair_samplesS
 data['constr']=constr_storeS
 data['out']=output
 np.save('syn_null_models',data)
+# -
+
+maxf=np.zeros((20,))
+for tit,trial in enumerate(data['f'][it]):    
+    maxf[tit]=np.max(trial)
+fig,ax=pl.subplots(1,1)
+# df=pd.DataFrame(maxf.T,columns=['C1','C2','C1+C2']).melt(value_vars=['C1','C2','C1+C2'],value_name='$f_{max}$',var_name='constraint')
+sns.scatterplot(ax=ax,
+               data=pd.DataFrame(maxf), 
+              color='k', # Make points black
+              alpha=0.7) # and slightly transparent
+print(np.where(maxf>-3))
+
+maxn=np.zeros((20,))
+for tit,trial in enumerate(data['n1n2'][it]):    
+    maxn[tit]=trial.max().max()
+fig,ax=pl.subplots(1,1)
+# df=pd.DataFrame(maxf.T,columns=['C1','C2','C1+C2']).melt(value_vars=['C1','C2','C1+C2'],value_name='$f_{max}$',var_name='constraint')
+sns.scatterplot(ax=ax,
+               data=pd.DataFrame(maxn), 
+              color='k', # Make points black
+              alpha=0.7) # and slightly transparent
+print(np.where(maxn>e4))
+
+# +
+maxf=np.zeros((20,))
+for tit,trial in enumerate(data['f'][it]):    
+    maxf[tit]=np.max(trial)
+maxn=np.zeros((20,))
+for tit,trial in enumerate(data['n1n2'][it]):    
+    maxn[tit]=trial.max().max()
+    
+logfthresh=-3.
+nthresh=7e4
+fig,ax=pl.subplots(1,3,figsize=(16,8))
+for axit in range(3):
+    
+    #select trials based on fmax
+    if axit==2:
+#         seltrials=np.where(maxf>logfthresh)[0]
+        seltrials=np.where(maxf>logfthresh)[0]
+        title='4/20 $f_{max}>10^{-3}$ trials '
+    elif axit==1:
+#         seltrials=np.where(maxf<logfthresh)[0]
+        seltrials=[4,3,6,8,9,13]
+        title='6/20 high-error trials'
+    else:
+        seltrials=range(20)
+        title='20 trials'
+
+
+    constr_names=(r'$N\langle f \rangle=1$',r'$N\langle f \rangle_{|data}=1$','both')
+    para_names=(r'$\alpha_{\rho}$',r'$\log_{10}a$',r'$\gamma$',r'$\log_{10}f_\textrm{min}$')
+    df=pd.DataFrame(columns=['mag. rel. error','constr','parameter'])
+
+    for it,constr in enumerate(constr_names):
+        for tit,trial in enumerate(data['out'][it]):
+            if tit in list(seltrials):
+                for pit,para in enumerate(paras):
+                    row={'mag. rel. error':np.log10(np.abs((trial.x[pit]-para)/para)),'constr':constr,'parameter':para_names[pit]}
+                    df=df.append(row,ignore_index=True)
+    # Create plot
+    sns.violinplot(ax=ax[axit],
+                   x='parameter',
+                   y='mag. rel. error', 
+                   data=df, 
+                   hue='constr',
+                   inner=None) # Remove the bars inside the violins
+                   #palette=pkmn_type_colors)
+    handles, labels = ax[axit].get_legend_handles_labels()
+
+    sns.swarmplot(ax=ax[axit],
+                  x='parameter',
+                   y='mag. rel. error', 
+                   data=df, 
+                   hue='constr',
+                  color='k', # Make points black
+                  dodge=True,
+                  alpha=0.7) # and slightly transparent
+    ax[axit].set_ylim(-8,0)
+    # ax.set_yticklabels([r'$10^{'+str(x)+'}$' for x in range(-10,1,2)]);
+    # # Set title with matplotlib
+    # plt.title('Attack by Type')
+    ax[axit].legend(handles, labels,frameon=False)
+    ax[axit].set_title(title)
+    ax[axit].set_ylabel('$\log_{10}|(p-p^*)/p^*|$')
+    ax[axit].set_xlabel('parameter, $p$')
+
+fig.tight_layout()
+fig.savefig('high_error_mode_reinference_analysis.pdf',format='pdf',dpi=1000, bbox_inches='tight')
+# -
+
+# So there is a low and high error mode. Probably also for alpha_rho, just smaller in size. DIfference not apparent when using only the C2 (realization-based) constraint
 
 # NOw analyze data:
 
