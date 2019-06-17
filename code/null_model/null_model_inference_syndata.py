@@ -27,7 +27,7 @@ from lib.utils.prob_utils import get_distsample
 from lib.proc import get_sparserep,import_data
 from lib.model import get_Pn1n2_s, get_rhof, NegBinParMtr,get_logPn_f,get_model_sample_obs
 from lib.learning import constr_fn,callback,learn_null_model
-import lib.learning
+# import lib.learning
 # %load_ext autoreload
 # %autoreload 2
 
@@ -113,9 +113,16 @@ data['out']=output
 np.save('syn_null_models',data)
 # -
 
+sumf=np.zeros((20,))
+for tit,trial in enumerate(data['f'][it]):    
+#     maxf[tit]=np.max(trial)
+    sumf[tit]=np.sum(trial[np.argpartition(trial,-nummax)[-nummax:]])
+np.argsort(sumf)
+
 maxf=np.zeros((20,))
 for tit,trial in enumerate(data['f'][it]):    
-    maxf[tit]=np.max(trial)
+#     maxf[tit]=np.max(trial)
+    maxf[tit]=np.sum(trial[np.argpartition(trial,-nummax)[-nummax:]])
 fig,ax=pl.subplots(1,1)
 # df=pd.DataFrame(maxf.T,columns=['C1','C2','C1+C2']).melt(value_vars=['C1','C2','C1+C2'],value_name='$f_{max}$',var_name='constraint')
 sns.scatterplot(ax=ax,
@@ -123,6 +130,8 @@ sns.scatterplot(ax=ax,
               color='k', # Make points black
               alpha=0.7) # and slightly transparent
 print(np.where(maxf>-3))
+
+data['n1n2'][it][0]
 
 maxn=np.zeros((20,))
 for tit,trial in enumerate(data['n1n2'][it]):    
@@ -134,6 +143,15 @@ sns.scatterplot(ax=ax,
               color='k', # Make points black
               alpha=0.7) # and slightly transparent
 print(np.where(maxn>e4))
+
+nummax=1
+maxf=np.zeros((20,nummax))
+for tit,trial in enumerate(data['f'][it]):    
+    maxf[tit,:]=trial[np.argpartition(trial,-nummax)[-nummax:]]
+
+np.argsort(np.sum(maxf,axis=1))
+
+np.where(maxf>logfthresh)[0]
 
 # +
 maxf=np.zeros((20,))

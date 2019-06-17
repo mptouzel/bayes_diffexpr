@@ -45,7 +45,7 @@ def constr_fn(paras,svec,sparse_rep,acq_model_type,constr_type): #additional inp
     Z     = np.exp(logNclones + np.log(Pn0n0) + log_avgf_n0n0) + np.exp(log_sumavgf)
     
     C2=np.log(Z)
-    print('C1:'+str(C1)+' C2:'+str(C2))
+    #print('C1:'+str(C1)+' C2:'+str(C2))
     if constr_type==0:
         return C1
     elif constr_type==1:
@@ -56,10 +56,13 @@ def constr_fn(paras,svec,sparse_rep,acq_model_type,constr_type): #additional inp
 def callback(paras,prtfn,nparas): #acq_model_type dependent
     '''prints iteration info. called by scipy.minimize'''
     global curr_iter
-    print(''.join(['{0:d} ']+['{'+str(it)+':3.6f} ' for it in range(1,len(paras)+1)]).format(*([curr_iter]+list(paras))))
+    prtfn(''.join(['{0:d} ']+['{'+str(it)+':3.6f} ' for it in range(1,len(paras)+1)]).format(*([curr_iter]+list(paras))))
     curr_iter += 1
 
 def learn_null_model(sparse_rep,acq_model_type,init_paras,constr_type=2,prtfn=print):
+    '''
+    performs constrained maximization of null model likelihood
+    '''
     if acq_model_type<2:
         parameter_labels=['alph_rho', 'beta','alpha','m_total','fmin']
     elif acq_model_type==2:
@@ -75,7 +78,7 @@ def learn_null_model(sparse_rep,acq_model_type,init_paras,constr_type=2,prtfn=pr
     prtfn(''.join(['{'+str(it)+':9s} ' for it in range(len(init_paras)+1)]).format(*header))
     global curr_iter
     curr_iter = 1
-    callbackp=partial(callback,prtfn=print,nparas=len(init_paras))
+    callbackp=partial(callback,prtfn=prtfn,nparas=len(init_paras))
     outstruct = minimize(partialobjfunc, init_paras, method='SLSQP', callback=callbackp, constraints=condict,options={'ftol':nullfunctol ,'disp': True,'maxiter':nullmaxiter})
     constr_value=constr_fn(outstruct.x,-1,sparse_rep,acq_model_type,constr_type)
     prtfn(outstruct)
