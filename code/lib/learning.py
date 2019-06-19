@@ -83,192 +83,309 @@ def learn_null_model(sparse_rep,acq_model_type,init_paras,constr_type=2,prtfn=pr
     constr_value=constr_fn(outstruct.x,-1,sparse_rep,acq_model_type,constr_type)
     prtfn(outstruct)
     return outstruct,constr_value
-   
+
+
+def learn_diffexpr_model(sparse_rep,acq_model_type,null_model_paras, init_paras,constr_type=2,prtfn=print):
+    '''
+    performs constrained maximization of null model likelihood
+    '''
+    if acq_model_type<2:
+        parameter_labels=['alph_rho', 'beta','alpha','m_total','fmin']
+    elif acq_model_type==2:
+        parameter_labels=['alph_rho', 'beta','alpha','fmin']
+    else:
+        parameter_labels=['alph_rho', 'fmin']
+    assert len(parameter_labels)==len(init_paras), "number of model and initial paras differ!"
+    condict={'type':'eq','fun':constr_fn,'args': (-1,sparse_rep,acq_model_type,constr_type)}
+    partialobjfunc=partial(get_Pn1n2_s,svec=-1, sparse_rep=sparse_rep,acq_model_type=acq_model_type)
+    nullfunctol=1e-6
+    nullmaxiter=200
+    header=['Iter']+parameter_labels
+    prtfn(''.join(['{'+str(it)+':9s} ' for it in range(len(init_paras)+1)]).format(*header))
+    global curr_iter
+    curr_iter = 1
+    callbackp=partial(callback,prtfn=prtfn,nparas=len(init_paras))
+    outstruct = minimize(partialobjfunc, init_paras, method='SLSQP', callback=callbackp, constraints=condict,options={'ftol':nullfunctol ,'disp': True,'maxiter':nullmaxiter})
+    constr_value=constr_fn(outstruct.x,-1,sparse_rep,acq_model_type,constr_type)
+    prtfn(outstruct)
+    return outstruct,constr_value
+
+def get_shift(sparse_rep,acq_model_type,paras,shift,logfvec,logfvecwide,svec,f2s_step,logPn1_f,logrhofvec,logPsvec,tol=1e-3):
+    indn1,indn2,sparse_rep_counts,_,unicounts,_,Nreads=sparse_rep
+    Nsamp=np.sum(sparse_rep_counts)
+    dlogfby2=np.diff(logfvec)/2. #1/2 comes from trapezoid integration below
+
+    alpha = paras[0] #power law exponent
+    if acq_model_type<2:
+        m_total=float(np.power(10, paras[3])) 
+        r_c=Nreads/m_total
+        fmin=np.power(10,paras[4])
+    else:
+        fmin=np.power(10,paras[3])
+        
+    beta_mv= paras[1]
+    alpha_mv=paras[2]
+    diffval=np.Inf
+    addshift=0
+    it=0
+    #breakflag=False
+    while diffval>tol:
+        it+=1
+        shift+=addshift
+        print(str(it)+' '+str(shift)+' '+str(diffval))
+        fvecwide_shift=np.exp(logfvecwide-shift) #implements shift in Pn2_fs
+        svec_shift=svec-shift
+        
+        logPn2_f=get_logPn_f(unicounts,Nreads,np.log(fvecwide_shift),acq_model_type,paras)
+        
+        #logPn2_s=np.zeros((len(svec),len(logfvec),len(unicounts))) #svec is svec_shift
+        #for s_it in range(len(svec)):
+            #logPn2_s[s_it,:,:]=logPn2_f[f2s_step*s_it:f2s_step*s_it+len(logfvec),:]   #note here this is fvec long
+        #iterative sum avoids having to compute P(n|f,s) above and commented out lines below
+        log_Pn2_f=np.zeros((len(logfvec),len(unicounts)))
+        for s_it in range(len(svec)):
+            log_Pn2_f+=np.exp(logPn2_f[f2s_step*s_it:f2s_step*s_it+len(logfvec),:]+logPsvec[s_it,np.newaxis,np.newaxis])
+        log_Pn2_f=np.log(log_Pn2_f)
+        #log_Pn2_f=np.log(np.sum(np.exp(logPn2_s+logPsvec[:,np.newaxis,np.newaxis]),axis=0))
+        integ=np.exp(log_Pn2_f[:,indn2]+logPn1_f[:,indn1]+logrhofvec[:,np.newaxis]+logfvec[:,np.newaxis])
+        log_Pn1n2=np.log(np.sum(dlogfby2[:,np.newaxis]*(integ[1:,:] + integ[:-1,:]),axis=0))
+
+        #log_Pn2_f=np.log(np.sum(np.exp(logPn2_s+logPsvec[:,np.newaxis,np.newaxis]),axis=0))
+        integ=np.exp(np.log(integ)+logfvec[:,np.newaxis]) 
+        #np.exp(log_Pn2_f[:,indn2]+logPn1_f[:,indn1]+logrhofvec[:,np.newaxis]+logfvec[:,np.newaxis]+logfvec[:,np.newaxis])
+        tmp=deepcopy(log_Pn1n2)
+        tmp[tmp==-np.Inf]=np.Inf #since subtracted in next line
+        avgf_n1n2=    np.exp(np.log(np.sum(dlogfby2[:,np.newaxis]*(integ[1:,:] + integ[:-1,:]),axis=0))-tmp)
+        log_avgf=np.log(np.dot(sparse_rep_counts,avgf_n1n2))
+
+        log_expsavg_Pn2_f=np.zeros((len(logfvec),len(unicounts)))
+        for s_it in range(len(svec)):
+            log_expsavg_Pn2_f+=np.exp(svec_shift[s_it,np.newaxis,np.newaxis]+logPn2_f[f2s_step*s_it:f2s_step*s_it+len(logfvec),:]+logPsvec[s_it,np.newaxis,np.newaxis]) #cuts down on memory constraints
+        log_expsavg_Pn2_f=np.log(log_expsavg_Pn2_f)
+        #log_expsavg_Pn2_f=np.log(np.sum(np.exp(svec[:,np.newaxis,np.newaxis]+logPn2_s+logPsvec[:,np.newaxis,np.newaxis]),axis=0))
+        integ=np.exp(log_expsavg_Pn2_f[:,indn2]+logPn1_f[:,indn1]+logrhofvec[:,np.newaxis]+2*logfvec[:,np.newaxis])
+        avgfexps_n1n2=np.exp(np.log(np.sum(dlogfby2[:,np.newaxis]*(integ[1:,:] + integ[:-1,:]),axis=0))-tmp)
+        log_avgfexps=np.log(np.dot(sparse_rep_counts,avgfexps_n1n2))
+
+        logPn20_s=np.zeros((len(svec),len(logfvec))) #svec is svec_shift
+        for s_it in range(len(svec)):
+            logPn20_s[s_it,:]=logPn2_f[f2s_step*s_it:f2s_step*s_it+len(logfvec),0]   #note here this is fvec long on shifted s
+        log_Pnn0_fs=logPn1_f[np.newaxis,:,0]+logPn20_s
+        log_Pfsnn0=log_Pnn0_fs+logrhofvec[np.newaxis,:]+logPsvec[:,np.newaxis]
+        log_Pfsnng0=np.log(1-np.exp(log_Pnn0_fs))+logrhofvec[np.newaxis,:]+logPsvec[:,np.newaxis]
+        log_Pfnn0=np.log(np.sum(np.exp(log_Pfsnn0),axis=0))
+        integ=np.exp(log_Pfnn0+logfvec)
+        logPnn0=np.log(np.dot(dlogfby2,integ[1:]+integ[:-1]))
+
+        log_Pnng0=np.log(1-np.exp(logPnn0))
+        log_Pfs_nng0=log_Pfsnng0-log_Pnng0
+
+        #decomposed f averages
+        integ = np.exp(logPn1_f[:,0]+logrhofvec+2*logfvec+np.log(np.sum(np.exp(logPn20_s+logPsvec[:,np.newaxis]),axis=0)))
+        log_avgf_n0n0 = np.log(np.dot(dlogfby2,integ[1:]+integ[:-1]))
+
+        #decomposed fexps averages
+        integ = np.exp(logPn1_f[:,0]+logrhofvec+2*logfvec+np.log(np.sum(np.exp(svec_shift[:,np.newaxis]+logPn20_s+logPsvec[:,np.newaxis]),axis=0)))  #----------svec
+        log_avgfexps_n0n0 = np.log(np.dot(dlogfby2,integ[1:]+integ[:-1]))
+
+        logNclones=np.log(Nsamp)-log_Pnng0
+        Z     = np.exp(logNclones + logPnn0 + log_avgf_n0n0    ) + np.exp(log_avgf)    
+        Zdash = np.exp(logNclones + logPnn0 + log_avgfexps_n0n0) + np.exp(log_avgfexps)
+        
+        if Z>1.5 or Zdash>1.5:
+            print('Prior too big!'+str(Z)+' '+str(Zdash))
+            break
+
+        addshiftold=deepcopy(addshift)
+        addshift=np.log(Zdash)-np.log(Z)
+        diffval=np.fabs(addshift-addshiftold)
+    return shift,Z,Zdash
+
 #-------fucntions for polishing P(s) parameter estimates after grid search----------
 
-def get_likelihood(paras,null_paras,svec,smax,s_step,indn1_d,indn2_d,fvec,fvecwide,rhofvec,\
-                                 unicountvals_1_d,unicountvals_2_d,countpaircounts_d,\
-                                 NreadsI, NreadsII, nfbins,f2s_step,\
-                                 m_low,m_high,mvec,Nsamp,logPn1_f,acq_model_type):
-    logfvec=np.log(fvec)
-    dlogf=np.diff(logfvec)/2.
-    logrhofvec=np.log(rhofvec)
-    alpha_rho = null_paras[0]
-    if acq_model_type<2: #acq_model_type: 0=NB->Pois, 1=Pois->NB, 2=NB, 3=Pois 
-        m_total=float(np.power(10, null_paras[3]))
-        r_c1=NreadsI/m_total 
-        r_c2=NreadsII/m_total     
-        r_cvec=(r_c1,r_c2)
-        fmin=np.power(10,null_paras[4])
-    else:
-        fmin=np.power(10,null_paras[3])
+#def get_likelihood(paras,null_paras,svec,smax,s_step,indn1_d,indn2_d,fvec,fvecwide,rhofvec,\
+                                 #unicountvals_1_d,unicountvals_2_d,countpaircounts_d,\
+                                 #NreadsI, NreadsII, len(logfvec),f2s_step,\
+                                 #m_low,m_high,mvec,Nsamp,logPn1_f,acq_model_type):
+    #logfvec=np.log(fvec)
+    #dlogf=np.diff(logfvec)/2.
+    #logrhofvec=np.log(rhofvec)
+    #alpha_rho = null_paras[0]
+    #if acq_model_type<2: #acq_model_type: 0=NB->Pois, 1=Pois->NB, 2=NB, 3=Pois 
+        #m_total=float(np.power(10, null_paras[3]))
+        #r_c1=NreadsI/m_total 
+        #r_c2=NreadsII/m_total     
+        #r_cvec=(r_c1,r_c2)
+        #fmin=np.power(10,null_paras[4])
+    #else:
+        #fmin=np.power(10,null_paras[3])
 
-    if acq_model_type<3:
-        beta_mv= null_paras[1]
-        alpha_mv=null_paras[2]
+    #if acq_model_type<3:
+        #beta_mv= null_paras[1]
+        #alpha_mv=null_paras[2]
     
-    Ps = get_Ps_pm(np.power(10,paras[0]),0,0,paras[1],smax,s_step)
+    #Ps = get_Ps_pm(np.power(10,paras[0]),0,0,paras[1],smax,s_step)
 
-    logPsvec=np.log(Ps)
-    shift=paras[-1]
+    #logPsvec=np.log(Ps)
+    #shift=paras[-1]
     
 
-    fvecwide_shift=np.exp(np.log(fvecwide)-shift) #implements shift in Pn2_fs
-    svec_shift=svec-shift
-    unicounts=unicountvals_2_d
-    Pn2_f=np.zeros((len(fvecwide_shift),len(unicounts)))
-    if acq_model_type==0:
-        mean_m=m_total*fvecwide_shift
-        var_m=mean_m+beta_mv*np.power(mean_m,alpha_mv)
-        Poisvec=PoisPar(mvec*r_cvec[1],unicounts)
-        for f_it in range(len(fvecwide_shift)):
-            NBvec=NegBinPar(mean_m[f_it],var_m[f_it],mvec)
-            for n_it,n in enumerate(unicounts):
-                Pn2_f[f_it,n_it]=np.dot(NBvec[m_low[n_it]:m_high[n_it]+1],Poisvec[m_low[n_it]:m_high[n_it]+1,n_it]) 
-    elif acq_model_type==1:
-        Poisvec=PoisPar(m_total*fvecwide_shift,mvec)
-        mean_n=r_cvec[1]*mvec
-        NBmtr=NegBinParMtr(mean_n,mean_n+beta_mv*np.power(mean_m,alpha_mv),unicounts)
-        for f_it in range(len(fvecwide_shift)):
-            Poisvectmp=Poisvec[f_it,:]
-            for n_it,n in enumerate(unicounts):
-                Pn2_f[f_it,n_it]=np.dot(Poisvectmp[m_low[n_it]:m_high[n_it]+1],NBmtr[m_low[n_it]:m_high[n_it]+1,n_it]) 
-    elif acq_model_type==2:
-        mean_n=Nreadsvec[1]*fvecwide_shift
-        var_n=mean_n+beta_mv*np.power(mean_n,alpha_mv)
-        Pn2_f=NegBinParMtr(mean_n,var_n,unicounts)
-    else:# acq_model_type==3:
-        mean_n=Nreadsvec[1]*fvecwide_shift
-        Pn2_f=PoisPar(mean_n,unicounts)
-    logPn2_f=Pn2_f
-    logPn2_f=np.log(logPn2_f)
-    #logPn2_s=np.zeros((len(svec),nfbins,len(unicounts))) #svec is svec_shift
+    #fvecwide_shift=np.exp(np.log(fvecwide)-shift) #implements shift in Pn2_fs
+    #svec_shift=svec-shift
+    #unicounts=unicountvals_2_d
+    #Pn2_f=np.zeros((len(fvecwide_shift),len(unicounts)))
+    #if acq_model_type==0:
+        #mean_m=m_total*fvecwide_shift
+        #var_m=mean_m+beta_mv*np.power(mean_m,alpha_mv)
+        #Poisvec=PoisPar(mvec*r_cvec[1],unicounts)
+        #for f_it in range(len(fvecwide_shift)):
+            #NBvec=NegBinPar(mean_m[f_it],var_m[f_it],mvec)
+            #for n_it,n in enumerate(unicounts):
+                #Pn2_f[f_it,n_it]=np.dot(NBvec[m_low[n_it]:m_high[n_it]+1],Poisvec[m_low[n_it]:m_high[n_it]+1,n_it]) 
+    #elif acq_model_type==1:
+        #Poisvec=PoisPar(m_total*fvecwide_shift,mvec)
+        #mean_n=r_cvec[1]*mvec
+        #NBmtr=NegBinParMtr(mean_n,mean_n+beta_mv*np.power(mean_m,alpha_mv),unicounts)
+        #for f_it in range(len(fvecwide_shift)):
+            #Poisvectmp=Poisvec[f_it,:]
+            #for n_it,n in enumerate(unicounts):
+                #Pn2_f[f_it,n_it]=np.dot(Poisvectmp[m_low[n_it]:m_high[n_it]+1],NBmtr[m_low[n_it]:m_high[n_it]+1,n_it]) 
+    #elif acq_model_type==2:
+        #mean_n=Nreadsvec[1]*fvecwide_shift
+        #var_n=mean_n+beta_mv*np.power(mean_n,alpha_mv)
+        #Pn2_f=NegBinParMtr(mean_n,var_n,unicounts)
+    #else:# acq_model_type==3:
+        #mean_n=Nreadsvec[1]*fvecwide_shift
+        #Pn2_f=PoisPar(mean_n,unicounts)
+    #logPn2_f=Pn2_f
+    #logPn2_f=np.log(logPn2_f)
+    ##logPn2_s=np.zeros((len(svec),len(logfvec),len(unicounts))) #svec is svec_shift
+    ##for s_it in range(len(svec)):
+        ##logPn2_s[s_it,:,:]=logPn2_f[f2s_step*s_it:f2s_step*s_it+len(logfvec),:]   #note here this is fvec long
+
+    #log_Pn2_f=np.zeros((len(fvec),len(unicountvals_2_d)))
     #for s_it in range(len(svec)):
-        #logPn2_s[s_it,:,:]=logPn2_f[f2s_step*s_it:f2s_step*s_it+nfbins,:]   #note here this is fvec long
-
-    log_Pn2_f=np.zeros((len(fvec),len(unicountvals_2_d)))
-    for s_it in range(len(svec)):
-        log_Pn2_f+=np.exp(logPn2_f[f2s_step*s_it:f2s_step*s_it+nfbins,:]+logPsvec[s_it,np.newaxis,np.newaxis])
-    log_Pn2_f=np.log(log_Pn2_f)
-    #log_Pn2_f=np.log(np.sum(np.exp(logPn2_s+logPsvec[:,np.newaxis,np.newaxis]),axis=0))
-    integ=np.exp(log_Pn2_f[:,indn2_d]+logPn1_f[:,indn1_d]+logrhofvec[:,np.newaxis]+logfvec[:,np.newaxis])
-    log_Pn1n2=np.log(np.sum(dlogf[:,np.newaxis]*(integ[1:,:] + integ[:-1,:]),axis=0))
+        #log_Pn2_f+=np.exp(logPn2_f[f2s_step*s_it:f2s_step*s_it+len(logfvec),:]+logPsvec[s_it,np.newaxis,np.newaxis])
+    #log_Pn2_f=np.log(log_Pn2_f)
+    ##log_Pn2_f=np.log(np.sum(np.exp(logPn2_s+logPsvec[:,np.newaxis,np.newaxis]),axis=0))
+    #integ=np.exp(log_Pn2_f[:,indn2_d]+logPn1_f[:,indn1_d]+logrhofvec[:,np.newaxis]+logfvec[:,np.newaxis])
+    #log_Pn1n2=np.log(np.sum(dlogf[:,np.newaxis]*(integ[1:,:] + integ[:-1,:]),axis=0))
     
-    integ=np.exp(log_Pn2_f[:,0]+logPn1_f[:,0]+logrhofvec+logfvec)
-    logPnn0=np.log(np.sum(dlogf*(integ[1:] + integ[:-1]),axis=0))
+    #integ=np.exp(log_Pn2_f[:,0]+logPn1_f[:,0]+logrhofvec+logfvec)
+    #logPnn0=np.log(np.sum(dlogf*(integ[1:] + integ[:-1]),axis=0))
     
     
-    tmp=np.exp(log_Pn1n2-np.log(1-np.exp(logPnn0))) #renormalize
-    return np.dot(countpaircounts_d/float(Nsamp),np.where(tmp>0,np.log(tmp),0))
-
-def constr_fn_diffexpr(paras,null_paras,svec,smax,s_step,indn1_d,indn2_d,fvec,fvecwide,rhofvec,\
-                            unicountvals_1_d,unicountvals_2_d,countpaircounts_d,\
-                            NreadsI, NreadsII, nfbins,f2s_step,\
-                            m_low,m_high,mvec,Nsamp,logPn1_f,acq_model_type):
-    #Ps = get_Ps_pm(np.power(10,paras[0]),np.power(10,paras[1]),paras[2],paras[3],smax,s_step)
-    Ps = get_Ps_pm(np.power(10,paras[0]),0,0,paras[1],smax,s_step)
-
-    logPsvec=np.log(Ps) 
-    shift=paras[-1]
-
-    alpha_rho = null_paras[0]
-    if acq_model_type<2: #acq_model_type: 0=NB->Pois, 1=Pois->NB, 2=NB, 3=Pois 
-        m_total=float(np.power(10, null_paras[3]))
-        r_c1=NreadsI/m_total 
-        r_c2=NreadsII/m_total      
-        r_cvec=(r_c1,r_c2)
-        fmin=np.power(10,null_paras[4])
-    else:
-        fmin=np.power(10,null_paras[3])
-
-    if acq_model_type<3:
-        beta_mv= null_paras[1]
-        alpha_mv=null_paras[2]
-
-    logfvec=np.log(fvec)
-    dlogf=np.diff(logfvec)/2.
-    logrhofvec=np.log(rhofvec)
-    fvecwide_shift=np.exp(np.log(fvecwide)-shift) #implements shift in Pn2_fs
-    svec_shift=svec-shift
-    unicounts=unicountvals_2_d
-    Pn2_f=np.zeros((len(fvecwide_shift),len(unicounts)))
-    if acq_model_type==0:
-        mean_m=m_total*fvecwide_shift
-        var_m=mean_m+beta_mv*np.power(mean_m,alpha_mv)
-        Poisvec=PoisPar(mvec*r_cvec[1],unicounts)
-        for f_it in range(len(fvecwide_shift)):
-            NBvec=NegBinPar(mean_m[f_it],var_m[f_it],mvec)
-            for n_it,n in enumerate(unicounts):
-                Pn2_f[f_it,n_it]=np.dot(NBvec[m_low[n_it]:m_high[n_it]+1],Poisvec[m_low[n_it]:m_high[n_it]+1,n_it]) 
-    elif acq_model_type==1:
-        Poisvec=PoisPar(m_total*fvecwide_shift,mvec)
-        mean_n=r_cvec[1]*mvec
-        NBmtr=NegBinParMtr(mean_n,mean_n+beta_mv*np.power(mean_m,alpha_mv),unicounts)
-        for f_it in range(len(fvecwide_shift)):
-            Poisvectmp=Poisvec[f_it,:]
-            for n_it,n in enumerate(unicounts):
-                Pn2_f[f_it,n_it]=np.dot(Poisvectmp[m_low[n_it]:m_high[n_it]+1],NBmtr[m_low[n_it]:m_high[n_it]+1,n_it]) 
-    elif acq_model_type==2:
-        mean_n=Nreadsvec[1]*fvecwide_shift
-        var_n=mean_n+beta_mv*np.power(mean_n,alpha_mv)
-        Pn2_f=NegBinParMtr(mean_n,var_n,unicounts)
-    else:# acq_model_type==3:
-        mean_n=Nreadsvec[1]*fvecwide_shift
-        Pn2_f=PoisPar(mean_n,unicounts)
-    logPn2_f=Pn2_f
-    logPn2_f=np.log(logPn2_f)
-    #logPn2_s=np.zeros((len(svec),nfbins,len(unicounts))) #svec is svec_shift
-    #for s_it in range(len(svec)):
-        #logPn2_s[s_it,:,:]=logPn2_f[f2s_step*s_it:f2s_step*s_it+nfbins,:]   #note here this is fvec long
-
-    Pn2_f=np.zeros((len(fvec),len(unicountvals_2_d)))
-    for s_it in range(len(svec)):
-        Pn2_f+=np.exp(logPn2_f[f2s_step*s_it:f2s_step*s_it+nfbins,:]+logPsvec[s_it,np.newaxis,np.newaxis])
-    log_Pn2_f=np.log(Pn2_f)
-    #log_Pn2_f=np.log(np.sum(np.exp(logPn2_s+logPsvec[:,np.newaxis,np.newaxis]),axis=0))
-    integ=np.exp(log_Pn2_f[:,indn2_d]+logPn1_f[:,indn1_d]+logrhofvec[:,np.newaxis]+logfvec[:,np.newaxis])
-    log_Pn1n2=np.log(np.sum(dlogf[:,np.newaxis]*(integ[1:,:] + integ[:-1,:]),axis=0))
     #tmp=np.exp(log_Pn1n2-np.log(1-np.exp(logPnn0))) #renormalize
-    #log_Pn2_f=np.log(np.sum(np.exp(logPn2_s+logPsvec[:,np.newaxis,np.newaxis]),axis=0))
-    integ=np.exp(np.log(integ)+logfvec[:,np.newaxis]) 
-    #np.exp(log_Pn2_f[:,indn2]+logPn1_f[:,indn1]+logrhofvec[:,np.newaxis]+logfvec[:,np.newaxis]+logfvec[:,np.newaxis])
-    tmp=deepcopy(log_Pn1n2)
-    tmp[tmp==-np.Inf]=np.Inf #since subtracted in next line
-    avgf_n1n2=    np.exp(np.log(np.sum(dlogf[:,np.newaxis]*(integ[1:,:] + integ[:-1,:]),axis=0))-tmp)
-    log_avgf=np.log(np.dot(countpaircounts_d,avgf_n1n2))
+    #return np.dot(countpaircounts_d/float(Nsamp),np.where(tmp>0,np.log(tmp),0))
 
-    log_expsavg_Pn2_f=np.zeros((len(fvec),len(unicountvals_2_d)))
-    for s_it in range(len(svec)):
-        log_expsavg_Pn2_f+=np.exp(svec_shift[s_it,np.newaxis,np.newaxis]+logPn2_f[f2s_step*s_it:f2s_step*s_it+nfbins,:]+logPsvec[s_it,np.newaxis,np.newaxis]) #cuts down on memory constraints
-    log_expsavg_Pn2_f=np.log(log_expsavg_Pn2_f)
-    #log_expsavg_Pn2_f=np.log(np.sum(np.exp(svec[:,np.newaxis,np.newaxis]+logPn2_s+logPsvec[:,np.newaxis,np.newaxis]),axis=0))
-    integ=np.exp(log_expsavg_Pn2_f[:,indn2_d]+logPn1_f[:,indn1_d]+logrhofvec[:,np.newaxis]+2*logfvec[:,np.newaxis])
-    avgfexps_n1n2=np.exp(np.log(np.sum(dlogf[:,np.newaxis]*(integ[1:,:] + integ[:-1,:]),axis=0))-tmp)
-    log_avgfexps=np.log(np.dot(countpaircounts_d,avgfexps_n1n2))
+#def constr_fn_diffexpr(paras,null_paras,svec,smax,s_step,indn1_d,indn2_d,fvec,fvecwide,rhofvec,\
+                            #unicountvals_1_d,unicountvals_2_d,countpaircounts_d,\
+                            #NreadsI, NreadsII, len(logfvec),f2s_step,\
+                            #m_low,m_high,mvec,Nsamp,logPn1_f,acq_model_type):
+    ##Ps = get_Ps_pm(np.power(10,paras[0]),np.power(10,paras[1]),paras[2],paras[3],smax,s_step)
+    #Ps = get_Ps_pm(np.power(10,paras[0]),0,0,paras[1],smax,s_step)
 
-    logPn20_s=np.zeros((len(svec),len(fvec))) #svec is svec_shift
-    for s_it in range(len(svec)):
-        logPn20_s[s_it,:]=logPn2_f[f2s_step*s_it:f2s_step*s_it+len(fvec),0]   #note here this is fvec long on shifted s
-    log_Pnn0_fs=logPn1_f[np.newaxis,:,0]+logPn20_s
-    log_Pfsnn0=log_Pnn0_fs+logrhofvec[np.newaxis,:]+logPsvec[:,np.newaxis]
-    log_Pfsnng0=np.log(1-np.exp(log_Pnn0_fs))+logrhofvec[np.newaxis,:]+logPsvec[:,np.newaxis]
-    log_Pfnn0=np.log(np.sum(np.exp(log_Pfsnn0),axis=0))
-    integ=np.exp(log_Pfnn0+logfvec)
-    logPnn0=np.log(np.sum(dlogf*(integ[1:]+integ[:-1])))
+    #logPsvec=np.log(Ps) 
+    #shift=paras[-1]
 
-    log_Pnng0=np.log(1-np.exp(logPnn0))
-    log_Pfs_nng0=log_Pfsnng0-log_Pnng0
+    #alpha_rho = null_paras[0]
+    #if acq_model_type<2: #acq_model_type: 0=NB->Pois, 1=Pois->NB, 2=NB, 3=Pois 
+        #m_total=float(np.power(10, null_paras[3]))
+        #r_c1=NreadsI/m_total 
+        #r_c2=NreadsII/m_total      
+        #r_cvec=(r_c1,r_c2)
+        #fmin=np.power(10,null_paras[4])
+    #else:
+        #fmin=np.power(10,null_paras[3])
 
-    #decomposed f averages
-    integ = np.exp(logPn1_f[:,0]+logrhofvec+2*logfvec+np.log(np.sum(np.exp(logPn20_s+logPsvec[:,np.newaxis]),axis=0)))
-    log_avgf_n0n0 = np.log(np.dot(dlogf,integ[1:]+integ[:-1]))
+    #if acq_model_type<3:
+        #beta_mv= null_paras[1]
+        #alpha_mv=null_paras[2]
 
-    #decomposed fexps averages
-    integ = np.exp(logPn1_f[:,0]+logrhofvec+2*logfvec+np.log(np.sum(np.exp(svec_shift[:,np.newaxis]+logPn20_s+logPsvec[:,np.newaxis]),axis=0)))  #----------svec
-    log_avgfexps_n0n0 = np.log(np.dot(dlogf,integ[1:]+integ[:-1]))
+    #logfvec=np.log(fvec)
+    #dlogf=np.diff(logfvec)/2.
+    #logrhofvec=np.log(rhofvec)
+    #fvecwide_shift=np.exp(np.log(fvecwide)-shift) #implements shift in Pn2_fs
+    #svec_shift=svec-shift
+    #unicounts=unicountvals_2_d
+    #Pn2_f=np.zeros((len(fvecwide_shift),len(unicounts)))
+    #if acq_model_type==0:
+        #mean_m=m_total*fvecwide_shift
+        #var_m=mean_m+beta_mv*np.power(mean_m,alpha_mv)
+        #Poisvec=PoisPar(mvec*r_cvec[1],unicounts)
+        #for f_it in range(len(fvecwide_shift)):
+            #NBvec=NegBinPar(mean_m[f_it],var_m[f_it],mvec)
+            #for n_it,n in enumerate(unicounts):
+                #Pn2_f[f_it,n_it]=np.dot(NBvec[m_low[n_it]:m_high[n_it]+1],Poisvec[m_low[n_it]:m_high[n_it]+1,n_it]) 
+    #elif acq_model_type==1:
+        #Poisvec=PoisPar(m_total*fvecwide_shift,mvec)
+        #mean_n=r_cvec[1]*mvec
+        #NBmtr=NegBinParMtr(mean_n,mean_n+beta_mv*np.power(mean_m,alpha_mv),unicounts)
+        #for f_it in range(len(fvecwide_shift)):
+            #Poisvectmp=Poisvec[f_it,:]
+            #for n_it,n in enumerate(unicounts):
+                #Pn2_f[f_it,n_it]=np.dot(Poisvectmp[m_low[n_it]:m_high[n_it]+1],NBmtr[m_low[n_it]:m_high[n_it]+1,n_it]) 
+    #elif acq_model_type==2:
+        #mean_n=Nreadsvec[1]*fvecwide_shift
+        #var_n=mean_n+beta_mv*np.power(mean_n,alpha_mv)
+        #Pn2_f=NegBinParMtr(mean_n,var_n,unicounts)
+    #else:# acq_model_type==3:
+        #mean_n=Nreadsvec[1]*fvecwide_shift
+        #Pn2_f=PoisPar(mean_n,unicounts)
+    #logPn2_f=Pn2_f
+    #logPn2_f=np.log(logPn2_f)
+    ##logPn2_s=np.zeros((len(svec),len(logfvec),len(unicounts))) #svec is svec_shift
+    ##for s_it in range(len(svec)):
+        ##logPn2_s[s_it,:,:]=logPn2_f[f2s_step*s_it:f2s_step*s_it+len(logfvec),:]   #note here this is fvec long
 
-    logNclones=np.log(Nsamp)-log_Pnng0
-    Z     = np.exp(logNclones + logPnn0 + log_avgf_n0n0    ) + np.exp(log_avgf)    
-    Zdash = np.exp(logNclones + logPnn0 + log_avgfexps_n0n0) + np.exp(log_avgfexps)
+    #Pn2_f=np.zeros((len(fvec),len(unicountvals_2_d)))
+    #for s_it in range(len(svec)):
+        #Pn2_f+=np.exp(logPn2_f[f2s_step*s_it:f2s_step*s_it+len(logfvec),:]+logPsvec[s_it,np.newaxis,np.newaxis])
+    #log_Pn2_f=np.log(Pn2_f)
+    ##log_Pn2_f=np.log(np.sum(np.exp(logPn2_s+logPsvec[:,np.newaxis,np.newaxis]),axis=0))
+    #integ=np.exp(log_Pn2_f[:,indn2_d]+logPn1_f[:,indn1_d]+logrhofvec[:,np.newaxis]+logfvec[:,np.newaxis])
+    #log_Pn1n2=np.log(np.sum(dlogf[:,np.newaxis]*(integ[1:,:] + integ[:-1,:]),axis=0))
+    ##tmp=np.exp(log_Pn1n2-np.log(1-np.exp(logPnn0))) #renormalize
+    ##log_Pn2_f=np.log(np.sum(np.exp(logPn2_s+logPsvec[:,np.newaxis,np.newaxis]),axis=0))
+    #integ=np.exp(np.log(integ)+logfvec[:,np.newaxis]) 
+    ##np.exp(log_Pn2_f[:,indn2]+logPn1_f[:,indn1]+logrhofvec[:,np.newaxis]+logfvec[:,np.newaxis]+logfvec[:,np.newaxis])
+    #tmp=deepcopy(log_Pn1n2)
+    #tmp[tmp==-np.Inf]=np.Inf #since subtracted in next line
+    #avgf_n1n2=    np.exp(np.log(np.sum(dlogf[:,np.newaxis]*(integ[1:,:] + integ[:-1,:]),axis=0))-tmp)
+    #log_avgf=np.log(np.dot(countpaircounts_d,avgf_n1n2))
 
-    return np.log(Zdash)-np.log(Z)
+    #log_expsavg_Pn2_f=np.zeros((len(fvec),len(unicountvals_2_d)))
+    #for s_it in range(len(svec)):
+        #log_expsavg_Pn2_f+=np.exp(svec_shift[s_it,np.newaxis,np.newaxis]+logPn2_f[f2s_step*s_it:f2s_step*s_it+len(logfvec),:]+logPsvec[s_it,np.newaxis,np.newaxis]) #cuts down on memory constraints
+    #log_expsavg_Pn2_f=np.log(log_expsavg_Pn2_f)
+    ##log_expsavg_Pn2_f=np.log(np.sum(np.exp(svec[:,np.newaxis,np.newaxis]+logPn2_s+logPsvec[:,np.newaxis,np.newaxis]),axis=0))
+    #integ=np.exp(log_expsavg_Pn2_f[:,indn2_d]+logPn1_f[:,indn1_d]+logrhofvec[:,np.newaxis]+2*logfvec[:,np.newaxis])
+    #avgfexps_n1n2=np.exp(np.log(np.sum(dlogf[:,np.newaxis]*(integ[1:,:] + integ[:-1,:]),axis=0))-tmp)
+    #log_avgfexps=np.log(np.dot(countpaircounts_d,avgfexps_n1n2))
+
+    #logPn20_s=np.zeros((len(svec),len(fvec))) #svec is svec_shift
+    #for s_it in range(len(svec)):
+        #logPn20_s[s_it,:]=logPn2_f[f2s_step*s_it:f2s_step*s_it+len(fvec),0]   #note here this is fvec long on shifted s
+    #log_Pnn0_fs=logPn1_f[np.newaxis,:,0]+logPn20_s
+    #log_Pfsnn0=log_Pnn0_fs+logrhofvec[np.newaxis,:]+logPsvec[:,np.newaxis]
+    #log_Pfsnng0=np.log(1-np.exp(log_Pnn0_fs))+logrhofvec[np.newaxis,:]+logPsvec[:,np.newaxis]
+    #log_Pfnn0=np.log(np.sum(np.exp(log_Pfsnn0),axis=0))
+    #integ=np.exp(log_Pfnn0+logfvec)
+    #logPnn0=np.log(np.sum(dlogf*(integ[1:]+integ[:-1])))
+
+    #log_Pnng0=np.log(1-np.exp(logPnn0))
+    #log_Pfs_nng0=log_Pfsnng0-log_Pnng0
+
+    ##decomposed f averages
+    #integ = np.exp(logPn1_f[:,0]+logrhofvec+2*logfvec+np.log(np.sum(np.exp(logPn20_s+logPsvec[:,np.newaxis]),axis=0)))
+    #log_avgf_n0n0 = np.log(np.dot(dlogf,integ[1:]+integ[:-1]))
+
+    ##decomposed fexps averages
+    #integ = np.exp(logPn1_f[:,0]+logrhofvec+2*logfvec+np.log(np.sum(np.exp(svec_shift[:,np.newaxis]+logPn20_s+logPsvec[:,np.newaxis]),axis=0)))  #----------svec
+    #log_avgfexps_n0n0 = np.log(np.dot(dlogf,integ[1:]+integ[:-1]))
+
+    #logNclones=np.log(Nsamp)-log_Pnng0
+    #Z     = np.exp(logNclones + logPnn0 + log_avgf_n0n0    ) + np.exp(log_avgf)    
+    #Zdash = np.exp(logNclones + logPnn0 + log_avgfexps_n0n0) + np.exp(log_avgfexps)
+
+    #return np.log(Zdash)-np.log(Z)

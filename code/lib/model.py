@@ -77,6 +77,24 @@ def get_rhof(alpha_rho,fmin,freq_nbins=800,freq_dtype='float64'):
     logrhovec-=normconst 
     return logrhovec,logfvec
 
+def get_svec(paras,s_step,smax):
+    '''
+    biuld discrete domain of s, centered on s=0, also extend fvec range from [fmin,1] to [fmin-smax*s2f,1+s2f*smax] 
+    '''
+    logrhofvec,logfvec = get_rhof(paras[0],np.power(10,paras[-1]))
+    s_step_old=s_step
+    logf_step=logfvec[1] - logfvec[0] #use natural log here since f2 increments in increments in exp().  
+    f2s_step=int(round(s_step/logf_step)) #rounded number of f-steps in one s-step
+    s_step=float(f2s_step)*logf_step
+    smax=s_step*(smax/s_step_old)
+    svec=s_step*np.arange(0,int(round(smax/s_step)+1))   
+    svec=np.append(-svec[1:][::-1],svec)
+    smaxind=(len(svec)-1)/2
+    logfmin=logfvec[0 ]-f2s_step*smaxind*logf_step
+    logfmax=logfvec[-1]+f2s_step*smaxind*logf_step
+    logfvecwide=np.linspace(logfmin,logfmax,len(logfvec)+2*smaxind*f2s_step)
+    return svec,logfvecwide,f2s_step
+
 def get_Ps(alp,sbar,smax,stp):
     '''
     generates symmetric exponential distribution over log fold change
@@ -91,21 +109,23 @@ def get_Ps(alp,sbar,smax,stp):
     Ps[s_zeroind]+=(1-alp)
     return Ps
   
-def get_Ps_pm(alp,bet,m_sbar,p_sbar,smax,stp):
+def get_logPs_pm(alp,bet,m_sbar,p_sbar,smax,stp):
     '''
     generates asymmetric exponential distribution over log fold change
     with contraction effect size m_sbar expansion effect size p_sbar and responding fraction alp.
     computed over discrete range of s from -smax to smax in steps of size stp.
     note that the responding fraction has no s=0 contribution.
     '''
+
+        
     lambp=-stp/p_sbar
-    lambm=-stp/m_sbar
     smaxt=round(smax/stp)
     if m_sbar==0:
         Z_p=(np.exp((smaxt+1)*lambp)-1)/(np.exp(lambp)-1)-1 #no s=0 contribution
         Ps=np.zeros(2*int(smaxt)+1)
         Ps[int(smaxt)+1:] = np.exp(lambp*np.fabs(np.arange(           1,int(smaxt)+1)))/Z_p
     else:
+        lambm=-stp/m_sbar
         Z_m=(np.exp((smaxt+1)*lambm)-1)/(np.exp(lambm)-1)-1 #no s=0 contribution
         #Z_m=(np.exp((smaxt+1)*lambm)-1)/(np.exp(lambm)-1) #no s=0 contribution
         Z_p=(np.exp((smaxt+1)*lambp)-1)/(np.exp(lambp)-1)-1 #no s=0 contribution
@@ -120,7 +140,7 @@ def get_Ps_pm(alp,bet,m_sbar,p_sbar,smax,stp):
         #Ps/=(Zp+Zm)/2
     Ps*=alp
     Ps[int(smaxt)]=(1-alp) #the sole contribution to s=0
-    return Ps
+    return np.log(Ps)
 
 def get_logPn_f(unicounts,Nreads,logfvec,acq_model_type,paras):
     alpha = paras[0] #power law exponent

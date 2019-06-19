@@ -1,7 +1,7 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.16 (MiKTeX 2.9) (preloaded format=pdflatex 2015.12.2)  13 JUN 2019 15:13
+This is pdfTeX, Version 3.14159265-2.6-1.40.16 (MiKTeX 2.9) (preloaded format=pdflatex 2015.12.2)  17 JUN 2019 16:01
 entering extended mode
-**C:/Users/mptouzel/Dropbox/Documents/Projects/immune/BayesDiffExpr/diffexpr_manuscipt/diffexpr_MAIN_TEXT
-(C:/Users/mptouzel/Dropbox/Documents/Projects/immune/BayesDiffExpr/diffexpr_manuscipt/diffexpr_MAIN_TEXT.tex
+**C:/Users/mptouzel/Dropbox/scripts/Projects/immuno/diffexpr/bayes_diffexpr/paper/diffexpr_MAIN_TEXT
+(C:/Users/mptouzel/Dropbox/scripts/Projects/immuno/diffexpr/bayes_diffexpr/paper/diffexpr_MAIN_TEXT.tex
 LaTeX2e <2015/01/01> patch level 2
 Babel <3.9m> and hyphenation patterns for 69 languages loaded.
 ("C:\Program Files (x86)\MiKTeX 2.9\tex\latex\revtex\revtex4-1.cls"
@@ -674,14 +674,14 @@ LaTeX Warning: There were undefined references.
  ) 
 Here is how much of TeX's memory you used:
  13389 strings out of 493673
- 182699 string characters out of 3141521
+ 182684 string characters out of 3141521
  325985 words of memory out of 3000000
  16446 multiletter control sequences out of 15000+200000
  17996 words of font info for 55 fonts, out of 3000000 for 9000
  1025 hyphenation exceptions out of 8191
- 42i,18n,48p,1874b,626s stack positions out of 5000i,500n,10000p,200000b,50000s
+ 42i,18n,48p,1869b,626s stack positions out of 5000i,500n,10000p,200000b,50000s
 {C:/Users/mptouzel/AppData/Roaming/MiKTeX/2.9/fonts/enc/dvips/cm-super/cm-super-t1.enc} <C:\Users\mptouzel\AppData\Local\MiKTeX\2.9\fonts\pk\ljfour\public\bbold\dpi600\bbold10.pk><C:/Program Files (x86)/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmex10.pfb><C:/Program Files (x86)/MiKTeX 2.9/fonts/type1/public/amsfonts/cmextra/cmex9.pfb><C:/Program Files (x86)/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmmi10.pfb><C:/Program Files (x86)/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmmi12.pfb><C:/Program Files (x86)/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmmi5.pfb><C:/Program Files (x86)/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmmi6.pfb><C:/Program Files (x86)/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmmi7.pfb><C:/Program Files (x86)/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmmi8.pfb><C:/Program Files (x86)/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmmi9.pfb><C:/Program Files (x86)/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmr10.pfb><C:/Program Files (x86)/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmr12.pfb><C:/Program Files (x86)/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmr5.pfb><C:/Program Files (x86)/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmr6.pfb><C:/Program Files (x86)/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmr7.pfb><C:/Program Files (x86)/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmr8.pfb><C:/Program Files (x86)/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmr9.pfb><C:/Program Files (x86)/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmsy10.pfb><C:/Program Files (x86)/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmsy5.pfb><C:/Program Files (x86)/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmsy6.pfb><C:/Program Files (x86)/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmsy7.pfb><C:/Program Files (x86)/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmsy9.pfb><C:/Program Files (x86)/MiKTeX 2.9/fonts/type1/public/esint/esint10.pfb><C:/Users/mptouzel/AppData/Roaming/MiKTeX/2.9/fonts/type1/public/cm-super/sfbx0900.pfb><C:/Users/mptouzel/AppData/Roaming/MiKTeX/2.9/fonts/type1/public/cm-super/sfbx1000.pfb><C:/Users/mptouzel/AppData/Roaming/MiKTeX/2.9/fonts/type1/public/cm-super/sfbx1200.pfb><C:/Users/mptouzel/AppData/Roaming/MiKTeX/2.9/fonts/type1/public/cm-super/sfrm0500.pfb><C:/Users/mptouzel/AppData/Roaming/MiKTeX/2.9/fonts/type1/public/cm-super/sfrm0600.pfb><C:/Users/mptouzel/AppData/Roaming/MiKTeX/2.9/fonts/type1/public/cm-super/sfrm0700.pfb><C:/Users/mptouzel/AppData/Roaming/MiKTeX/2.9/fonts/type1/public/cm-super/sfrm0900.pfb><C:/Users/mptouzel/AppData/Roaming/MiKTeX/2.9/fonts/type1/public/cm-super/sfrm1000.pfb><C:/Users/mptouzel/AppData/Roaming/MiKTeX/2.9/fonts/type1/public/cm-super/sfti0900.pfb><C:/Users/mptouzel/AppData/Roaming/MiKTeX/2.9/fonts/type1/public/cm-super/sfti1000.pfb>
-Output written on diffexpr_MAIN_TEXT.pdf (12 pages, 3191131 bytes).
+Output written on diffexpr_MAIN_TEXT.pdf (12 pages, 3191314 bytes).
 PDF statistics:
  984 PDF objects out of 1000 (max. 8388607)
  101 named destinations out of 1000 (max. 500000)

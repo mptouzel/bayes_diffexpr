@@ -11,8 +11,9 @@ if root_path not in sys.path:
     
 #load local functions
 from lib.proc import get_sparserep,import_data
-from lib.learning import constr_fn,callback,learn_null_model
+from lib.learning import constr_fn,callback,learn_null_model,get_shift
 from lib.utils.readouts import setup_outpath_and_logs
+from lib.model import get_svec,get_logPn_f,get_logPs_pm,get_rhof
 
 #inputs to mkl library used by numpy to parallelize np.dot 
 import ctypes
@@ -63,7 +64,7 @@ def main(null_pair_1,null_pair_2,test_pair_1,test_pair_2,run_index,input_data_pa
         #input path    
         datasetstr=dataset_pair[0]+'_'+dataset_pair[1] 
         
-        loadnull=False #set to True to skip 1st iteration that learns null model, once learned null model parameters, optparas.py, already exist.
+        loadnull=True #set to True to skip 1st iteration that learns null model, once learned null model parameters, optparas.py, already exist.
         if (not loadnull and it==0) or it==1:
           
             if it==0:
@@ -162,34 +163,16 @@ def main(null_pair_1,null_pair_2,test_pair_1,test_pair_2,run_index,input_data_pa
             paras=  np.load(outpath+'optparas.npy')
 
     ###############################diffexpr learning
-    diffexpr=False
+    diffexpr=True
     if diffexpr:
-        
-        #get Pn1n2_s
         logrhofvec,logfvec = get_rhof(paras[0],np.power(10,paras[-1]))
-        #biuld discrete domain of s, centered on s=0
-        s_step_old=s_step
-        logf_step=logfvec[1] - logfvec[0] #use natural log here since f2 increments in increments in exp().  
-        f2s_step=int(round(s_step/logf_step)) #rounded number of f-steps in one s-step
-        s_step=float(f2s_step)*logf_step
-        smax=s_step*(smax/s_step_old)
-        svec=s_step*np.arange(0,int(round(smax/s_step)+1))   
-        svec=np.append(-svec[1:][::-1],svec)
- 
-        #compute conditional P(n1,n2|s) and P(n1=0,n2=0|s)
-        prtfn('calc Pn1n2_s: ')
-        st = time.time()
-        if os.path.exists(outpath+'Pn1n2_s_d.npy'):
-            Pn1n2_s=np.load(outpath+'Pn1n2_s_d.npy')
-            Pn0n0_s=np.load(outpath+'Pn0n0.npy')
-            logPn1_f=np.log(np.load(outpath + 'Pn1_f.npy'))
-        else:
-            Pn1n2_s, unicountvals_1_d, unicountvals_2_d, Pn1_f, fvec, Pn2_s, Pn0n0_s,svec = get_Pn1n2_s(paras, svec,sparse_rep,s_step=s_step)
-            np.save(outpath + 'Pn1n2_s_d', Pn1n2_s)
-            np.save(outpath + 'Pn0n0',Pn0n0_s)
-            np.save(outpath + 'Pn1_f',Pn1_f)
-            logPn1_f=np.log(Pn1_f)
-            prtfn("calc Pn1n2_s elapsed " + str(np.round(time.time() - st))+'\n')
+        dlogfby2=np.diff(logfvec)/2. #1/2 comes from trapezoid integration below
+
+        svec,logfvecwide,f2s_step=get_svec(paras,s_step,smax)
+        
+        indn1,indn2,sparse_rep_counts,unicountvals_1,unicountvals_2,NreadsI,NreadsII=sparse_rep
+        Nsamp=np.sum(sparse_rep_counts)
+        logPn1_f=get_logPn_f(unicountvals_1,NreadsI,logfvec,acq_model_type,paras)
         
         #flags for 3 remaining code blocks:
         learn_surface=True
@@ -197,38 +180,71 @@ def main(null_pair_1,null_pair_2,test_pair_1,test_pair_2,run_index,input_data_pa
         output_table=False
             
         if learn_surface:
-            prtfn('calc surface: \n')
-            st = time.time()
+            #rhs only
+            alpvec=np.logspace(-4.,0., 2)
+            sbarvec_p=np.linspace(0.1,5.,2)
+            shiftMtr =np.zeros(len(sbarvec_p))#,len(betvec)))
+            Zstore =np.zeros(len(sbarvec_p))#,len(betvec)))
+            Pnng0_Store=np.zeros(len(sbarvec_p))#,len(betvec)))
+            Zdashstore =np.zeros(len(sbarvec_p))#,len(betvec)))
+            nit_list =np.zeros(len(sbarvec_p)) #,len(betvec)))
+            LSurface=np.zeros(len(sbarvec_p))#,len(betvec)))
+            alp=alpvec[run_index]
             
-            #define grid search parameters  
-            npoints=20
-            nsbarpoints=npoints
-            sbarvec=np.linspace(0.01,5,nsbarpoints)
-            nalppoints=21
-            alpvec=np.logspace(-3,np.log10(0.99),nalppoints)
+            sbar_m=0
+            bet=1.
+            ait=run_index
+            shift=0
+            first_shift=0
+            sst=time.time()
+            for spit,sbar_p in enumerate(sbarvec_p):
+                
+                #shift=deepcopy(first_shift)
+                #smit_flag=True
+                #for ait,alp in enumerate(alpvec):
+                st=time.time()
 
-            LSurface =np.zeros((len(sbarvec),len(alpvec)))
-            for sit,sbar in enumerate(sbarvec):
-                for ait,alp in enumerate(alpvec):
-                    Ps=get_Ps(alp,sbar,smax,s_step)
-                    Pn0n0=np.dot(Pn0n0_s,Ps)
-                    Pn1n2_ps=np.sum(Pn1n2_s*Ps[:,np.newaxis,np.newaxis],0)
-                    Pn1n2_ps/=1-Pn0n0  #renormalize
-                    LSurface[sit,ait]=np.dot(countpaircounts_d/float(Nsamp),np.where(Pn1n2_ps[indn1_d,indn2_d]>0,np.log(Pn1n2_ps[indn1_d,indn2_d]),0))
+                logPsvec = get_logPs_pm(alp,bet,sbar_m,sbar_p,smax,s_step)
+                                                                                                                                                                                                                                                    
+                shift,Z,Zdash=get_shift(sparse_rep,acq_model_type,paras,shift,logfvec,logfvecwide,svec,f2s_step,logPn1_f,logrhofvec,logPsvec)
+                prtfn('it:'+str(run_index)+' '+str(spit)+' shift:'+str(shift)+' Z:'+str(Z)+' Zdash:'+str(Zdash))
+                logfvecwide_shift=logfvecwide-shift #implements shift in Pn2_fs
+                svec_shift=svec-shift
+                logPn2_f=get_logPn_f(unicountvals_2,NreadsII,logfvecwide_shift,acq_model_type,paras)
 
-            maxinds=np.unravel_index(np.argmax(LSurface),np.shape(LSurface))
-            optsbar=sbarvec[maxinds[0]]
-            optalp=alpvec[maxinds[1]]
-            optPs=get_Ps(optalp,optsbar,smax,s_step)
+                log_Pn2_f=np.zeros((len(logfvec),len(unicountvals_2))) #n.b. underscore
+                for s_it in range(len(svec)):
+                    log_Pn2_f+=np.exp(logPn2_f[f2s_step*s_it:f2s_step*s_it+len(logfvec),:]+logPsvec[s_it,np.newaxis,np.newaxis])
+                log_Pn2_f=np.log(log_Pn2_f)
+                integ=np.exp(log_Pn2_f[:,indn2]+logPn1_f[:,indn1]+logrhofvec[:,np.newaxis]+logfvec[:,np.newaxis])
+                log_Pn1n2=np.log(np.sum(dlogfby2[:,np.newaxis]*(integ[1:,:] + integ[:-1,:]),axis=0))
+                
+                integ=np.exp(logPn1_f[:,0]+log_Pn2_f[:,0]+logrhofvec+logfvec)
+                Pn0n0=np.dot(dlogfby2,integ[1:]+integ[:-1])
+                LSurface[spit]=np.dot(sparse_rep_counts/float(Nsamp),log_Pn1n2-np.log(1-Pn0n0))
+                Pnng0_Store[spit]=Pn0n0
+                shiftMtr[spit]=shift
+                nit_list[spit]=it
+                Zstore[spit]=Z
+                Zdashstore[spit]=Zdash 
+        
+                prtfn(str(spit)+':'+str(time.time()-st))
+                #if smit_flag:
+                    #first_shift=deepcopy(shift)
+                    #smit_flag=False
 
-            np.save(outpath + 'optsbar', optsbar)
-            np.save(outpath + 'optalp', optalp)
-            np.save(outpath + 'LSurface', LSurface)
-            np.save(outpath + 'sbarvec', sbarvec)
-            np.save(outpath + 'alpvec', alpvec)
-            np.save(outpath + 'optPs', optPs)
-            prtfn("optalp="+str(optalp)+" ("+str(alpvec[0])+","+str(alpvec[-1])+"),optsbar="+str(optsbar)+", ("+str(sbarvec[0])+","+str(sbarvec[-1])+") \n")
-            prtfn("surface learning elapsed " + str(np.round(time.time() - st))+'\n')
+
+            np.save(outpath+'Lsurface_nonorm'+str(ait), LSurface)
+            np.save(outpath+'Pnng0_Store'+str(ait), Pnng0_Store)
+            np.save(outpath+'nit_list'+str(ait), nit_list)
+            np.save(outpath+'shift'+str(ait), shiftMtr)
+            np.save(outpath+'Zstore'+str(ait), Zstore)
+            np.save(outpath+'Zdashstore'+str(ait), Zdashstore)
+            np.save(outpath+'time_elapsed'+str(ait),time.time()-sst)
+            np.save(outpath+'sbarvec_p'+str(ait),sbarvec_p)
+            np.save(outpath+'alpvec',alpvec)
+            #prtfn("optalp="+str(optalp)+" ("+str(alpvec[0])+","+str(alpvec[-1])+"),optsbar="+str(optsbar)+", ("+str(sbarvec[0])+","+str(sbarvec[-1])+") \n")
+            #prtfn("surface learning elapsed " + str(np.round(time.time() - st))+'\n')
             
         if polish_estimate:
             
@@ -321,10 +337,12 @@ if __name__ == "__main__":
     
     try:#optional args
         run_index=int(sys.argv[5])      #run specific index 
+    except IndexError:
+        run_index=0
+    try:
         output_data_path=sys.argv[6]    #custom path
         input_data_path=sys.argv[7]     #custom path
     except IndexError:
-        run_index=0
         output_data_path='../../data/Yellow_fever/prepostvaccine/'
         input_data_path='../../output/'
                 

@@ -20,21 +20,21 @@ root_path = os.path.abspath(os.path.join('..'))
 if root_path not in sys.path:
     sys.path.append(root_path)
 # %run -i '../lib/utils/ipynb_setup.py'
-# import lib.utils.plotting
-# from lib.utils.plotting import plot_n1_vs_n2,add_ticks
-# from lib.utils.prob_utils import get_distsample
-# from lib.proc import get_sparserep,import_data
-# from lib.model import get_Pn1n2_s, get_rhof, NegBinParMtr,get_logPn_f,get_model_sample_obs
-# from lib.learning import constr_fn,callback,learn_null_model
+import lib.utils.plotting
+from lib.utils.plotting import plot_n1_vs_n2,add_ticks
+from lib.utils.prob_utils import get_distsample
+from lib.proc import get_sparserep,import_data
+from lib.model import get_Pn1n2_s, get_rhof, NegBinParMtr,get_logPn_f,get_model_sample_obs
+from lib.learning import constr_fn,callback,learn_null_model
 # import lib.learning
 # %load_ext autoreload
 # %autoreload 2
 
-# from scipy.interpolate import interp1d
-# from scipy import stats
-# from scipy.stats import poisson
-# from scipy.stats import nbinom
-# from scipy.stats import rv_discrete
+from scipy.interpolate import interp1d
+from scipy import stats
+from scipy.stats import poisson
+from scipy.stats import nbinom
+from scipy.stats import rv_discrete
 # -
 
 # Make dataframe
@@ -42,8 +42,7 @@ if root_path not in sys.path:
 # casestrvec=(r'$NB\rightarrow Pois$',r'$Pois \rightarrow NB$','$NB$','$Pois$')
 casestrvec=(r'$NB\rightarrow Pois$','$NB$','$Pois$')
 casevec=[0,2,3]
-donorstrvec=['P1','P2','Q1','Q2','S1','S2']
-# donorvec=("Azh","KB","Yzh","GS","Kar","Luci")
+donorvec=("Azh","KB","Yzh","GS","Kar","Luci")
 dayvec=range(5)
 nparasvec=(4,3,1)
 outstructs=np.empty((len(casevec),len(donorvec),len(dayvec)),dtype=dict)
@@ -51,9 +50,8 @@ out_df=pd.DataFrame()
 for cit, case in enumerate(casevec):
     for dit,donor in enumerate(donorvec):
         for ddit,day in enumerate(dayvec):
-            data_name=donor+'_'+str(day)+"_F1_"+str(day)+'_F1
-            runstr='../../../output/'+dataname+'/null_pair_v1_null_ct_1_acq_model_type'+str(case)+'_min0_maxinf/'
-            setname=runstr+'outstruct.npy'
+            runstr='nullparasv7/learnnulltestv7_'+donor+'_'+str(day)+"_0_"+str(day)+'_1_case_'+str(case)+'_'
+            setname=runstr+'outstruct_mmax1e6.npy'
             outstructs[cit,dit,ddit]=np.load(setname).flatten()[0]
             tmpdict=np.load(setname).flatten()[0]
             tmpdict['day']=day
