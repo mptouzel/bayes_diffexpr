@@ -102,9 +102,13 @@ Final Paragraph:
 
 Here, we first quantify the natural variation (either same-day replicate or different day non-perturbation containing) in a learned generative model of receptor RNA count-pair statistics. Next, we then construct a differential expression model by augmenting this null model with the hidden log fold-change of clone frequency between the two compared conditions, learning a prior on such change from the data. Seeing how the parameters of this prior vary across time-point comparisons provides the repertoire dynamics at ensemble-level of description. Finally, we show how our learned model can be used to infer a posterior probability distribution of fold change for any observed count pair, and thus any specific clone, that can be used to infer the temporal changes of that clone's frequency. The structure of the contribution of singleton clones, the vast majority of all clones in the sample, reflect the balance between of the power of the power-law form of clone frequency density preferencing near maximal expansion and our conservative choice of prior preferencing expansion of a characteristic size. The uncertainty in the inferred expansion obtained from these posteriors is over-dispersed, roughly uniform over the range of expansion for singleton clones appearing in the differentially expressed condition.  As an example, we use the posterior expansion probability to generate a list of clones significantly expanded by YF vaccination. 
 
-\section*{Model family}
+\section*{Results}
+
+\subsection*{A repertoire model family learnable using RepSeq}
+
+\subsubsection*{Model family definition}
 We consider a family of generative models of pair count statistics of observed immune receptor RNA molecules obtained by sequencing blood samples taken in a reference and test pair of conditions, respectively. 
-For our purpose, an immune repertoire is a finite set of $N$ clones with frequencies $\vec{f}=(f_1,\dots,f_N)$, over the domain $f_i\in[f_{\textrm{min}},1]$, where $f_{\textrm{min}}$ is the minimum allowed frequency of corresponding to a single lymphocyte. A prior density over clone frequencies is given by $\rho(f)$. $N$ and $f_{\textrm{min}}$ must be determined self-consistently when defining the corresponding joint density, 
+For our purpose, an immune repertoire is a finite set of $N$ clones with frequencies $\vec{f}=(f_1,\dots,f_N)$, over the domain $f_i\in[f_{\textrm{min}},1]$, where $f_{\textrm{min}}$ is the minimum allowed frequency corresponding to a single lymphocyte. A prior density over clone frequencies is given by $\rho(f)$. $N$ and $f_{\textrm{min}}$ must be determined self-consistently when defining the corresponding joint density, 
 \begin{eqnarray}
 	\rho_N(\vec{f})\propto \prod_{i=1}^N\rho(f_i)\delta(Z_f-1)\;,\label{eq:jointf}
 \end{eqnarray}
@@ -121,26 +125,26 @@ We present a model, $P(n,n',f,f')$, based on the priors $\rho(f)$ and $\rho(f')$
 i.e. the distribution of pair counts from observed clones. The model estimate for the total number of clones is then $N=N_{\textrm{\textrm{obs}}}/(1-P(0,0))$. 
 %These are the union of two sets of \emph{observed} clones, i.e. clones that are captured in the blood sample and amplified in the sequencer in either of the two conditions, providing a finite number of molecules in at least one of the reference-test pair.
 %The unobserved frequencies of these observed clones directly impact the model's observed distribution, $P(n,n')$, of molecule count pairs, $n$ and $n'$, in the reference and test condition, respectively (Fig.\ref{fig:nullstats}A; see Methods section for details). 
-
+\subsubsection*{Handling normalization}
 The $N-N_{\textrm{\textrm{obs}}}$ \emph{unobserved} clones influence the count statistics only via the presence of their frequencies in the two normalization constraints, $Z_f=1$ and $Z_{f'}=1$, so far unaccounted for in the model.
 In the Methods, we show that $Z_f=1$ is implicitly satisfied if 
 \begin{equation}
 	N\langle f\rangle=1\;,\label{eq:orignorm}
 \end{equation}
-which also imposes the desired self-consistency between $f_\textrm{min}$ and $N$. We employ this constraint in our clone model. Equivalently, it is expressed using the frequency posteriors, which we separate into unobserved and observed contributions,
+which also imposes self-consistency between $f_\textrm{min}$ and $N$. We employ this constraint in our clone model. Equivalently, it is expressed using the frequency posteriors, which we separate into unobserved and observed contributions,
 \begin{align*}
 	%1&=\langle Z\rangle_{\prod_i^N\rho(f_i|\mathcal{D})}\\
 	%&=\sum_i^N \langle f_i\rangle_{\rho(f_i|\mathcal{D})}\\
 	1&= NP(0,0) \langle f\rangle_{\rho(f|n+n'=0)}+	N\sum_{n+n'>0}P(n,n')\langle f\rangle_{\rho(f|n,n')}\;.
 \end{align*}
 
-$Z_f$ and $Z_{f'}$ are insensitive to the precise values of a realized set of unobserved clones, and their average frequency is well approximated as the ensemble average in first term above. In contrast, the sum of frequencies of the observed clones might depend on the realization, especially in the case of large, outlying clones arising from power-law distributed clone sizes. This sensitivity can nevertheless be incorporated into the model by using the approximation $\sum_{n+n'>0}P(n,n')\approx \frac{1}{N}\sum_{i=1}^{N_\textrm{obs}}$ so that the second term is $\sum_{i=1}^{N_{\textrm{obs}}}\langle f\rangle_{\rho(f|n_i,n'_i)}$. We define the right-hand side of this realization-dependent constraint 
+$Z_f$ and $Z_{f'}$ are insensitive to the precise values of a realization's unobserved clones, and their average frequency is well approximated as the ensemble average in first term above. In contrast, the sum of frequencies of the observed clones might depend on the realization, especially in the case of large, outlying clones arising from power-law distributed clone sizes. Indeed, we find that parameter learning in such cases is biased~\ref{fig:constr_compare}. This sensitivity can nevertheless be incorporated into the model by using the approximation $\sum_{n+n'>0}P(n,n')\approx \frac{1}{N}\sum_{i=1}^{N_\textrm{obs}}$ so that the second term is $\sum_{i=1}^{N_{\textrm{obs}}}\langle f\rangle_{\rho(f|n_i,n'_i)}$. We define the right-hand side of this realization-dependent constraint 
 \begin{align}
 	%1&=\langle Z\rangle_{\prod_i^N\rho(f_i|\mathcal{D})}\\
 	%&=\sum_i^N \langle f_i\rangle_{\rho(f_i|\mathcal{D})}\\
 	Z^\mathcal{D}_f&= N	P(0,0)\langle f\rangle_{\rho(f|n+n'=0)} + \sum_{i=1}^{N_{\textrm{obs}}}\langle f\rangle_{\rho(f|n_i,n'_i)}\;.\label{eq:postnorm}
 \end{align}
-and impose that $Z^\mathcal{D}_f=1$, in addition to $N\langle f\rangle=1$. We note that while not equivalent, differences in values of parameters learned with each constraint separately were small, suggesting there is a high overlap in the respective regions of the parameter space satisfying the original  \ref{eq:orignorm} and realization-dependent \ref{eq:postnorm} constraints (Supp.Fig.X). We impose an equivalent constraint for $\vec{f}'$, via the equivalent condition, 
+and impose that $Z^\mathcal{D}_f=1$. In contrast to learning with \ref{eq:orignorm}, learning with \ref{eq:postnorm} leads to unbiased parameter estimates~\ref{fig:constr}. We impose an equivalent constraint for $\vec{f}'$, via the equivalent condition, 
 \begin{align}
 	Z^\mathcal{D}_{f'}=Z^\mathcal{D}_f\;.\label{eq:fprimeconst}
 \end{align}
@@ -164,8 +168,10 @@ and impose that $Z^\mathcal{D}_f=1$, in addition to $N\langle f\rangle=1$. We no
 
 %In this case, the normalization when sampling from the model is implementation of the normalization depends on whether sampling from or inferring the parameters of the model, and also whether we are considering the null or differential expression model.
 %We present each form of the normalization used in its respective section.
-
+\subsubsection*{Model Assumptions}
 Finally, we take the `common dispersion' approach \citep{Robinson2008}, in which we assume that $n$ and $n'$ are conditionally independent once the reference and test frequency are given, and that their statistics depend only implicitly on clone identity (\emph{i.e.} clonal sequence) via these frequencies.
+
+\subsubsection*{learning procedure}
 Defined models were fit using a pair count dataset, $\mathcal{D}=\{(n_i,n'_i)\}_{i=1}^{N_{\textrm{\textrm{obs}}}}$, by maximizing the $\log$ marginal likelihood of the data, $\sum_{i=1}^{N_{\textrm{\textrm{obs}}}} \log P(n_i,n'_i|\theta)$, over the free parameters, $\theta$, subject to the above constraints.
 %See Appendix for the derivation of this single clone model from the full density over the entire repertoire of all clones. \textcolor{red}{(include this?)}. 
 
@@ -180,27 +186,33 @@ What is different here is $\rho(f')$: the test frequency, $f'$, is obtained from
 This transformation summarizes the effect of the dynamics assumed to act on clone sizes during the time period between the two samples. 
 In the absence of a strong perturbation such as a vaccine or acute infection, this dynamics is dominated by the diffusive behavior of some stochastic population dynamics for which the transformation is given by the corresponding Green's function.  
 For a strong, transient perturbation, in contrast, time-translation invariance is broken and a transformation tailored to the properties of the transient perturbation must be specified. 
-In the context of immune response to yellow fever vaccination, we focus on the latter. 
+In the context of transient immune response to yellow fever vaccination, we focus on the latter. 
 %Throughout, the optimization was performed subject to the normalization constraint, $\langle \sum_i^N f_i\rangle=1$, where $N$ is the (unobserved) total number of clones in the repertoire and angle brackets denote ensemble average. 
 %Bringing the average into the sum gives $N\langle f \rangle=1$, approximately satisfied for $N$ large enough that the approximation $\langle f \rangle \approx \frac{1}{N}\sum_i^{N}f_i$ becomes valid on account of the law of large numbers. 
 %The latter applies here since we define $f$ over the closed interval $\left[f_{\textrm{min}},1\right]$ so that the ensemble average $\langle f \rangle=\int f\rho(f)\textrm{d}f$ always exists, even for the power law form of $\rho(f)$, which we choose throughout.
 %The resulting constraint, $\langle f \rangle=(1-P(0,0))/N_{\textrm{\textrm{obs}}}$ was enforced at each step of the learning and can be viewed as restricting the family of considered models to those for which the joint density of clone frequencies factorizes. {\color{red}More here on $\vec{f}$?}.
 
-\section*{Results}
 \subsection*{A null model for replicate clone size variation}
+
+\subsubsection*{Model Description}
 Using this model family, we defined a null model of count statistics and fit it to a pair of replicates, here defined as coming from the same blood sample. 
 This model provides a baseline variability with which differential expression can after be assessed. 
 The marginal pair count distribution of this null model is  
 \begin{eqnarray}
-	P(n,n'|\theta_{\textrm{null}})=\int P(n|f)P(n'|f'=f)\rho(f)\text{d}f\;,
+	P(n,n'|\theta_{\textrm{\textrm{null}}})=\int P(n|f)P(n'|f'=f)\rho(f)\text{d}f\;,
 \end{eqnarray}
-where we have collected the parameters into $\theta_{\textrm{null}}$. 
+where we have collected the parameters into $\theta_{\textrm{\textrm{null}}}$. 
 The influence of $f$ on $P(n|f)$ is an explicit parametrization, e.g. where $P(n|f)$ is a Poisson distribution with mean proportional to $f$ (see Fig.\ref{fig:nullstats}B). 
 Current methods, e.g. \cite{Robinson2008}, more accurately model $P(n|f)$ by accounting for its observed over-dispersion using a negative binomial distribution. 
+
+\subsubsection*{Testing the normalization constraints}
+First, and in order to assess the effects of the constraints on the parameter learning, we took a model with $P(n|f)$ distributed as a negative binomial. We developed a sampling protocol for generic instances of this model (see Methods) and used it to validate our inference algorithm (Fig. \ref{fig:reinfer_null}). We used our model to generate a sample set of replicate pair repertoires for a given set of of parameter values. We performed three instances of our parameter learning procedure (See Methods), each subject to different constraints. The results show that the data agnostic constraint in fact bias the estimates, by allowing trials with large clones to create a second, high-bias mode. Learning with the data-specific constraint, by contrast, was insensitive to this effect.
+
+\subsubsection*{Refinements to the acquisition model}
 The number of cells of a clone in the sample, $m$, is an additional random variable in the measurement process chain, which has so far been neglected. 
 Thus, in a further refined choice for $P(n|f)$, we explicitly account for this step by choosing $P(m|f)$ as a negative binomial distribution and then $P(n|m)$ as a Poisson distribution, giving $P(n|f)=\sum_m P(n|m)P(m|f)$. 
 This two-step model, as a more explicit representation, more accurately captures the count statistics of the measurement process, especially at low counts. 
-The latter fact arises from the power-law nature of frequency distribution, for which the frequency of most clones falls below the sampling depth so that the majority of clones are not captured in the sample. 
+The latter fact arises from the power-law nature of the frequency distribution, for which the frequency of most clones falls below the sampling depth so that the majority of clones are not captured in the sample. 
 These low frequency clones are so numerous, however, that the sample is nevertheless dominated by them, each appearing at the minimum finite size. 
 For a single-step model, the minimal size of a clone is a single molecule. 
 For a two-step model, in contrast, the minimal clone size is a single cell, which gives a small, but variable number of molecules. 
@@ -216,7 +228,7 @@ The fit for the over-dispersed, one-step model is not significantly worse howeve
 \emph{Repertoire model}. 
 (a) Clone frequency distribution, $\rho(f)$, is set as a power law, parameterized by the power, $\alpha$ and the minimum frequency, $f_{min}$.
 (b)
-(c) Differential expression model structure and learning procedure. Null model parameters are learned by marginalizing over clone frequency, $f$, and maximizing this marginal likelihood with respect to the parameters. Sampled repertoires can then be generated using the ML estimate. $P(n|f)$ is set as a negative binomial distribution in cell counts controlling the scale parameter of a Poisson distribution of molecule counts. In the differentially expressed condition (prime-decorated quantities), the parameters, $\theta_{diff}$, of the prior distribution, $\rho(c)$, of fold-change, $c$, are learned by maximizing the marginal likelihood (see section \textit{Fold change prior}) with respect to $\theta_{diff}$, keeping the remaining parameters, $\theta_{null}$, fixed to their ML estimates, $\hat{\theta}_{null}$, previously obtained using same-day replicate data (see fig. \ref{fig:nullstats}).
+(c) Differential expression model structure and learning procedure. Null model parameters are learned by marginalizing over clone frequency, $f$, and maximizing this marginal likelihood with respect to the parameters. Sampled repertoires can then be generated using the ML estimate. $P(n|f)$ is set as a negative binomial distribution in cell counts controlling the scale parameter of a Poisson distribution of molecule counts. In the differentially expressed condition (prime-decorated quantities), the parameters, $\theta_{\textrm{diff}}$, of the prior distribution, $\rho(c)$, of fold-change, $c$, are learned by maximizing the marginal likelihood (see section \textit{Fold change prior}) with respect to $\theta_{\textrm{diff}}$, keeping the remaining parameters, $\theta_{\textrm{null}}$, fixed to their ML estimates, $\hat{\theta}_{\textrm{null}}$, previously obtained using same-day replicate data (see fig. \ref{fig:nullstats}).
 \label{fig:fullmodel}}
 \end{figure}
 
@@ -266,21 +278,23 @@ The fit for the over-dispersed, one-step model is not significantly worse howeve
 % Here we provide an accurate, process-based model of the observed variability of RNA count pairs obtained from pairs of same-day replicates sampled together, but sequenced separately (see Fig. \ref{fig:nullstats}).
 % %We developed four process-motivated generative models for the replicate count-pair distribution (see table \ref{Tbl1:NullModelCompare} and Fig.\ref{fig:modelstruct}). 
 % Our model maps clone frequency to observed number of RNA receptor molecules, via the number of cells of that clone captured in the sample (see fig.\ref{fig:proc}). This two-step process better captures the behaviour of the clones captured with few counts (see Supp. Fig. 1). Presumably, this is because the smallest clone size in the sample is a single cell, which gives a variable number of RNA receptor molecules, whereas a single step process of RNA counts alone would give just a single count. 
-
-The null models were fit by maximizing the $\log$ marginal likelihood of the data, $\sum_{i=1}^{N_{\textrm{\textrm{obs}}}} \log P(n_i,n'_i|\theta_{\text{null}})$, over the parameters, $\theta_{\text{null}}$. 
-For the two-step model, the parameters are $\theta_{\text{null}}=(\alpha,M,a,\gamma,f_{\textrm{min}})$, where $\alpha$ is the power law exponent, $M$ is the total number of cells, $a$ and $\gamma$ are the coefficient and power of the over-dispersion term in the mean variance relation of the negative binomial distribution of cells, and finally, $f_{\textrm{min}}$ is the minimum allowed clone frequency.
-We developed a sampling protocol for this model (see Methods) and used it to validate our inference algorithm (Fig. \ref{fig:reinfer_null}). Next, we assessed the ability of the two-step model to capture the observed count pair statistics obtained from the same-day replicates, across days and donors. 
+\subsubsection*{Acquisition model parameters}
+The null models were fit by maximizing the $\log$ marginal likelihood of the data, $\sum_{i=1}^{N_{\textrm{\textrm{obs}}}} \log P(n_i,n'_i|\theta_{\text{\textrm{null}}})$, over the parameters, $\theta_{\text{\textrm{null}}}$. 
+For the two-step model, the parameters are $\theta_{\text{\textrm{null}}}=(\alpha,M,a,\gamma,f_{\textrm{min}})$, where $\alpha$ is the power law exponent, $M$ is the total number of cells, $a$ and $\gamma$ are the coefficient and power of the over-dispersion term in the mean variance relation of the negative binomial distribution of cells, and finally, $f_{\textrm{min}}$ is the minimum allowed clone frequency.
+We assessed the ability of the two-step model to capture the observed count pair statistics obtained from the same-day replicates, across days and donors (see supp mat for same results using the NB only model). 
 Figure \ref{fig:nullparas_timeseries} shows the learned values for 30 null models calculated from same-day replicates from 6 donors sampled over 5 time points spanning a 1.5 month period. 
 The variability across donors and days is \textcolor{red}{... indicating a degree of regularity to the natural variability.} 
 The learned values of $M$ are consistent with rough estimates obtained from the known sample volume (personal communication, M. Pogorelyy), and the reciprocal of the learned values of $f_{\textrm{min}}$ give plausible estimates for the total number of lymphocytes in the body.
-The uncertainty associated with these estimates was assessed using the lower-bound provided by the curvature of the likelihood function around the optimum, \emph{i.e.} the Fisher information, of the optimization problem without the normalization constraint. 
+The uncertainty associated with these estimates was assessed using the lower-bound provided by the curvature of the likelihood function around the optimum, \emph{i.e.} the Fisher information, of the optimization problem without the normalization constraint. \re{Must incorporate constraint in errorbar estimation}.
 
 We confirmed that the learned values of the parameters provide a good fit to the pair count statistics via the model's prediction of the conditional and marginal distributions of pair counts, whose correspondence with their empirical counterparts is not required by the fitting procedure (see Fig.\ref{fig:modelfit}). For example, Fig. \ref{fig:modelfit}A shows that marginal, $P(n)$, inherits the power law of the clone frequency distribution, but exhibits deviations from this law at low count number consistent with the data and the prevalence of clones in the sample with putative frequencies less than $1/N_{\textrm{\textrm{obs}}}$. We also note that the model does well at capturing the count statistics in one condition when there are no observed counts in the other condition \textcolor{red}{(need to add this plot)}.
 
+\subsubsection*{Diversity \& observability Inference}
 The learned models provide a clone frequency distribution, $\rho(f)$, that, together with the observed number of clones in one sample can be used to estimate measures of diversity of the repertoire producing that sample (see Methods). In Fig. \ref{fig:div_estimates}, we show the values, across donor and days, of the $\beta=0,1,2$ Hill diversities as three distinct diversity metrics: the species richness, i.e. the total number of clones; the Shannon diversity as the effective number of clones obtained from a uniform distribution of their frequencies; and the Simpson diversity, the expected number of shared clones between two realized repertoires. \textcolor{red}{Discuss the variability here?} We note that diversity estimates obtained from observed species abundance are affected by statistical bias \citep{Mora2016}.
+We can also use the model to infer the observed fraction of clones picked up in our sample, relative to the full repertoire in the body, and the fraction of cells they take up. Generally, the estimates say that we catch only about 0.1\% of clones, but that these take up to 1/3 of the number of available cells.
+%\textcolor{red}{Paragraph on control result showing negligible diffusive effect (develop and include, or leave out?):}
 
-\textcolor{red}{Paragraph on control result showing negligible diffusive effect (develop and include, or leave out?):}
-
+\subsubsection*{Pushing the null model into the temporal domain}
 Both the intrinsic and driven fluctuations of the population dynamics of immune receptor repertoires imply that clone frequencies will vary across days, even in the absence of any antigen-driven response. 
 If the timescale of this diffusive effect falls within the transient response time, the variability of pair count statistics over this window will be structured by both types of fluctuations. 
 in such a short time window, however, we cannot infer the diffusive component reliably, and we omit this component.
@@ -311,7 +325,7 @@ This suggests that our inference of differential expression discussed in the nex
 % \includegraphics{fig2_diffexprmodel_schematic}
 % \centering{}
 % \caption{
-% \emph{Differential expression model structure and learning procedure}. $P(n|f)$ is set as a negative binomial distribution in cell counts controlling the scale parameter of a Poisson distribution of molecule counts. In the differentially expressed condition (prime-decorated quantities), the parameters, $\theta_{diff}$, of the prior distribution, $\rho(c)$, of fold-change, $c$, are learned by maximizing the marginal likelihood (see section \textit{Fold change prior}) with respect to $\theta_{diff}$, keeping the remaining parameters, $\theta_{null}$, fixed to their ML estimates, $\hat{\theta}_{null}$, previously obtained using same-day replicate data (see fig. \ref{fig:nullstats}). 
+% \emph{Differential expression model structure and learning procedure}. $P(n|f)$ is set as a negative binomial distribution in cell counts controlling the scale parameter of a Poisson distribution of molecule counts. In the differentially expressed condition (prime-decorated quantities), the parameters, $\theta_{\textrm{diff}}$, of the prior distribution, $\rho(c)$, of fold-change, $c$, are learned by maximizing the marginal likelihood (see section \textit{Fold change prior}) with respect to $\theta_{\textrm{diff}}$, keeping the remaining parameters, $\theta_{\textrm{null}}$, fixed to their ML estimates, $\hat{\theta}_{\textrm{null}}$, previously obtained using same-day replicate data (see fig. \ref{fig:nullstats}). 
 % \label{fig:modelstruct}}
 % \end{figure*}
 
@@ -378,12 +392,12 @@ Alternatively and best in the case of imprecise prior knowledge, $\rho(s)$ can b
 Similar to the learning of the null model, here the corresponding marginal pair count distribution is 
 \begin{equation}
     \begin{split}
-	P(n,n'|\hat{\theta}_{\textrm{null}},\theta_{\textrm{diff}})=\iint P(n|f)P(n'|f'=fe^s)\rho(f)\rho(s)\text{d}s\text{d}f\;,
+	P(n,n'|\hat{\theta}_{\textrm{\textrm{null}}},\theta_{\textrm{\textrm{diff}}})=\iint P(n|f)P(n'|f'=fe^s)\rho(f)\rho(s)\text{d}s\text{d}f\;,
 	\end{split}
 \end{equation}
-where we fix the null model parameters to their learned values, $\hat{\theta}_{\textrm{null}}$, and collect the parameters of $\rho(s)$ into $\theta_{\textrm{diff}}$. 
+where we fix the null model parameters to their learned values, $\hat{\theta}_{\textrm{\textrm{null}}}$, and collect the parameters of $\rho(s)$ into $\theta_{\textrm{\textrm{diff}}}$. 
 We satisfy the normalization constraint on $\vec{f'}$ by introducing into the given $\rho(s)$ an additional shift parameter, $s_0$, set to ensure, $Z^\mathcal{D}_{f'}=Z^\mathcal{D}_f$.
-We then maximize this marginal likelihood over $\theta_{\textrm{diff}}$ to obtain the estimates. 
+Subject to this constraint, we maximize this marginal likelihood over $\theta_{\textrm{\textrm{diff}}}$ to obtain the optimal $\rho(s)$. 
 
 Constraints on cell population dynamics (e.g. division rates) suggest that the transformed frequencies in the differentially expressed condition should be bounded relative to those in the reference condition. 
 In the absence of normalization, they can differ drastically, depending on the $\rho(s)$.
@@ -402,7 +416,7 @@ It is calculated from the model by marginalizing $f$, and using Bayes' rule,
 \end{align}
 where $P(n,n'|s)=\int P(n|f)P(n'|f'=fe^s)\rho(f)\textrm{d}f\rho(s)$. 
 
-\subsubsection*{Example 1: base prior and mouse repertoire}
+\subsubsection*{Example 1: base prior and mouse vs. human repertoires}
 To illustrate the behavior of the differential expression model, we present an application where
 \begin{align}
 	\rho_{s_0}(s)=\alpha\frac{1}{\bar{s}}e^{\frac{s_0-s}{\bar{s}}} \Theta(s-s_0)+(1-\alpha)\delta(s-s_0)\;, \label{eq:Ps_ex1}
@@ -414,6 +428,20 @@ $s_0>0$ shifts the probability mass to lower values of $s$.
 We set $s_0$ using the equal average frequency normalization constraint, ensuring that the sum of frequencies in the differentially expression condition equals that in the reference condition.
 We inferred the parameters of the model from model-sampled synthetic $(n,n')$ data for both a small (mouse-like) and large (human-like \textcolor{red}{(still to do!)}) synthetic repertoire over a range of biologically plausible parameter values (see Methods for parameter values). 
 In fig. \ref{fig:diffexpr_ex1}b, we show the inference problem of a mouse ($N=10^{6}$) repertoire for $(\bar{s}^*,\alpha^* )=(1.0,10^{-2})$, showing the errors are distributed optimally $\alpha$ and $\bar{s}$, i.e. they are given by the corresponding Fisher information, as expected from the fact that the MLE is efficient. To illustrate the structure of the posteriors computed from these learned models, in fig.\ref{fig:diffexpr_ex1}c, we show how the mass in the posteriors moves as we move in orthogonal directions in $(n,n')$ space. In particular, we see for example, that the width of the posterior narrows when counts are both large, and that the model ascribes no fold-change to clones with $n'< n$.
+
+\subsubsection*{Learning $\rho(s)$ on real data}
+We find that the regions of high likelihood in the parameter space of $\rho(s)$ do not highlight a particular $(\bar{s}^*,\alpha^*)$ pair, but an entire family of pairs with $\bar{s}^*$ trading off with $\alpha^*$. The bounds of this region are determined by the particular form chosen for $\rho(s)$. For the base prior introduced above, the region extends down to a minimum (maximum) possible $\alpha^*$ ($\bar{s}^*$). No maximum fraction less than 1 is given for $\alpha^*$. \re{results for other choices of prior}. 
+
+\subsubsection*{Inferring global properties of the differentially expressed repertoire}
+Our model incorporates both observed and unobserved parts of the repertoire. As a result it provides estimates for global properties of the response. Namely, the fraction of repertoire that responds, $\alpha$. Obtaining such estimates from existing state-of-the-art approaches, one might be tempted to use the number of significantly changed clones identified in the sample (say with EdgeR). Normalizing by knowledge of the total number of clones likely under estimates the fraction. Normalizing instead by the number of observed clones (even when adjusted for the presence of large clones (e.g. edgeR's TMM)) is likely to overestimate this fraction of clones.
+
+We can also ask our model to estimate the fraction of the repertoire (e.g. the fraction of cells) that respond. 
+\begin{equation}
+	\alpha N \langle f\rangle_{P(f|s>0)}\;.
+\end{equation}
+Again, we might be tempted to use the sum of molecule copies of the observed clones determined to have been significantly expanded. And again, we would only have insufficiently accurate estimates of the normalization factor at our disposal: the sample size, or some external estimate.
+To get a sense of these inaccuracies, we can apply these other approaches to samples from our repertoire model where we know the ground truth. As expected both estimates are off by orders of magnitude (our re-inference of course gets the parameters exactly, though this is expected since it is the model used to generate the date).
+What can we say about actual data? We show a comparison of the results of edgeR with the range of plausible estimates given by our model. The model gives a range of possible values, but very much more narrow that the range between the naive upper and lower bounds produced by the two estimates accessible using models without an underlying repertoire dynamics.
 
 \begin{figure}[tbph!]
 \includegraphics{fig5_diffexpr_eval}
@@ -649,7 +677,7 @@ The normalized clone size, $f$, is distributed according to the probability dens
 
 The final and highest scoring model is of cells sampled from a negative binomial and mRNA molecules from a Poisson distribution. A clone of size $f$ appears in a sample containing $M$ lymphocytes on average as $fM$ cells. To account for over-dispersed count statistics, the number of cells is set to be Negative-Binomial distributed with mean $fM$ and variance $fM+a (fM)^{\gamma}$, with $a>0$ the coefficient and $\gamma>1$ the power controlling the over-dispersion. For each clone, the number $n$ of detected mRNA molecules (i.e. UMI) is distributed according to a Poisson distribution with mean $mN_{\textrm{reads}}/M$, where $N_{\textrm{reads}}/M$ is the average number of UMI per cell, obtained using the observed total number of molecules, $N_{\textrm{reads}}$.
  
-We inferred the parameters of this null model, $\theta_n=(\alpha,M,a,\gamma)$, from day-0 replicates by maximizing the likelihood of the observed count pairs, $(n,n')$, where $n\sim \mathrm{Poisson}(m N/M)$, $m\sim \mathrm{NegBin}(fM,fM+a (fM)^{\gamma})$, for each replicate, and $f\sim\rho$ is common to both replicates. For a given pair, the likelihood, $P(n,n'|\theta_{\textrm{null}})$, is obtained by marginalizing over $m,m'$, and $f$.
+We inferred the parameters of this null model, $\theta_n=(\alpha,M,a,\gamma)$, from day-0 replicates by maximizing the likelihood of the observed count pairs, $(n,n')$, where $n\sim \mathrm{Poisson}(m N/M)$, $m\sim \mathrm{NegBin}(fM,fM+a (fM)^{\gamma})$, for each replicate, and $f\sim\rho$ is common to both replicates. For a given pair, the likelihood, $P(n,n'|\theta_{\textrm{\textrm{null}}})$, is obtained by marginalizing over $m,m'$, and $f$.
 
 \subsection*{Normalization}
 Here we derive the condition for which the normalization in the joint density is implicitly satisfied. The normalization constant of the joint density is
@@ -705,7 +733,7 @@ Sampling the chain of random variables of the null model can be performed effici
 Using this sampling procedure we demonstrate the validity of the null model and its inference by sampling across the observed range of parameters and reinferring their values (See fig. \ref{fig:reinfer_null}).
 
 \subsection*{Null Model Inference}
-Given a data set, $\mathcal{D}=\{(n_i,n'_i)\}_{i=1}^{N_{\textrm{obs}}}$, we infer the parameters of the null model, $\Theta_{\textrm{null}}=(\alpha,a,\gamma,M,f_{\textrm{min}})$ by maximizing the marginal likelihood of the observable model, $P(n,n'|n+n'>0,\Theta_{\textrm{null}})$, subject to the normalization constraint$, N\langle f\rangle_{\rho(f)}=1$, where $N=N_{\textrm{obs}}/(1-P(0,0))$. Since in this case we have access to a realization, we could instead normalize conditioned on this realization. Since, 
+Given a data set, $\mathcal{D}=\{(n_i,n'_i)\}_{i=1}^{N_{\textrm{obs}}}$, we infer the parameters of the null model, $\Theta_{\textrm{\textrm{null}}}=(\alpha,a,\gamma,M,f_{\textrm{min}})$ by maximizing the marginal likelihood of the observable model, $P(n,n'|n+n'>0,\Theta_{\textrm{\textrm{null}}})$, subject to the normalization constraint$, N\langle f\rangle_{\rho(f)}=1$, where $N=N_{\textrm{obs}}/(1-P(0,0))$. Since in this case we have access to a realization, we could instead normalize conditioned on this realization. Since, 
 \begin{equation*}
 	N\sum_{(n,n')>0}P(n,n')\approx N\sum_{(n,n')\in \mathcal{D}}\frac{\#(n,n')}{N}\equiv \sum_{i}^{N_{\textrm{obs}}}
 \end{equation*}
@@ -821,11 +849,11 @@ Alternatively, the average can be computed over the data directly, via $\langle 
 % 
 % We parametrize our prior, $\rho(s)$, with  $\alpha\in[0,1]$, the fraction of clones that responds to the change, and $\bar{s}>0$, their typical effect size. Accordingly, we set $\rho(s)=\frac{\alpha}{Z}\exp\left[-|s|/\bar{s}\right]+(1-\alpha)\delta(s)$, where the normalization, $Z$, is such that the first term integrates to $\alpha$. We set the values of the parameters of this prior by again maximizing the likelihood of the data given the corresponding model,
 % \begin{align}
-% \mathcal{L}(\alpha,\bar{s})=\frac{1}{N_{clones}}\sum_{(n_1,n_2)_{data}}\log P_{\mathrm{diff}}(n_1,n_2)
+% \mathcal{L}(\alpha,\bar{s})=\frac{1}{N_{clones}}\sum_{(n_1,n_2)_{data}}\log P_{\mathrm{\textrm{diff}}}(n_1,n_2)
 % \end{align}
 % where
 % \begin{align}
-% P_{\mathrm{diff}}(n_1,n_2)=\int_{s_{min}}^{s_{max}}P(n_1,n_2|s)\rho(s)\mathrm{d}s\;.
+% P_{\mathrm{\textrm{diff}}}(n_1,n_2)=\int_{s_{min}}^{s_{max}}P(n_1,n_2|s)\rho(s)\mathrm{d}s\;.
 % \end{align}
 
 \section*{Acknowledgements}

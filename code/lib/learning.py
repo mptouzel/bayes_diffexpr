@@ -87,7 +87,7 @@ def learn_null_model(sparse_rep,acq_model_type,init_paras,constr_type=2,prtfn=pr
 
 def learn_diffexpr_model(sparse_rep,acq_model_type,null_model_paras, init_paras,constr_type=2,prtfn=print):
     '''
-    performs constrained maximization of null model likelihood
+    performs constrained maximization of diff model likelihood
     '''
     if acq_model_type<2:
         parameter_labels=['alph_rho', 'beta','alpha','m_total','fmin']
@@ -110,6 +110,7 @@ def learn_diffexpr_model(sparse_rep,acq_model_type,null_model_paras, init_paras,
     prtfn(outstruct)
     return outstruct,constr_value
 
+#@profile
 def get_shift(sparse_rep,acq_model_type,paras,shift,logfvec,logfvecwide,svec,f2s_step,logPn1_f,logrhofvec,logPsvec,tol=1e-3):
     indn1,indn2,sparse_rep_counts,_,unicounts,_,Nreads=sparse_rep
     Nsamp=np.sum(sparse_rep_counts)
@@ -194,12 +195,13 @@ def get_shift(sparse_rep,acq_model_type,paras,shift,logfvec,logfvecwide,svec,f2s
         
         if Z>1.5 or Zdash>1.5:
             print('Prior too big!'+str(Z)+' '+str(Zdash))
+            it=-1
             break
 
         addshiftold=deepcopy(addshift)
         addshift=np.log(Zdash)-np.log(Z)
         diffval=np.fabs(addshift-addshiftold)
-    return shift,Z,Zdash
+    return shift,Z,Zdash,it
 
 #-------fucntions for polishing P(s) parameter estimates after grid search----------
 

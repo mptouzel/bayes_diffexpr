@@ -18,15 +18,44 @@ from lib.model import get_svec,get_logPn_f,get_logPs_pm,get_rhof
 #inputs to mkl library used by numpy to parallelize np.dot 
 import ctypes
 mkl_rt = ctypes.CDLL('libmkl_rt.so')
-num_threads=4 #number of cores available on local machine
+num_threads=2 #number of cores available on local machine
 mkl_set_num_threads = mkl_rt.MKL_Set_Num_Threads(num_threads)
 print(str(num_threads)+' cores available')
+
+#with kernprof.py in directory, place @profile above any functions to be profiled , then run:
+# kernprof -l tempytron_main.py
+#then generate readable output by running:
+# python -m line_profiler tempytron_main.py.lprof > profiling_stats.txt 
 
 def main(null_pair_1,null_pair_2,test_pair_1,test_pair_2,run_index,input_data_path,output_data_path):
   
     constr_type=1
-    parvernull = 'v1_null_ct_'+str(constr_type) #prefix label for null model data path
-    parvertest = 'v1_null' #prefix label for diff expr model data path
+    acq_model_type=2 #which P(n|f) model to use (0:NB->Pois,1:Pois->NB,2:NBonly,3:Pois only)
+    
+    #rhs only, sbar scan for each alpha
+    npoints=20
+            
+    Ps_type='rhs_only'
+    #alpvec=np.logspace(-6.,0., 2*npoints)
+    #sbarvec_p=np.logspace(-1,1.5,npoints)
+    alpvec=np.logspace(-3.,0., 2*npoints)
+    sbarvec_p=np.logspace(-0.5,0.5,npoints)
+
+    #Ps_type='sym_exp'
+    #alpvec=np.logspace(-8.,0., 2*npoints)
+    #sbarvec_p=np.logspace(-1.,1.5,npoints)
+    
+    #Ps_type='cent_gauss'
+    #alpvec=np.logspace(-6.,0., npoints)
+    #sbarvec_p=np.logspace(-1,1,npoints)/5
+    
+    #Ps_type='offcent_gauss'
+    #alpvec=np.logspace(-6.,0., npoints)
+    #sbarvec_p=np.logspace(-2,1,npoints)
+    #sbarvec_m=np.linspace(0.1,15,10)
+        
+    parvernull = 'v1_ct_'+str(constr_type)+'_mt_'+str(acq_model_type) #prefix label for null model data path
+    parvertest = 'v1_ct_'+str(constr_type)+'_mt_'+str(acq_model_type)+'_st_'+Ps_type #prefix label for diff expr model data path
 
 ######################################Preprocessing###########################################3
 
@@ -43,14 +72,19 @@ def main(null_pair_1,null_pair_2,test_pair_1,test_pair_2,run_index,input_data_pa
     # Start Computations
     starttime = time.time()
     
+    if acq_model_type<2:
+        nparas=5
+    elif acq_model_type==2:
+        nparas=4
+    else:
+        nparas=3
+        
     null_pair_1=null_pair_1.split('.')[0][:-1]
     null_pair_2=null_pair_2.split('.')[0][:-1]
     test_pair_1=test_pair_1.split('.')[0][:-1]
     test_pair_2=test_pair_2.split('.')[0][:-1]
     logfilename='_'.join((null_pair_1,null_pair_2,test_pair_1,test_pair_2))
     
-    acq_model_type=0 #which P(n|f) model to use (0:NB->Pois,1:Pois->NB,2:NBonly,3:Pois only)
-
     #loop: it=0 :learn null paras on specified null pair, then it=1: load test pair data
     it_label=('null_pair','diffexpr_pair')
     for it,dataset_pair in enumerate(((null_pair_1,null_pair_2),(test_pair_1,test_pair_2))):
@@ -70,25 +104,26 @@ def main(null_pair_1,null_pair_2,test_pair_1,test_pair_2,run_index,input_data_pa
             if it==0:
                 #set output path
                 datasetstr_null=deepcopy(datasetstr)
-                parver=parvernull+'_acq_model_type'+str(acq_model_type)
+                parver=parvernull
             else:
                 parver=parvertest
                 parver=datasetstr_null+"_"+parver
 
             runstr = it_label[it]+'_'+parver +'_min' + str(mincount) + '_max' + str(maxcount)
             outpath = output_data_path + dataset_pair[0] + '_' + dataset_pair[1] + '/' + runstr + '/'
+            
+            time.sleep((run_index+1)/10.)#avoid race condition
             if not os.path.exists(outpath):
-                time.sleep((run_index+1)/10.)#avoid race condition
                 os.makedirs(outpath)
                  
             #write shelloutput to file
             prtfn= setup_outpath_and_logs(outpath,logfilename)
             if it==0:
-                prtfn("importing and running null pair: "+datasetstr+'\n')
+                prtfn("importing null pair: "+datasetstr+'\n')
             else:
                 if loadnull:
                     prtfn('loading learned null paras for '+str(null_pair_1) + ' ' + str(null_pair_2)+' : '+str(paras))
-                prtfn("importing and running test pair: "+datasetstr+'\n')
+                prtfn("importing test pair: "+datasetstr+'\n')
 
             #read in data with heterogeneous labelling 
             if day1=='730': #2yr datasets have different column labels
@@ -105,62 +140,74 @@ def main(null_pair_1,null_pair_2,test_pair_1,test_pair_2,run_index,input_data_pa
             
             #transform to sparse representation adn store    
             sparse_rep=get_sparserep(subset.loc[:,['Clone_count_1','Clone_count_2']])       
-
+            data_strvec=('uni_idx_1','uni_idx_2','uni_counts','uni_vals_1','uni_vals_2','Nreads_1','Nreads_2')
+            np.save(outpath+'sparserep.npy',dict(zip(data_strvec,sparse_rep)))
+            
             if it==0:
                 #initial values for null model learning (copied near optimal ones here to speed up):
-                if os.path.exists(outpath+'optparas.npy'):
-                    paras=np.load(outpath+'optparas.npy')
+                #if os.path.exists(outpath+'optparas.npy'):
+                    #paras=np.load(outpath+'optparas.npy')
+                    #assert len(paras)==nparas, "loaded paras for wrong acq model!"
+                #else:
+                prtfn('learn null:')
+                donorstrvec=['P1','P2','Q1','Q2','S1','S2']
+                #donorstrvec=('Yzh','KB',  'Luci', 'Kar', 'Azh','GS')  #delete this line of actual donor names before publishing
+                if acq_model_type==0:
+                    #constr_type=0
+                    #defaultnullparasvec=np.asarray( [
+                    #[-2.21501853,  2.40694626,  1.16697953,  6.75321541, -9.41467361],
+                    #[-2.20317149,  2.19642467,  1.10515637,  6.63847919, -9.57396901],
+                    #[ -2.0016999,    1.69206104,   1.14715666,   6.82722752, -11.67739647],
+                    #[ -2.08578182,   1.81610271,   1.10418693,   6.74893278, -10.1010326 ],
+                    #[-2.15,        1.4,         1.15,        6.6685081,  -9.62994141],
+                    #[-2.19686053,  2.54462487,  1.10896311,  6.63110241, -9.31923867]
+                    #])
+                    
+                    #constr_type=1
+                    defaultnullparasvec=np.asarray( [
+                    [-2.19865022,  2.40811359,  1.1885886 ,  6.73120963, -9.43713528],
+                    [-2.18684369,  2.19921088,  1.12710212,  6.61652184, -9.59133643],
+                    [ -1.99747218,   1.69221099,   1.15192853,   6.82786948,-11.6720086 ],
+                    [ -2.08578182,   1.81610271,   1.10418693,   6.74893278, -10.1010326 ],
+                    [-2.15,        1.4,         1.15,        6.6685081,  -9.62994141],
+                    [-2.11369677,   2.47065402,   1.08416164,   6.62501443, -10.04874892]
+                    ])
+                elif acq_model_type==2:
+                    defaultnullparasvec=np.asarray( [
+                    [-2.19865022,  2.40811359,  1.1885886 ,   -9.43713528],
+                    [-2.18684369,  2.19921088,  1.12710212,   -9.59133643],
+                    [ -1.99747218,   1.69221099,   1.15192853,  -11.6720086 ],
+                    [ -2.08578182,   1.81610271,   1.10418693,    -10.1010326 ],
+                    [-2.15,        1.4,         1.15,         -9.62994141],
+                    [-2.11369677,   2.47065402,   1.08416164,    -10.04874892]
+                    ])
                 else:
-                    prtfn('learn null:')
-                    donorstrvec=['P1','P2','Q1','Q2','S1','S2']
-                    #donorstrvec=('Yzh','KB',  'Luci', 'Kar', 'Azh','GS')  #delete this line of actual donor names before publishing
-                    if acq_model_type==0:
-                        #defaultnullparasvec=np.asarray( [
-                        #[-2.21501853,  2.40694626,  1.16697953,  6.75321541, -9.41467361],
-                        #[-2.20317149,  2.19642467,  1.10515637,  6.63847919, -9.57396901],
-                        #[ -2.0016999,    1.69206104,   1.14715666,   6.82722752, -11.67739647],
-                        #[ -2.08578182,   1.81610271,   1.10418693,   6.74893278, -10.1010326 ],
-                        #[-2.15,        1.4,         1.15,        6.6685081,  -9.62994141],
-                        #[-2.19686053,  2.54462487,  1.10896311,  6.63110241, -9.31923867]
-                        #])
-                        
-                        #C=1
-                        defaultnullparasvec=np.asarray( [
-                        [-2.19865022,  2.40811359,  1.1885886 ,  6.73120963, -9.43713528],
-                        [-2.18684369,  2.19921088,  1.12710212,  6.61652184, -9.59133643],
-                        [ -1.99747218,   1.69221099,   1.15192853,   6.82786948,-11.6720086 ],
-                        [ -2.08578182,   1.81610271,   1.10418693,   6.74893278, -10.1010326 ],
-                        [-2.15,        1.4,         1.15,        6.6685081,  -9.62994141],
-                        [-2.11369677,   2.47065402,   1.08416164,   6.62501443, -10.04874892]
-                        ])
-                    elif acq_model_type>0:
-                        prtfn('not computed yet!')
-                        
-                    dind=[i for i, s in enumerate(donorstrvec) if donorstr in s][0]
-                    init_paras = defaultnullparasvec[dind,:]
-                    prtfn('init paras:'+str(init_paras))
-                    st=time.time()
-                    outstruct,constr_value=learn_null_model(sparse_rep,acq_model_type,init_paras,constr_type=constr_type,prtfn=prtfn)
-                    prtfn('constr value:')
-                    prtfn(constr_value)
-                    prtfn('learning took '+str(time.time()-st))                    
-                    if not outstruct.success:
-                        prtfn('null learning failed!')
+                    prtfn('not computed yet!')
                     
-                    optparas=outstruct.x
-                    np.save(outpath + 'optparas', optparas)
-                    np.save(outpath + 'success', outstruct.success)
-                    np.save(outpath + 'outstruct', outstruct)
-
-                    paras=optparas  #null paras to use from here on
-                    
-                prtfn("elapsed " + str(np.round(time.time() - st))+'\n')
+                dind=[i for i, s in enumerate(donorstrvec) if donorstr in s][0]
+                init_paras = defaultnullparasvec[dind,:]
+                prtfn('init paras:'+str(init_paras))
+                st=time.time()
+                outstruct,constr_value=learn_null_model(sparse_rep,acq_model_type,init_paras,constr_type=constr_type,prtfn=prtfn)
+                prtfn('constr value:')
+                prtfn(constr_value)
+                prtfn('learning took '+str(time.time()-st))                    
+                if not outstruct.success:
+                    prtfn('null learning failed!')
                 
+                optparas=outstruct.x
+                np.save(outpath + 'optparas', optparas)
+                np.save(outpath + 'success', outstruct.success)
+                np.save(outpath + 'outstruct', outstruct)
+
+                paras=optparas  #null paras to use from here on
+                                
         else:          
             datasetstr_null=datasetstr
-            runstr = it_label[it]+'_'+parvernull+'_acq_model_type'+str(acq_model_type) +'_min' + str(mincount) + '_max' + str(maxcount)
+            runstr = it_label[it]+'_'+parvernull+'_min' + str(mincount) + '_max' + str(maxcount)
             outpath = output_data_path + dataset_pair[0] + '_' + dataset_pair[1] + '/' + runstr + '/'
             paras=  np.load(outpath+'optparas.npy')
+            assert len(paras)==nparas, "loaded paras for wrong acq model!"
 
     ###############################diffexpr learning
     diffexpr=True
@@ -169,7 +216,7 @@ def main(null_pair_1,null_pair_2,test_pair_1,test_pair_2,run_index,input_data_pa
         dlogfby2=np.diff(logfvec)/2. #1/2 comes from trapezoid integration below
 
         svec,logfvecwide,f2s_step=get_svec(paras,s_step,smax)
-        
+        np.save(outpath+'svec.npy',svec)
         indn1,indn2,sparse_rep_counts,unicountvals_1,unicountvals_2,NreadsI,NreadsII=sparse_rep
         Nsamp=np.sum(sparse_rep_counts)
         logPn1_f=get_logPn_f(unicountvals_1,NreadsI,logfvec,acq_model_type,paras)
@@ -180,34 +227,60 @@ def main(null_pair_1,null_pair_2,test_pair_1,test_pair_2,run_index,input_data_pa
         output_table=False
             
         if learn_surface:
-            #rhs only
-            alpvec=np.logspace(-4.,0., 2)
-            sbarvec_p=np.linspace(0.1,5.,2)
-            shiftMtr =np.zeros(len(sbarvec_p))#,len(betvec)))
-            Zstore =np.zeros(len(sbarvec_p))#,len(betvec)))
-            Pnng0_Store=np.zeros(len(sbarvec_p))#,len(betvec)))
-            Zdashstore =np.zeros(len(sbarvec_p))#,len(betvec)))
-            nit_list =np.zeros(len(sbarvec_p)) #,len(betvec)))
-            LSurface=np.zeros(len(sbarvec_p))#,len(betvec)))
-            alp=alpvec[run_index]
             
+             
+            #who is who
+            #ait=run_index
+            #alp=alpvec[run_index]
+            
+            #itervec=sbarvec_p
+            #dims=(len(itervec1),)
+                        
+            sbar_p=sbarvec_p[run_index]  #job dimension
+            spit=run_index
+            
+            itervec1=deepcopy(alpvec)    #dimension 1 
+            dims=(len(itervec1),)
+
+            #itervec2=sbarvec_m           #dimension 2
+            #dims=(len(itervec1),len(itervec2))
+
+            #other Ps paras
             sbar_m=0
             bet=1.
-            ait=run_index
+            
+            shiftMtr =np.zeros(dims)
+            Zstore =np.zeros(dims)
+            Pnng0_Store=np.zeros(dims)
+            Zdashstore =np.zeros(dims)
+            nit_list =np.zeros(dims)
+            LSurface=np.zeros(dims)
+            
             shift=0
             first_shift=0
             sst=time.time()
-            for spit,sbar_p in enumerate(sbarvec_p):
-                
+            for it in range(np.prod(dims)):
+                inds=np.unravel_index(it,dims)
                 #shift=deepcopy(first_shift)
                 #smit_flag=True
                 #for ait,alp in enumerate(alpvec):
                 st=time.time()
-
-                logPsvec = get_logPs_pm(alp,bet,sbar_m,sbar_p,smax,s_step)
+                
+                alp=alpvec[inds[0]]
+                #sbar_m=sbarvec_m[inds[1]]                
+            
+                logPsvec = get_logPs_pm(alp,bet,sbar_m,sbar_p,smax,s_step,Ps_type)
                                                                                                                                                                                                                                                     
-                shift,Z,Zdash=get_shift(sparse_rep,acq_model_type,paras,shift,logfvec,logfvecwide,svec,f2s_step,logPn1_f,logrhofvec,logPsvec)
-                prtfn('it:'+str(run_index)+' '+str(spit)+' shift:'+str(shift)+' Z:'+str(Z)+' Zdash:'+str(Zdash))
+                shift,Z,Zdash,shift_it=get_shift(sparse_rep,acq_model_type,paras,shift,logfvec,logfvecwide,svec,f2s_step,logPn1_f,logrhofvec,logPsvec)
+                if shift_it==-1:
+                    LSurface[inds]=np.nan#np.dot(sparse_rep_counts/float(Nsamp),log_Pn1n2-np.log(1-Pn0n0))
+                    Pnng0_Store[inds]=0
+                    shiftMtr[inds]=shift
+                    nit_list[inds]=shift_it
+                    Zstore[inds]=Z
+                    Zdashstore[inds]=Zdash 
+                    continue
+            
                 logfvecwide_shift=logfvecwide-shift #implements shift in Pn2_fs
                 svec_shift=svec-shift
                 logPn2_f=get_logPn_f(unicountvals_2,NreadsII,logfvecwide_shift,acq_model_type,paras)
@@ -221,30 +294,28 @@ def main(null_pair_1,null_pair_2,test_pair_1,test_pair_2,run_index,input_data_pa
                 
                 integ=np.exp(logPn1_f[:,0]+log_Pn2_f[:,0]+logrhofvec+logfvec)
                 Pn0n0=np.dot(dlogfby2,integ[1:]+integ[:-1])
-                LSurface[spit]=np.dot(sparse_rep_counts/float(Nsamp),log_Pn1n2-np.log(1-Pn0n0))
-                Pnng0_Store[spit]=Pn0n0
-                shiftMtr[spit]=shift
-                nit_list[spit]=it
-                Zstore[spit]=Z
-                Zdashstore[spit]=Zdash 
+                
+                LSurface[inds]=np.dot(sparse_rep_counts/float(Nsamp),log_Pn1n2-np.log(1-Pn0n0))
+                Pnng0_Store[inds]=Pn0n0
+                shiftMtr[inds]=shift
+                nit_list[inds]=shift_it
+                Zstore[inds]=Z
+                Zdashstore[inds]=Zdash 
         
-                prtfn(str(spit)+':'+str(time.time()-st))
-                #if smit_flag:
-                    #first_shift=deepcopy(shift)
-                    #smit_flag=False
-
-
-            np.save(outpath+'Lsurface_nonorm'+str(ait), LSurface)
-            np.save(outpath+'Pnng0_Store'+str(ait), Pnng0_Store)
-            np.save(outpath+'nit_list'+str(ait), nit_list)
-            np.save(outpath+'shift'+str(ait), shiftMtr)
-            np.save(outpath+'Zstore'+str(ait), Zstore)
-            np.save(outpath+'Zdashstore'+str(ait), Zdashstore)
-            np.save(outpath+'time_elapsed'+str(ait),time.time()-sst)
-            np.save(outpath+'sbarvec_p'+str(ait),sbarvec_p)
+                prtfn('its:('+str(run_index)+', '+str(it)+') shift:'+str(shift)+' Z:'+str(Z)+' Zdash:'+str(Zdash)+':'+str(time.time()-st))
+            
+            np.save(outpath+'Lsurface'+str(run_index), LSurface)
+            np.save(outpath+'Pnng0_Store'+str(run_index), Pnng0_Store)
+            np.save(outpath+'nit_list'+str(run_index), nit_list)
+            np.save(outpath+'shift'+str(run_index), shiftMtr)
+            np.save(outpath+'Zstore'+str(run_index), Zstore)
+            np.save(outpath+'Zdashstore'+str(run_index), Zdashstore)
+            np.save(outpath+'time_elapsed'+str(run_index),time.time()-sst)
+            np.save(outpath+'sbarvec_p',sbarvec_p)
             np.save(outpath+'alpvec',alpvec)
-            #prtfn("optalp="+str(optalp)+" ("+str(alpvec[0])+","+str(alpvec[-1])+"),optsbar="+str(optsbar)+", ("+str(sbarvec[0])+","+str(sbarvec[-1])+") \n")
-            #prtfn("surface learning elapsed " + str(np.round(time.time() - st))+'\n')
+            
+            #2D
+            #np.save(outpath+'offset',sbarvec_m)
             
         if polish_estimate:
             

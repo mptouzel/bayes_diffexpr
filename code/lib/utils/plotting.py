@@ -11,7 +11,7 @@ def plot_n1_vs_n2(sp,savename,savepath,save,figsize=(8,8),thresh=0.05,mkrsz=70,m
     if save:
         figsize=(5.5/3,5.5/3)
         thresh=1e-7
-        mkrsz=40
+        mkrsz=20
         minmkrsz=2
         ftsz=8
 

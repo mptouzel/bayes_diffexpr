@@ -42,26 +42,27 @@ if root_path not in sys.path:
 # casestrvec=(r'$NB\rightarrow Pois$',r'$Pois \rightarrow NB$','$NB$','$Pois$')
 casestrvec=(r'$NB\rightarrow Pois$','$NB$','$Pois$')
 casevec=[0,2,3]
-donorstrvec=['P1','P2','Q1','Q2','S1','S2']
+donorvec=['P1','P2','Q1','Q2','S1','S2']
 # donorvec=("Azh","KB","Yzh","GS","Kar","Luci")
 dayvec=range(5)
 nparasvec=(4,3,1)
 outstructs=np.empty((len(casevec),len(donorvec),len(dayvec)),dtype=dict)
 out_df=pd.DataFrame()
-for cit, case in enumerate(casevec):
-    for dit,donor in enumerate(donorvec):
-        for ddit,day in enumerate(dayvec):
-            data_name=donor+'_'+str(day)+"_F1_"+str(day)+'_F1
-            runstr='../../../output/'+dataname+'/null_pair_v1_null_ct_1_acq_model_type'+str(case)+'_min0_maxinf/'
-            setname=runstr+'outstruct.npy'
-            outstructs[cit,dit,ddit]=np.load(setname).flatten()[0]
-            tmpdict=np.load(setname).flatten()[0]
-            tmpdict['day']=day
-            tmpdict['donor']=donor
-            tmpdict['case']=case
-            out_df=out_df.append(tmpdict,ignore_index=True)
-
-out_df.loc[np.logical_and(out_df.donor=='Azh',out_df.case==0)].iloc[1].x
+# for cit, case in enumerate(casevec):
+case=2
+for dit,donor in enumerate(donorvec):
+    day=0
+#     for ddit,day in enumerate(dayvec):
+    data_name=donor+'_'+str(day)+"_F1_"+donor+'_'+str(day)+'_F2'
+#             runstr='../../../output/'+dataname+'/null_pair_v1_null_ct_1_acq_model_type'+str(case)+'_min0_maxinf/'
+    runstr='../../../output/'+data_name+'/null_pair_v1_ct_1_mt_'+str(case)+'_min0_maxinf/'
+    setname=runstr+'outstruct.npy'
+    outstructs[cit,dit,ddit]=np.load(setname).flatten()[0]
+    tmpdict=np.load(setname).flatten()[0]
+    tmpdict['day']=day
+    tmpdict['donor']=donor
+    tmpdict['mt']=case
+    out_df=out_df.append(tmpdict,ignore_index=True)
 
 # +
 fig,ax=pl.subplots(3,4,figsize=(16,12))
@@ -317,12 +318,13 @@ for ddit, day in enumerate(dayvec):
     for dit,donor in enumerate(donorstrvec):
         try:
             data_df=pd.DataFrame(columns=['x','y'])
-            outpath='outdata_all/'+donor+'_'+day+'_F1_'+donor+'_'+day+'_F2/min0_maxinf_v1_case0_noconst_case0/'
-            countpaircounts_d=np.load(outpath+"countpaircounts_d.npy")
-            parasopt=np.load(outpath+'outstruct.npy').flatten()[0].x
-            logLikelihood_NBPois=np.load('nullerrorbars_hessian_noconst_'+donor+'_'+day+'.npy')*len(countpaircounts_d)
+            data_name=donor+'_'+str(day)+"_F1_"+donor+'_'+str(day)+'_F2'
+   
+            outpath='output/'+donor+'_'+day+'_F1_'+donor+'_'+day+'_F2/null_pair_v1_ct_1_mt_'+str(case)+'_min0_maxinf/'
+            sparse_rep=np.load(outpath+"sparse_rep.npy").items()            
+            parasopt=np.load(outpath+'optparas.npy')
+            logLikelihood_NBPois=np.load('local_likelihood_'+donor+'_'+day+'.npy')*len(sparse_rep['uni_counts'])
 
-    #         logLikelihood_NBPois=np.load('nullerror_diag/nullerrorbars_'+donor+'_'+day+'.npy')*len(countpaircounts_d)
             logLikelihood_NBPois_diag=np.zeros((5,5))
             for pit in range(5):
                 if pit==0:

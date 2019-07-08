@@ -109,39 +109,57 @@ def get_Ps(alp,sbar,smax,stp):
     Ps[s_zeroind]+=(1-alp)
     return Ps
   
-def get_logPs_pm(alp,bet,m_sbar,p_sbar,smax,stp):
+def get_logPs_pm(alp,bet,sbar_m,sbar_p,smax,stp,func_type):
     '''
     generates asymmetric exponential distribution over log fold change
-    with contraction effect size m_sbar expansion effect size p_sbar and responding fraction alp.
+    with contraction effect size sbar_m expansion effect size sbar_p and responding fraction alp.
     computed over discrete range of s from -smax to smax in steps of size stp.
     note that the responding fraction has no s=0 contribution.
     '''
-
-        
-    lambp=-stp/p_sbar
     smaxt=round(smax/stp)
-    if m_sbar==0:
+    Ps=np.zeros(2*int(smaxt)+1)
+    if func_type=='rhs_only':        #(alp,sbar)
+        lambp=-stp/sbar_p
         Z_p=(np.exp((smaxt+1)*lambp)-1)/(np.exp(lambp)-1)-1 #no s=0 contribution
-        Ps=np.zeros(2*int(smaxt)+1)
         Ps[int(smaxt)+1:] = np.exp(lambp*np.fabs(np.arange(           1,int(smaxt)+1)))/Z_p
-    else:
-        lambm=-stp/m_sbar
+        Ps*=alp
+        Ps[int(smaxt)]=(1-alp) #the sole contribution to s=0
+    elif func_type=='sym_exp':         #(alp,bet,sbar_m,sbar_p)
+        lambp=-stp/sbar_p
+        Z_p=2*((np.exp((smaxt+1)*lambp)-1)/(np.exp(lambp)-1)-1) #no s=0 contribution
+        Ps[:int(smaxt)]=np.exp(lambp*np.fabs(np.arange(0-int(smaxt),           0)))/Z_p
+        Ps[int(smaxt)+1:]  =np.exp(lambp*np.fabs(np.arange(           1,int(smaxt)+1)))/Z_p
+        Ps*=alp
+        Ps[int(smaxt)]=(1-alp) #the sole contribution to s=0
+    elif func_type=='asym_exp':         #(alp,bet,sbar_m,sbar_p)
+        lambm=-stp/sbar_m
+        lambp=-stp/sbar_p
         Z_m=(np.exp((smaxt+1)*lambm)-1)/(np.exp(lambm)-1)-1 #no s=0 contribution
-        #Z_m=(np.exp((smaxt+1)*lambm)-1)/(np.exp(lambm)-1) #no s=0 contribution
         Z_p=(np.exp((smaxt+1)*lambp)-1)/(np.exp(lambp)-1)-1 #no s=0 contribution
-        Ps=np.zeros(2*int(smaxt)+1)
-        #Ps[:int(smaxt)]=(1-bet)*np.exp(lambm*np.fabs(np.arange(0-int(smaxt),           0)))/Z_m
-        Ps[int(smaxt)+1:]  =bet*np.exp(lambp*np.fabs(np.arange(           1,int(smaxt)+1)))/Z_p
-        
-        #Ps[:int(smaxt)+1]=(1-bet)*np.exp(lambm*np.fabs(np.arange(0-int(smaxt),           1)))/Z_m
-        
-        #Ps[:int(smaxt)]=(1-bet)*np.exp(lambm*np.fabs(np.arange(0-int(smaxt),           0)))#/Z_m
-        #Ps[int(smaxt)+1:]  =bet*np.exp(lambp*np.fabs(np.arange(           1,int(smaxt)+1)))#/Z_p
-        #Ps/=(Zp+Zm)/2
-    Ps*=alp
-    Ps[int(smaxt)]=(1-alp) #the sole contribution to s=0
+        Ps[:int(smaxt)]=(1-bet)*np.exp(lambm*np.fabs(np.arange(0-int(smaxt),           0)))/Z_m/2
+        Ps[int(smaxt)+1:]  =bet*np.exp(lambp*np.fabs(np.arange(           1,int(smaxt)+1)))/Z_p/2
+        Ps*=alp
+        Ps[int(smaxt)]=(1-alp) #the sole contribution to s=0
+    elif func_type=='cent_gauss':   #(alp,sbar_p)
+        lambp=-stp/sbar_p
+        svec=lambp*np.arange(           -int(smaxt),int(smaxt)+1)
+        Ps=np.exp(-svec*svec)
+        Ps[int(smaxt)]=0
+        Ps*=alp/np.sum(Ps)
+        Ps[int(smaxt)]=(1-alp)
+    elif func_type=='offcent_gauss':   #(alp,sbar_p)
+        lambp=-stp/sbar_p
+        svec=lambp*np.arange(           -int(smaxt),int(smaxt)+1)
+        svec-=lambp*sbar_m/stp
+        Ps=np.exp(-svec*svec)
+        Ps[int(smaxt)]=0
+        Ps*=alp/np.sum(Ps)
+        Ps[int(smaxt)]=(1-alp)           
+    else:
+        print('func_Type does not exist!')
+    assert np.fabs(np.sum(Ps)-1)<1e-5, "P(s) distribution not normalized! "+str(np.sum(Ps))
     return np.log(Ps)
-
+#@profile
 def get_logPn_f(unicounts,Nreads,logfvec,acq_model_type,paras):
     alpha = paras[0] #power law exponent
     if acq_model_type<2:

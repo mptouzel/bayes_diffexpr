@@ -10,13 +10,16 @@ def setup_outpath_and_logs(outpath,batchname):
     if not os.path.exists(outpath):
         os.makedirs(outpath)
     prefix=outpath+batchname
-    ignr_patts=('.git','.pyc','.npy.')
-    if os.path.exists(outpath+'code'):
-        rmtree(outpath+'code')
-    copytree('../code',outpath+'code',ignore=ignore_patterns(*ignr_patts))
     logfileid=open(prefix+'logs.txt', 'a')
     prtfn=partial(print_func,fileid=logfileid)
     prtfn('-------------New run-------------')
     prtfn('output directory: '+outpath)
     prtfn('logging run in '+batchname+ 'logs.txt')
+    
+    ignr_patts=('.git','.pyc','.npy.','ipynb')
+    #if os.path.exists(outpath+'code'):
+        #prtfn('overwriting '+outpath+'code')
+        #rmtree(outpath+'code')
+    #copytree('../code',outpath+'code',ignore=ignore_patterns(*ignr_patts))
+    
     return prtfn
