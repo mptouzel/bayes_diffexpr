@@ -11,7 +11,7 @@ if root_path not in sys.path:
     
 #load local functions
 from lib.proc import get_sparserep,import_data
-from lib.learning import constr_fn,callback,learn_null_model,get_shift
+from lib.learning import callback,learn_null_model,get_shift,learn_diffexpr_model
 from lib.utils.readouts import setup_outpath_and_logs
 from lib.model import get_svec,get_logPn_f,get_logPs_pm,get_rhof
 
@@ -33,7 +33,7 @@ def main(null_pair_1,null_pair_2,test_pair_1,test_pair_2,run_index,input_data_pa
     acq_model_type=2 #which P(n|f) model to use (0:NB->Pois,1:Pois->NB,2:NBonly,3:Pois only)
     
     #rhs only, sbar scan for each alpha
-    npoints=20
+    npoints=2
             
     Ps_type='rhs_only'
     #alpvec=np.logspace(-6.,0., 2*npoints)
@@ -55,7 +55,7 @@ def main(null_pair_1,null_pair_2,test_pair_1,test_pair_2,run_index,input_data_pa
     #sbarvec_m=np.linspace(0.1,15,10)
         
     parvernull = 'v1_ct_'+str(constr_type)+'_mt_'+str(acq_model_type) #prefix label for null model data path
-    parvertest = 'v1_ct_'+str(constr_type)+'_mt_'+str(acq_model_type)+'_st_'+Ps_type #prefix label for diff expr model data path
+    parvertest = 'v2_ct_'+str(constr_type)+'_mt_'+str(acq_model_type)+'_st_'+Ps_type #prefix label for diff expr model data path
 
 ######################################Preprocessing###########################################3
 
@@ -122,7 +122,7 @@ def main(null_pair_1,null_pair_2,test_pair_1,test_pair_2,run_index,input_data_pa
                 prtfn("importing null pair: "+datasetstr+'\n')
             else:
                 if loadnull:
-                    prtfn('loading learned null paras for '+str(null_pair_1) + ' ' + str(null_pair_2)+' : '+str(paras))
+                    prtfn('loading learned null paras for '+str(null_pair_1) + ' ' + str(null_pair_2)+' : '+str(null_paras))
                 prtfn("importing test pair: "+datasetstr+'\n')
 
             #read in data with heterogeneous labelling 
@@ -144,10 +144,10 @@ def main(null_pair_1,null_pair_2,test_pair_1,test_pair_2,run_index,input_data_pa
             np.save(outpath+'sparserep.npy',dict(zip(data_strvec,sparse_rep)))
             
             if it==0:
-                #initial values for null model learning (copied near optimal ones here to speed up):
+                #initial values for null model learning (copied near optimal ones here to speed up): #TODO decide whether or not to keep this block
                 #if os.path.exists(outpath+'optparas.npy'):
-                    #paras=np.load(outpath+'optparas.npy')
-                    #assert len(paras)==nparas, "loaded paras for wrong acq model!"
+                    #null_paras=np.load(outpath+'optparas.npy')
+                    #assert len(null_paras)==nparas, "loaded paras for wrong acq model!"
                 #else:
                 prtfn('learn null:')
                 donorstrvec=['P1','P2','Q1','Q2','S1','S2']
@@ -185,10 +185,10 @@ def main(null_pair_1,null_pair_2,test_pair_1,test_pair_2,run_index,input_data_pa
                     prtfn('not computed yet!')
                     
                 dind=[i for i, s in enumerate(donorstrvec) if donorstr in s][0]
-                init_paras = defaultnullparasvec[dind,:]
-                prtfn('init paras:'+str(init_paras))
+                init_null_paras = defaultnullparasvec[dind,:]
+                prtfn('init null model paras:'+str(init_null_paras))
                 st=time.time()
-                outstruct,constr_value=learn_null_model(sparse_rep,acq_model_type,init_paras,constr_type=constr_type,prtfn=prtfn)
+                outstruct,constr_value=learn_null_model(sparse_rep,acq_model_type,init_null_paras,constr_type=constr_type,prtfn=prtfn)
                 prtfn('constr value:')
                 prtfn(constr_value)
                 prtfn('learning took '+str(time.time()-st))                    
@@ -200,54 +200,51 @@ def main(null_pair_1,null_pair_2,test_pair_1,test_pair_2,run_index,input_data_pa
                 np.save(outpath + 'success', outstruct.success)
                 np.save(outpath + 'outstruct', outstruct)
 
-                paras=optparas  #null paras to use from here on
+                null_paras=optparas  #null paras to use from here on
                                 
         else:          
             datasetstr_null=datasetstr
             runstr = it_label[it]+'_'+parvernull+'_min' + str(mincount) + '_max' + str(maxcount)
             outpath = output_data_path + dataset_pair[0] + '_' + dataset_pair[1] + '/' + runstr + '/'
-            paras=  np.load(outpath+'optparas.npy')
-            assert len(paras)==nparas, "loaded paras for wrong acq model!"
+            null_paras=  np.load(outpath+'optparas.npy')
+            assert len(null_paras)==nparas, "loaded paras for wrong acq model!"
 
     ###############################diffexpr learning
     diffexpr=True
     if diffexpr:
-        logrhofvec,logfvec = get_rhof(paras[0],np.power(10,paras[-1]))
+        logrhofvec,logfvec = get_rhof(null_paras[0],np.power(10,null_paras[-1]))
         dlogfby2=np.diff(logfvec)/2. #1/2 comes from trapezoid integration below
 
-        svec,logfvecwide,f2s_step=get_svec(paras,s_step,smax)
+        svec,logfvecwide,f2s_step,smax,s_step=get_svec(null_paras,s_step,smax)
         np.save(outpath+'svec.npy',svec)
         indn1,indn2,sparse_rep_counts,unicountvals_1,unicountvals_2,NreadsI,NreadsII=sparse_rep
         Nsamp=np.sum(sparse_rep_counts)
-        logPn1_f=get_logPn_f(unicountvals_1,NreadsI,logfvec,acq_model_type,paras)
+        logPn1_f=get_logPn_f(unicountvals_1,NreadsI,logfvec,acq_model_type,null_paras)
         
         #flags for 3 remaining code blocks:
-        learn_surface=True
-        polish_estimate=False
+        learn_surface=False
+        polish_estimate=True
         output_table=False
             
         if learn_surface:
             
-             
             #who is who
             #ait=run_index
             #alp=alpvec[run_index]
-            
+            dims=(len(alpvec),len(sbarvec_p))
+
             #itervec=sbarvec_p
             #dims=(len(itervec1),)
-                        
-            sbar_p=sbarvec_p[run_index]  #job dimension
-            spit=run_index
-            
+               
             itervec1=deepcopy(alpvec)    #dimension 1 
-            dims=(len(itervec1),)
+            #dims=(len(itervec1),)
 
             #itervec2=sbarvec_m           #dimension 2
             #dims=(len(itervec1),len(itervec2))
 
             #other Ps paras
-            sbar_m=0
-            bet=1.
+            #sbar_m=0
+            #bet=1.
             
             shiftMtr =np.zeros(dims)
             Zstore =np.zeros(dims)
@@ -255,55 +252,48 @@ def main(null_pair_1,null_pair_2,test_pair_1,test_pair_2,run_index,input_data_pa
             Zdashstore =np.zeros(dims)
             nit_list =np.zeros(dims)
             LSurface=np.zeros(dims)
+           
+            for spit,sbar_p in enumerate(sbarvec_p):
+                #sbar_p=sbarvec_p[run_index]  #job dimension
+                #spit=run_index
             
-            shift=0
-            first_shift=0
-            sst=time.time()
-            for it in range(np.prod(dims)):
-                inds=np.unravel_index(it,dims)
-                #shift=deepcopy(first_shift)
-                #smit_flag=True
-                #for ait,alp in enumerate(alpvec):
-                st=time.time()
-                
-                alp=alpvec[inds[0]]
-                #sbar_m=sbarvec_m[inds[1]]                
-            
-                logPsvec = get_logPs_pm(alp,bet,sbar_m,sbar_p,smax,s_step,Ps_type)
-                                                                                                                                                                                                                                                    
-                shift,Z,Zdash,shift_it=get_shift(sparse_rep,acq_model_type,paras,shift,logfvec,logfvecwide,svec,f2s_step,logPn1_f,logrhofvec,logPsvec)
-                if shift_it==-1:
-                    LSurface[inds]=np.nan#np.dot(sparse_rep_counts/float(Nsamp),log_Pn1n2-np.log(1-Pn0n0))
-                    Pnng0_Store[inds]=0
+                shift=0
+                first_shift=0
+                sst=time.time()
+                #for it in range(np.prod(dims)):
+                for it,alp in enumerate(alpvec): 
+                    inds=np.unravel_index(it,dims)
+
+                    st=time.time()    
+                    
+                    if Ps_type=='sym_exp' or Ps_type=='rhs_only' or Ps_type=='cent_gauss':
+                        Ps_paras=[alpvec[inds[0]],sbar_p]
+                    elif Ps_type=='offcent_gauss':
+                        Ps_paras=[alpvec[inds[0]],sbar_p,sbarvec_m[inds[1]]]
+                    inds=(it,spit)
+                    logPsvec = get_logPs_pm(Ps_paras,smax,s_step,Ps_type)
+                                                                                                                                                                                                                                                        
+                    shift,Z,Zdash,shift_it=get_shift(logPsvec,null_paras,sparse_rep,acq_model_type,shift,logfvec,logfvecwide,svec,f2s_step,logPn1_f,logrhofvec)
+                    
+                    if shift_it==-1:
+                        LSurface[inds]=np.nan#np.dot(sparse_rep_counts/float(Nsamp),log_Pn1n2-np.log(1-Pn0n0))
+                        Pnng0_Store[inds]=0
+                        shiftMtr[inds]=shift
+                        nit_list[inds]=shift_it
+                        Zstore[inds]=Z
+                        Zdashstore[inds]=Zdash 
+                        continue
+                    diffexpr_paras=Ps_paras+[shift]
+                    L,Pn0n0= get_diffexpr_likelihood(diffexpr_paras,null_paras,sparse_rep,acq_model_type,logfvec,logfvecwide,svec,smax,s_step,Ps_type,f2s_step,logPn1_f,logrhofvec,True)
+                    LSurface[inds]=L
+                    Pnng0_Store[inds]=Pn0n0
                     shiftMtr[inds]=shift
                     nit_list[inds]=shift_it
                     Zstore[inds]=Z
                     Zdashstore[inds]=Zdash 
-                    continue
             
-                logfvecwide_shift=logfvecwide-shift #implements shift in Pn2_fs
-                svec_shift=svec-shift
-                logPn2_f=get_logPn_f(unicountvals_2,NreadsII,logfvecwide_shift,acq_model_type,paras)
-
-                log_Pn2_f=np.zeros((len(logfvec),len(unicountvals_2))) #n.b. underscore
-                for s_it in range(len(svec)):
-                    log_Pn2_f+=np.exp(logPn2_f[f2s_step*s_it:f2s_step*s_it+len(logfvec),:]+logPsvec[s_it,np.newaxis,np.newaxis])
-                log_Pn2_f=np.log(log_Pn2_f)
-                integ=np.exp(log_Pn2_f[:,indn2]+logPn1_f[:,indn1]+logrhofvec[:,np.newaxis]+logfvec[:,np.newaxis])
-                log_Pn1n2=np.log(np.sum(dlogfby2[:,np.newaxis]*(integ[1:,:] + integ[:-1,:]),axis=0))
+                    prtfn('its:('+str(run_index)+', '+str(it)+') shift:'+str(shift)+' Z:'+str(Z)+' Zdash:'+str(Zdash)+':'+str(time.time()-st))
                 
-                integ=np.exp(logPn1_f[:,0]+log_Pn2_f[:,0]+logrhofvec+logfvec)
-                Pn0n0=np.dot(dlogfby2,integ[1:]+integ[:-1])
-                
-                LSurface[inds]=np.dot(sparse_rep_counts/float(Nsamp),log_Pn1n2-np.log(1-Pn0n0))
-                Pnng0_Store[inds]=Pn0n0
-                shiftMtr[inds]=shift
-                nit_list[inds]=shift_it
-                Zstore[inds]=Z
-                Zdashstore[inds]=Zdash 
-        
-                prtfn('its:('+str(run_index)+', '+str(it)+') shift:'+str(shift)+' Z:'+str(Z)+' Zdash:'+str(Zdash)+':'+str(time.time()-st))
-            
             np.save(outpath+'Lsurface'+str(run_index), LSurface)
             np.save(outpath+'Pnng0_Store'+str(run_index), Pnng0_Store)
             np.save(outpath+'nit_list'+str(run_index), nit_list)
@@ -318,75 +308,45 @@ def main(null_pair_1,null_pair_2,test_pair_1,test_pair_2,run_index,input_data_pa
             #np.save(outpath+'offset',sbarvec_m)
             
         if polish_estimate:
-            
-            optsbar=np.load(outpath + 'optsbar.npy')
-            optalp=np.load(outpath + 'optalp.npy')
-            prtfn('polish parameter estimate from '+str(optalp)+' '+str(optsbar))
+            prtfn('polish parameter estimate')
+            st=time.time()
+            LSurface=np.load(outpath+'Lsurface'+str(run_index)+'.npy')
+            maxind=np.unravel_index(np.argmax(LSurface),(len(sbarvec_p),len(alpvec)))
             
             init_shift=0
-            initparas=(optalp,optsbar,init_shift)   #(alpha,sbar,shift)
-            NreadsI=NreadsI_d 
-            NreadsII=NreadsII_d
-            
-            smaxind=(len(svec)-1)/2
-            logfmin=logfvec[0 ]-f2s_step*smaxind*logf_step
-            logfmax=logfvec[-1]+f2s_step*smaxind*logf_step
-            logfvecwide=np.linspace(logfmin,logfmax,len(logfvec)+2*smaxind*f2s_step)
+            if Ps_type=='sym_exp' or Ps_type=='rhs_only' or Ps_type=='cent_gauss':
+                init_paras=[alpvec[maxind[0]],sbarvec_p[maxind[1]]]
+                parameter_labels=['alpha', 'sbar']
+            elif Ps_type=='offcent_gauss':
+                init_paras=[alpvec[maxind[0]],sbar_p,sbarvec_m[maxind[1]]]
+                parameter_labels=['alpha', 'sbar_p','second_pos']
+            init_paras+=[init_shift]
+            parameter_labels+=['shift']
 
-            #compute range of m values (number of cells) over which to compute given the n values (reads) in the data  
-            m_total=float(np.power(10, paras[3]))
-            r_c1=NreadsI/m_total 
-            r_c2=NreadsII/m_total      
-            r_cvec=(r_c1,r_c2)
-            nsigma=5.
-            nmin=300.
-            #for each n, get actual range of m to compute around n-dependent mean m
-            m_low =np.zeros((len(unicountvals_2_d),),dtype=int)
-            m_high=np.zeros((len(unicountvals_2_d),),dtype=int)
-            for nit,n in enumerate(unicountvals_2_d):
-                mean_m=n/r_cvec[it]
-                dev=nsigma*np.sqrt(mean_m)
-                m_low[nit] =int(mean_m-  dev) if (mean_m>dev**2) else 0                         
-                m_high[nit]=int(mean_m+5*dev) if (      n>nmin) else int(10*nmin/r_cvec[it])
-            m_cellmax=np.max(m_high)
-            #across n, collect all in-range m
-            mvec_bool=np.zeros((m_cellmax+1,),dtype=bool) #cheap bool
-            nvec=range(len(unicountvals_2_d))
-            for nit in nvec:
-                mvec_bool[m_low[nit]:m_high[nit]+1]=True  #mask vector
-            mvec=np.arange(m_cellmax+1)[mvec_bool]                
-            #transform to in-range index
-            for nit in nvec:
-                m_low[nit]=np.where(m_low[nit]==mvec)[0][0]
-                m_high[nit]=np.where(m_high[nit]==mvec)[0][0]                
-
-            partialobjfunc=partial(get_likelihood,null_paras=paras,svec=svec,smax=smax,s_step=s_step,indn1_d=indn1_d ,indn2_d=indn2_d,fvec=np.exp(logfvec),fvecwide=np.exp(logfvecwide),rhofvec=np.exp(logrhofvec),\
-                                            unicountvals_1_d=unicountvals_1_d, unicountvals_2_d=unicountvals_2_d, countpaircounts_d=countpaircounts_d,\
-                                            NreadsI=NreadsI_d, NreadsII=NreadsII_d, nfbins=nfbins,f2s_step=f2s_step,\
-                                            m_low=m_low,m_high=m_high, mvec=mvec,Nsamp=Nsamp,logPn1_f=logPn1_f,acq_model_type=acq_model_type)
+            outstruct,constr_value=learn_diffexpr_model(init_paras,parameter_labels,null_paras,sparse_rep,acq_model_type,logfvec,logfvecwide,\
+                         svec,smax,s_step,Ps_type,f2s_step,logPn1_f,logrhofvec,prtfn=prtfn)
             
-            condict={'type':'eq','fun':constr_fn_diffexpr,'args': (paras,svec,smax,s_step,indn1_d,indn2_d,np.exp(logfvec),np.exp(logfvecwide),np.exp(logrhofvec),\
-                                                                unicountvals_1_d,unicountvals_2_d,countpaircounts_d,\
-                                                                NreadsI, NreadsII,nfbins, f2s_step,\
-                                                                m_low,m_high,mvec,Nsamp,logPn1_f,acq_model_type)\
-                }
-            callbackFdiffexpr_part=partial(callbackFdiffexpr,prtfn=prtfn)
-            outstruct = minimize(partialobjfunc, initparas, method='SLSQP', callback=callbackFdiffexpr_part, constraints=condict,tol=1e-6,options={'ftol':1e-8 ,'disp': True,'maxiter':300})
-            np.save(outpath + 'outstruct_diffexpr', outstruct)
+            prtfn('constr value:')
+            prtfn(constr_value)
+            prtfn('learning took '+str(time.time()-st))                    
+            if not outstruct.success:
+                prtfn('diffexpr learning failed!')
             
-        if output_table:
+            opt_diffexpr_paras=outstruct.x
+            np.save(outpath + 'opt_diffexpr_paras', opt_diffexpr_paras)
+            np.save(outpath + 'diffexpr_success', outstruct.success)
+            np.save(outpath + 'diffexpr_outstruct', outstruct)
+            
+        if output_table: #TODO update!
             st=time.time()
             prtfn('write table: ')
-            optsbar=np.load(outpath + 'sbaropt.npy')
-            optalp=np.load(outpath + 'alpopt.npy')
-            svec=np.load(outpath + 'svec.npy')
-            Pn1n2_s=np.load(outpath + 'Pn1n2_s_d.npy')
-            Psopt=np.load(outpath + 'Psopt.npy')
-            
+            opt_diffexpr_paras=np.load(outpath + 'opt_diffexpr_paras.npy')
+            logPsvec = get_logPs_pm(opt_diffexpr_paras[:-1],smax,s_step,Ps_type)
+
             pval_expanded=True #which end of the rank list to pull out. else: most contracted
             pval_threshold=0.05  #output all clones with pval below this threshold
             smed_threshold=3.46 #ln(2^5)
-            save_table(outpath+datasetstr+"table",pval_expanded,smed_threshold,pval_threshold,svec, Psopt, Pn1n2_s, Pn0n0_s,subset,unicountvals_1_d,unicountvals_2_d,indn1_d,indn2_d)
+            save_table(outpath+datasetstr+"table",pval_expanded,smed_threshold,pval_threshold,svec,logPsvec,subset,sparse_rep)
             prtfn(" elapsed " + str(np.round(time.time() - st))+'\n')
 
     # end computations

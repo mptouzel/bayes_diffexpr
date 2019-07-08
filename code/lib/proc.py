@@ -59,7 +59,7 @@ def get_sparserep(counts):
     
     return indn1,indn2,sparse_rep_counts,unicountvals_1,unicountvals_2,NreadsI,NreadsII
 
-def save_table(outpath, svec, Ps,Pn1n2_s, Pn0n0_s,  subset, unicountvals_1_d, unicountvals_2_d,indn1_d,indn2_d,print_expanded=True, pthresh=0.1, smedthresh=3.46):
+def save_table(outpath, print_expanded,smedthresh, pthresh, svec,logPsvec,subset, sparse_rep,):
     #'''
     #takes learned diffexpr model, Pn1n2_s*Ps, computes posteriors over (n1,n2) pairs, and writes to file a table of data with clones as rows and columns as measures of thier posteriors 
     #print_expanded=True orders table as ascending by , else descending
