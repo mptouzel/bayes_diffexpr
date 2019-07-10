@@ -11,14 +11,14 @@ if root_path not in sys.path:
     
 #load local functions
 from lib.proc import get_sparserep,import_data
-from lib.learning import callback,learn_null_model,get_shift,learn_diffexpr_model
+from lib.learning import callback,learn_null_model,get_shift,learn_diffexpr_model,get_diffexpr_likelihood
 from lib.utils.readouts import setup_outpath_and_logs
 from lib.model import get_svec,get_logPn_f,get_logPs_pm,get_rhof
 
 #inputs to mkl library used by numpy to parallelize np.dot 
 import ctypes
 mkl_rt = ctypes.CDLL('libmkl_rt.so')
-num_threads=2 #number of cores available on local machine
+num_threads=8 #number of cores available on local machine
 mkl_set_num_threads = mkl_rt.MKL_Set_Num_Threads(num_threads)
 print(str(num_threads)+' cores available')
 
@@ -33,13 +33,15 @@ def main(null_pair_1,null_pair_2,test_pair_1,test_pair_2,run_index,input_data_pa
     acq_model_type=2 #which P(n|f) model to use (0:NB->Pois,1:Pois->NB,2:NBonly,3:Pois only)
     
     #rhs only, sbar scan for each alpha
-    npoints=2
+    npoints=20
             
     Ps_type='rhs_only'
     #alpvec=np.logspace(-6.,0., 2*npoints)
     #sbarvec_p=np.logspace(-1,1.5,npoints)
-    alpvec=np.logspace(-3.,0., 2*npoints)
-    sbarvec_p=np.logspace(-0.5,0.5,npoints)
+    #alpvec=np.logspace(-3.,0., npoints)
+    #sbarvec_p=np.logspace(-1,0.5,npoints)
+    alpvec=np.logspace(-1.,0., npoints)
+    sbarvec_p=np.logspace(-0.5,0,npoints)
 
     #Ps_type='sym_exp'
     #alpvec=np.logspace(-8.,0., 2*npoints)
@@ -55,7 +57,8 @@ def main(null_pair_1,null_pair_2,test_pair_1,test_pair_2,run_index,input_data_pa
     #sbarvec_m=np.linspace(0.1,15,10)
         
     parvernull = 'v1_ct_'+str(constr_type)+'_mt_'+str(acq_model_type) #prefix label for null model data path
-    parvertest = 'v2_ct_'+str(constr_type)+'_mt_'+str(acq_model_type)+'_st_'+Ps_type #prefix label for diff expr model data path
+    parvertest = 'v2smax_ct_'+str(constr_type)+'_mt_'+str(acq_model_type)+'_st_'+Ps_type #prefix label for diff expr model data path
+    parvertest = 'v3zoom_ct_'+str(constr_type)+'_mt_'+str(acq_model_type)+'_st_'+Ps_type #prefix label for diff expr model data path
 
 ######################################Preprocessing###########################################3
 
@@ -222,8 +225,8 @@ def main(null_pair_1,null_pair_2,test_pair_1,test_pair_2,run_index,input_data_pa
         logPn1_f=get_logPn_f(unicountvals_1,NreadsI,logfvec,acq_model_type,null_paras)
         
         #flags for 3 remaining code blocks:
-        learn_surface=False
-        polish_estimate=True
+        learn_surface=True
+        polish_estimate=False
         output_table=False
             
         if learn_surface:
@@ -231,13 +234,13 @@ def main(null_pair_1,null_pair_2,test_pair_1,test_pair_2,run_index,input_data_pa
             #who is who
             #ait=run_index
             #alp=alpvec[run_index]
-            dims=(len(alpvec),len(sbarvec_p))
+            #dims=(len(alpvec),len(sbarvec_p))
 
             #itervec=sbarvec_p
             #dims=(len(itervec1),)
                
             itervec1=deepcopy(alpvec)    #dimension 1 
-            #dims=(len(itervec1),)
+            dims=(len(itervec1),)
 
             #itervec2=sbarvec_m           #dimension 2
             #dims=(len(itervec1),len(itervec2))
@@ -253,46 +256,45 @@ def main(null_pair_1,null_pair_2,test_pair_1,test_pair_2,run_index,input_data_pa
             nit_list =np.zeros(dims)
             LSurface=np.zeros(dims)
            
-            for spit,sbar_p in enumerate(sbarvec_p):
-                #sbar_p=sbarvec_p[run_index]  #job dimension
-                #spit=run_index
-            
-                shift=0
-                first_shift=0
-                sst=time.time()
-                #for it in range(np.prod(dims)):
-                for it,alp in enumerate(alpvec): 
-                    inds=np.unravel_index(it,dims)
+            #for spit,sbar_p in enumerate(sbarvec_p):
+            sbar_p=sbarvec_p[run_index]  #job dimension
+            spit=run_index
+        
+            shift=0
+            sst=time.time()
+            for it in range(np.prod(dims)):
+            #for it,alp in enumerate(alpvec): 
+                inds=np.unravel_index(it,dims)
 
-                    st=time.time()    
-                    
-                    if Ps_type=='sym_exp' or Ps_type=='rhs_only' or Ps_type=='cent_gauss':
-                        Ps_paras=[alpvec[inds[0]],sbar_p]
-                    elif Ps_type=='offcent_gauss':
-                        Ps_paras=[alpvec[inds[0]],sbar_p,sbarvec_m[inds[1]]]
-                    inds=(it,spit)
-                    logPsvec = get_logPs_pm(Ps_paras,smax,s_step,Ps_type)
-                                                                                                                                                                                                                                                        
-                    shift,Z,Zdash,shift_it=get_shift(logPsvec,null_paras,sparse_rep,acq_model_type,shift,logfvec,logfvecwide,svec,f2s_step,logPn1_f,logrhofvec)
-                    
-                    if shift_it==-1:
-                        LSurface[inds]=np.nan#np.dot(sparse_rep_counts/float(Nsamp),log_Pn1n2-np.log(1-Pn0n0))
-                        Pnng0_Store[inds]=0
-                        shiftMtr[inds]=shift
-                        nit_list[inds]=shift_it
-                        Zstore[inds]=Z
-                        Zdashstore[inds]=Zdash 
-                        continue
-                    diffexpr_paras=Ps_paras+[shift]
-                    L,Pn0n0= get_diffexpr_likelihood(diffexpr_paras,null_paras,sparse_rep,acq_model_type,logfvec,logfvecwide,svec,smax,s_step,Ps_type,f2s_step,logPn1_f,logrhofvec,True)
-                    LSurface[inds]=L
-                    Pnng0_Store[inds]=Pn0n0
+                st=time.time()    
+                
+                if Ps_type=='sym_exp' or Ps_type=='rhs_only' or Ps_type=='cent_gauss':
+                    Ps_paras=[alpvec[inds[0]],sbar_p]
+                elif Ps_type=='offcent_gauss':
+                    Ps_paras=[alpvec[inds[0]],sbar_p,sbarvec_m[inds[1]]]
+                #inds=(it,spit)
+                logPsvec = get_logPs_pm(Ps_paras,smax,s_step,Ps_type)
+                                                                                                                                                                                                                                                    
+                shift,Z,Zdash,shift_it=get_shift(logPsvec,null_paras,sparse_rep,acq_model_type,shift,logfvec,logfvecwide,svec,f2s_step,logPn1_f,logrhofvec)
+                
+                if shift_it==-1:
+                    LSurface[inds]=np.nan#np.dot(sparse_rep_counts/float(Nsamp),log_Pn1n2-np.log(1-Pn0n0))
+                    Pnng0_Store[inds]=0
                     shiftMtr[inds]=shift
                     nit_list[inds]=shift_it
                     Zstore[inds]=Z
                     Zdashstore[inds]=Zdash 
-            
-                    prtfn('its:('+str(run_index)+', '+str(it)+') shift:'+str(shift)+' Z:'+str(Z)+' Zdash:'+str(Zdash)+':'+str(time.time()-st))
+                    continue
+                diffexpr_paras=Ps_paras+[shift]
+                L,Pn0n0= get_diffexpr_likelihood(diffexpr_paras,null_paras,sparse_rep,acq_model_type,logfvec,logfvecwide,svec,smax,s_step,Ps_type,f2s_step,logPn1_f,logrhofvec,True)
+                LSurface[inds]=L
+                Pnng0_Store[inds]=Pn0n0
+                shiftMtr[inds]=shift
+                nit_list[inds]=shift_it
+                Zstore[inds]=Z
+                Zdashstore[inds]=Zdash 
+        
+                prtfn('its:('+str(run_index)+', '+str(it)+') shift:'+str(shift)+' Z:'+str(Z)+' Zdash:'+str(Zdash)+':'+str(time.time()-st))
                 
             np.save(outpath+'Lsurface'+str(run_index), LSurface)
             np.save(outpath+'Pnng0_Store'+str(run_index), Pnng0_Store)
@@ -308,10 +310,17 @@ def main(null_pair_1,null_pair_2,test_pair_1,test_pair_2,run_index,input_data_pa
             #np.save(outpath+'offset',sbarvec_m)
             
         if polish_estimate:
+            
+            #get max
+            dims=(len(alpvec),len(sbarvec_p))
+            LSurface=np.zeros(dims)
+            for ait in range(len(sbarvec_p)):
+                LSurface[:,ait]=np.load(outpath+'Lsurface'+str(ait)+'.npy')
+            maxind=np.unravel_index(np.argmax(LSurface),dims)
+            prtfn('max L:'+str(LSurface[maxind]))
+                        
             prtfn('polish parameter estimate')
             st=time.time()
-            LSurface=np.load(outpath+'Lsurface'+str(run_index)+'.npy')
-            maxind=np.unravel_index(np.argmax(LSurface),(len(sbarvec_p),len(alpvec)))
             
             init_shift=0
             if Ps_type=='sym_exp' or Ps_type=='rhs_only' or Ps_type=='cent_gauss':

@@ -59,6 +59,26 @@ def get_sparserep(counts):
     
     return indn1,indn2,sparse_rep_counts,unicountvals_1,unicountvals_2,NreadsI,NreadsII
 
+def get_distsample(pmf,Nsamp,dtype='uint32'):
+    '''
+    generates Nsamp index samples of dtype (e.g. uint16 handles up to 65535 indices) from discrete probability mass function pmf.
+    Handles multi-dimensional domain. Output is sorted.
+    '''
+    #assert np.sum(pmf)==1, "cmf not normalized!"
+    
+    shape = np.shape(pmf)
+    sortindex = np.argsort(pmf, axis=None)#uses flattened array
+    pmf = pmf.flatten()
+    pmf = pmf[sortindex]
+    cmf = np.cumsum(pmf)
+    choice = np.random.uniform(high = cmf[-1], size = int(float(Nsamp)))
+    index = np.searchsorted(cmf, choice)
+    index = sortindex[index]
+    index = np.unravel_index(index, shape)
+    index = np.transpose(np.vstack(index))
+    sampled_inds = np.array(index[np.argsort(index[:,0])],dtype=dtype)
+    return sampled_inds
+
 def save_table(outpath, print_expanded,smedthresh, pthresh, svec,logPsvec,subset, sparse_rep,):
     #'''
     #takes learned diffexpr model, Pn1n2_s*Ps, computes posteriors over (n1,n2) pairs, and writes to file a table of data with clones as rows and columns as measures of thier posteriors 

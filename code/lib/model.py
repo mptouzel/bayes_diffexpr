@@ -5,7 +5,7 @@ from functools import partial
 from copy import deepcopy
 import os
 from scipy.stats import nbinom
-from lib.utils.prob_utils import get_distsample
+from lib.proc import get_distsample
 #import ctypes
 #mkl_rt = ctypes.CDLL('libmkl_rt.so')
 #num_threads=4
@@ -77,11 +77,11 @@ def get_rhof(alpha_rho,fmin,freq_nbins=800,freq_dtype='float64'):
     logrhovec-=normconst 
     return logrhovec,logfvec
 
-def get_svec(paras,s_step,smax):
+def get_fvec_and_svec(paras,s_step,smax,freq_dtype='float64'):
     '''
     biuld discrete domain of s, centered on s=0, also extend fvec range from [fmin,1] to [fmin-smax*s2f,1+s2f*smax] 
     '''
-    logrhofvec,logfvec = get_rhof(paras[0],np.power(10,paras[-1]))
+    logrhofvec,logfvec = get_rhof(paras[0],np.power(10,paras[-1]),freq_dtype=freq_dtype)
     s_step_old=deepcopy(s_step)
     logf_step=logfvec[1] - logfvec[0] #use natural log here since f2 increments in increments in exp().  
     f2s_step=int(round(s_step/logf_step)) #rounded number of f-steps in one s-step
@@ -93,7 +93,7 @@ def get_svec(paras,s_step,smax):
     logfmin=logfvec[0 ]-f2s_step*smaxind*logf_step
     logfmax=logfvec[-1]+f2s_step*smaxind*logf_step
     logfvecwide=np.linspace(logfmin,logfmax,len(logfvec)+2*smaxind*f2s_step)
-    return svec,logfvecwide,f2s_step,smax,s_step
+    return svec,logfvec,logfvecwide,f2s_step,smax,s_step
 
 def get_Ps(alp,sbar,smax,stp):
     '''
@@ -320,18 +320,21 @@ def get_Pn1n2_s(paras, svec, sparse_rep,acq_model_type,  s_step=0):    #changed 
         Pn1n2_s[0,0]=0.
         return Pn1n2_s,unicountvals_1,unicountvals_2,Pn1_f,Pn2_f,logfvec
 
-
+#--------------------------Model Sampling-------------------------------
 
 def get_model_sample_obs(paras,Nsamp,Nreads):
     '''
     outputs an array of observed clone frequencies and corresponding dataframe of pair counts
     Sampling is conditioned on being observed in each of the three (n,0), (0,n'), and n,n'>0 conditions
+    Currently, only for nbinom null model. 
+    TODO add other null models, and generalize to diff expr model. 
+    Note that no explicit normalization is applied. It is assumed that the values in paras is consistent with N<f>=1.
     '''
     
     alpha_rho = paras[0]
     fmin=np.power(10,paras[3])
     logrhofvec,logfvec = get_rhof(alpha_rho,fmin) 
-    dlogfby2=np.diff(logfvec)/2. #two for custom trapezoid
+    dlogfby2=np.diff(logfvec)/2. #two for custom trapezoid integration
 
     beta_mv= paras[1]
     alpha_mv=paras[2]
@@ -396,7 +399,6 @@ def get_model_sample_obs(paras,Nsamp,Nreads):
     qx0_logf_samples=logfvec[f_samples_inds]
     find_vals,f_start_ind,f_counts=np.unique(f_samples_inds,return_counts=True,return_index=True)
     qx0_samples=np.zeros((num_qx0,))
-    qx0_m_samples=np.zeros((num_qx0,))
     for it,find in enumerate(find_vals):
         samples=np.random.random(size=f_counts[it]) * (1-Pn_f[find].cdf(0)) + Pn_f[find].cdf(0)
         qx0_samples[f_start_ind[it]:f_start_ind[it]+f_counts[it]]=Pn_f[find].ppf(samples)
@@ -405,7 +407,6 @@ def get_model_sample_obs(paras,Nsamp,Nreads):
     #f,s,n2 in 0x
     integ=np.exp(logPf_q0x+logfvec)
     f_samples_inds=get_distsample((dlogfby2*(integ[1:] + integ[:-1])),num_q0x).flatten()      
-    f_samples_inds=np.sort(f_samples_inds)
     find_vals,f_start_ind,f_counts=np.unique(f_samples_inds,return_counts=True,return_index=True)
     q0x_samples=np.zeros((num_q0x,))
     q0x_logf_samples=logfvec[f_samples_inds]
@@ -417,7 +418,6 @@ def get_model_sample_obs(paras,Nsamp,Nreads):
     #f,s,n1,n2 in xx
     integ=np.exp(logPf_qxx+logfvec)
     f_samples_inds=get_distsample((dlogfby2*(integ[1:] + integ[:-1])),num_qxx).flatten() 
-    f_samples_inds=np.sort(f_samples_inds)
     find_vals,f_start_ind,f_counts=np.unique(f_samples_inds,return_counts=True,return_index=True)
     qxx_logf_samples=logfvec[f_samples_inds]
     qxx_n1_samples=np.zeros((num_qxx,))
@@ -435,11 +435,85 @@ def get_model_sample_obs(paras,Nsamp,Nreads):
     
     return logf_samples,pair_samples
 
+#def get_model_sample_all(Ps_type,diffexpr_paras,smax,s_step,null_paras,Nreads,Nclones,seed,nofmin):
+def get_model_sample_all(acq_model_type,logPsvec,svec,logfvecwide,f2s_step,null_paras,Nreads,Nclones,seed,nofmin):
+    '''
+    outputs an array of observed clone frequencies and corresponding dataframe of pair counts.
+    OPtionally Sets fmin such that normalization condition satisfied.
+    Sampling is of the full repertoire, afterwhich unseen clones are removed.
+    Sampling is done efficiently by creating a single index over f and s, and batch sampling clones with the same index 
+    TODO add other null models,
+    '''
+    
+    logrhofvec,logfvec = get_rhof(null_paras[0],np.power(10,null_paras[-1]),freq_dtype='float32')
+    
+    alpha_rho=null_paras[0]    
+    
+    if nofmin:#given null model paras, except for fmin, obtain fmin as consistent with N<f>=1 constraint (n.b. thif only address null model...)
+        def fmin_func(logfmin,alpha_rho,Nclones):
+            fmin=np.power(10.,logfmin)
+            logrhofvec,logfvec = get_rhof(alpha_rho,fmin,freq_dtype='float32') #low precision here to be consistent with low precision freq sampling below
+            dlogfbby2=np.diff(logfvec)/2.
+            integ=np.exp(logrhofvec+2*logfvec,dtype='float64') #map back to regular precision
+            return np.exp(np.log(Nclones)+np.log(np.sum(dlogfby2*(integ[1:] + integ[:-1]))))-1   # N*<f> = 1 constraint
+        fmin_func_part=partial(fmin_func,alpha_rho=alpha_rho,Nclones=Nclones)
+        from scipy.optimize import fsolve
+        logfmin_guess = -9
+        logfmin_sol= fsolve(fmin_func_part, logfmin_guess)
+        fmin=np.power(10.,logfmin_sol[0])
+        print('logfmin: '+str(logfmin_sol))
+        paras=null_paras+[np.log10(fmin)]
+    else:
+        paras=deepcopy(null_paras)
+        fmin=np.power(10,paras[-1])
+    dlogfby2=np.asarray(np.diff(logfvec)/2.,dtype='float64')
+    
+    np.random.seed(seed+1)
+    n1_samples=np.zeros(Nclones)
+    n2_samples=np.zeros(Nclones)  
 
+    #sample in f,s space (doesn't work?) Relies on dlogf*integ, which hasn't worked in teh past though still dno't know why....
+    #integ=np.exp(logPsvec[:,np.newaxis]+logrhofvec[np.newaxis,:]+logfvec[np.newaxis,:])
+    #fs_samples_inds=get_distsample((dlogfby2[np.newaxis,:]*(integ[:,1:]+integ[:,:-1])).flatten(),Nclones,dtype='uint32') #n.b. input flattened; output sorted
+    
+    #sample in f space and s space
+    integ=np.exp(logrhofvec[np.newaxis,:]+logfvec[np.newaxis,:])
+    f_samples_inds=get_distsample(np.asarray((dlogfby2[np.newaxis,:]*(integ[:,1:]+integ[:,:-1])).flatten(),dtype='float64'),Nclones,dtype='uint32').flatten() #n.b. input flattened; output sorted
+    s_samples_inds=np.random.permutation(get_distsample(np.exp(logPsvec),Nclones,dtype='uint32').flatten()) #n.b. input flattened; output sorted
+    
+    
+    #implement normalization directly:
+    shift=np.log(np.sum(np.exp(logfvec[f_samples_inds]+svec[s_samples_inds]))) - np.log(np.sum(np.exp(logfvec[f_samples_inds])))
+    logfvecwide_shift=logfvecwide- shift
+    
+    if acq_model_type==3:
+        n1_samples=np.array(np.random.poisson(lam=NreadsI*np.exp(logfvec[f_samples_inds])),dtype='uint32')
+    elif acq_model_type==2:
+        beta_mv=paras[1]
+        alpha_mv=paras[2]
+        m=float(Nreads)*np.exp(logfvecwide_shift)
+        v=m+beta_mv*np.power(m,alpha_mv)
+        pvec=1-m/v
+        nvec=m*m/v/pvec
+        Pn_f=np.empty((len(logfvecwide),),dtype=object) #define a new Pn2_f on shifted domain at each iteration
+        for find,(n,p) in enumerate(zip(nvec,pvec)):
+            Pn_f[find]=nbinom(n,1-p)
+    
+    fs_samples_inds=s_samples_inds*len(logfvec)+f_samples_inds
+    fsind_vals,fs_start_ind,fs_counts=np.unique(fs_samples_inds,return_counts=True,return_index=True)
+    smaxind=(len(svec)-1)/2
+    for it,fsind in enumerate(fsind_vals):
+        sind,find=np.unravel_index(fsind,(len(svec),len(logfvec)))
+        n1_samples[fs_start_ind[it]:fs_start_ind[it]+fs_counts[it]]=np.array(Pn_f[int(smaxind*f2s_step+find)].rvs(fs_counts[it]),dtype='uint32')
+        n2_samples[fs_start_ind[it]:fs_start_ind[it]+fs_counts[it]]=np.array(Pn_f[int(   sind*f2s_step+find)].rvs(fs_counts[it]),dtype='uint32')
+  
+    seen=np.logical_or(n1_samples>0,n2_samples>0)
+    n1_samples=n1_samples[seen]
+    n2_samples=n2_samples[seen]
+    
+    pair_samples=pd.DataFrame({'Clone_count_1':n1_samples,'Clone_count_2':n2_samples})
 
-
-
-
+    return pair_samples
 
 
 

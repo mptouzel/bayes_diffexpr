@@ -192,8 +192,8 @@ def main(null_pair_1,null_pair_2,test_pair_1,test_pair_2,run_index,input_data_pa
             prtfn("calc Pn1n2_s elapsed " + str(np.round(time.time() - st))+'\n')
         
         #flags for 3 remaining code blocks:
-        learn_surface=True
-        polish_estimate=False
+        learn_surface=False
+        polish_estimate=True
         output_table=False
             
         if learn_surface:

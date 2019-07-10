@@ -47,6 +47,8 @@ import seaborn as sns
 params= {'text.latex.preamble' : [r'\usepackage{amsmath}']}
 pl.rcParams.update(params)
 
+len(svec)*800
+
 # # import data
 
 params= {'text.latex.preamble' : [r'\usepackage{amsmath}']}
@@ -111,6 +113,8 @@ def plot_pair(runname,day,startind,pl):
             maxL=np.max(np.max(Lsurface))
             Lsurface[Lsurface<fac*maxL]=fac*maxL
             Lsurface=np.log10(maxL- Lsurface)
+        else:
+            Lsurface=Lsurface#-np.log10(-Lsurface)
 
         p=ax[it].imshow(Lsurface,extent=[sbarvec[0], sbarvec[-1],alpvec[0], alpvec[-1]], aspect='auto',origin='lower',interpolation='none')#,cmap='viridis')
         ax[it].contour(X, Y, Lsurface,levels = 5,colors=('w',),linestyles=('--',),linewidths=(5,))
@@ -135,6 +139,10 @@ def plot_pair(runname,day,startind,pl):
 
 np.sum(np.exp(get_logPs_pm(alp,bet,sbar_m,sbar_p,smax,s_step,Ps_type)))
 
+outstruct=np.load(outpath+'diffexpr_outstruct.npy').item()
+
+np.power(10,outstruct.fun)+1.894
+
 smax=25
 stp=0.1
 smaxt=round(smax/stp)
@@ -146,6 +154,12 @@ Ps[int(smaxt)+1:]  =np.exp(lambp*np.fabs(np.arange(           1,int(smaxt)+1)))/
 Ps*=alp
 Ps[int(smaxt)]=(1-alp) #the sole contribution to s=0
 print(np.sum(Ps))
+
+Ps_type='rhs_only'
+day=15
+startind=0
+outpath=plot_pair('v2smax_ct_1_mt_2_st_'+Ps_type+'_min0_maxinf',day,startind,pl)
+pl.scatter([np.log10(0.64)],[np.log10(0.29)])
 
 for Ps_type in ('rhs_only','cent_gauss','sym_exp'):
     for day in [15]:

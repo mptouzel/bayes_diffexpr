@@ -13,22 +13,88 @@
 #     name: python3
 # ---
 
+# +
 # %matplotlib inline
-import matplotlib as mpl
-import matplotlib.pyplot as ppl
-from matplotlib import rcParams
-rcParams['font.size']=24
-rcParams['lines.markersize']=7
-rcParams['figure.figsize'] = 16, 8
-rcParams['lines.markeredgewidth'] = 2
+import sys,os
+root_path = os.path.abspath(os.path.join('..'))
+if root_path not in sys.path:
+    sys.path.append(root_path)
+# %run -i '../lib/utils/ipynb_setup.py'
+# import lib.utils.plotting
+# from lib.utils.plotting import plot_n1_vs_n2,add_ticks
+# from lib.utils.prob_utils import get_distsample
+# from lib.proc import get_sparserep,import_data
+from lib.model import get_logPs_pm,get_rhof,get_distsample
+from functools import partial
+
+# from lib.learning import constr_fn,callback,learn_null_model
+# import lib.learning
+# %load_ext autoreload
+# %autoreload 2
+# from scipy.interpolate import interp1d
+# from scipy import stats
+# from scipy.stats import poisson
+# from scipy.stats import nbinom
+# from scipy.stats import rv_discrete
+# -
+
+import matplotlib.pyplot as pl
+pl.rc("figure", facecolor="gray",figsize = (8,8))
+pl.rc('lines',markeredgewidth = 2)
+pl.rc('font',size = 24)
+pl.rc('text', usetex=True)
 import seaborn as sns
-sns.set()
-mpl.rc("figure", facecolor="gray")
-import numpy as np
-import time
-import pylab as pl
-from IPython.core.display import display, HTML
-display(HTML("<style>.container { width:100% !important; }</style>"))
+# sns.set_style("whitegrid", {'axes.grid' : True})
+params= {'text.latex.preamble' : [r'\usepackage{amsmath}']}
+pl.rcParams.update(params)
+
+# Test on one sample:
+
+null_paras=np.load()
+
+# +
+logrhofvec,logfvec = get_rhof(null_paras[0],np.power(10,null_paras[-1]))
+dlogfby2=np.diff(logfvec)/2. #1/2 comes from trapezoid integration below
+
+svec,logfvecwide,f2s_step,smax,s_step=get_svec(null_paras,s_step,smax)
+np.save(outpath+'svec.npy',svec)
+indn1,indn2,sparse_rep_counts,unicountvals_1,unicountvals_2,NreadsI,NreadsII=sparse_rep
+
+# +
+alp=0.1
+realsbar=1.0
+sbar_m=realsbar
+sbar_p=realsbar
+paras=(alp,realsbar)
+smax=25
+stp=0.1
+
+#sample from model
+st=time.time()
+
+integ=np.exp(logrhofvec+logfvec)
+logfsamples=logfvec[get_distsample(dlogf*(integ[:-1]+integ[1:]),Nclones)]
+
+alp=0.01
+realsbar=1.0
+bet=1.0
+Ps_type='sym_exp'
+logf2samples=logfsamples+np.random.permutation(svec[get_distsample(np.exp(get_logPs_pm(paras,smax,s_step,Ps_type)),Nclones)])
+
+Zf=np.sum(np.exp(logfsamples))
+print('f1norm='+str(Zf))
+n1_samples=np.array(np.random.poisson(lam=NreadsI*np.exp(logfsamples)),dtype='uint32')
+Zfp=np.sum(np.exp(logf2samples))
+print('f2norm='+str(Zfp))
+logf2samples-=np.log(Zfp)-np.log(Zf)
+n2_samples=np.array(np.random.poisson(lam=NreadsI*np.exp(logf2samples)),dtype='uint32')
+seen=np.logical_or(n1_samples>0,n2_samples>0)
+n1_samples=n1_samples[seen]
+n2_samples=n2_samples[seen]
+
+#report--------------------------------------------------------------------------
+print("samples n1: "+str(np.mean(n1_samples))+" | "+str(max(n1_samples))+", n2 "+str(np.mean(n2_samples))+" | "+str(max(n2_samples)))
+# -
 
 output_path='../output/syn_data/'
 fig,ax=pl.subplots(1,1)
@@ -52,21 +118,35 @@ for trial in range(10):
     indn2=np.load('/home/max/Dropbox/scripts/Projects/immuno/diffexpr/output/syn_data/v1_N1e9_test3indn2_d'+str(trial)+'.npy')
     shift=np.load('/home/max/Dropbox/scripts/Projects/immuno/diffexpr/output/syn_data/v1_N1e9_test3shift_v1_N1e9_test3_'+str(trial)+'.npy')
     print(shift)
+    n1=uni1[indn1]
+    n2=uni2[indn2]
+    ax.plot()
     ax.plot(uni1[indn1],uni2[indn2],'o')
     ax.set_yscale('log')
     ax.set_xscale('log')
 ax.plot(ax.get_xlim(),ax.get_xlim(),'k-')
 
-from importlib import reload
-import infer_diffexpr_lib
-reload(infer_diffexpr_lib)
-from infer_diffexpr_lib import get_Ps_pm,get_rhof,get_distsample
-from functools import partial
-from copy import deepcopy
+output_path='../output/syn_data/'
+fig,ax=pl.subplots(1,1)
+for trial in range(10):
+    outstruct=np.load(output_path+'v1_N1e9_test3outstruct_v1_N1e9_test3_'+str(trial)+'.npy').item()
+    optparas=outstruct.x
+    ax.scatter(optparas[0],optparas[1])
+    uni1=np.load('/home/max/Dropbox/scripts/Projects/immuno/diffexpr/output/syn_data/v1_N1e9_test3unicountvals_1_d'+str(trial)+'.npy')
+    uni2=np.load('/home/max/Dropbox/scripts/Projects/immuno/diffexpr/output/syn_data/v1_N1e9_test3unicountvals_2_d'+str(trial)+'.npy')
+    indn1=np.load('/home/max/Dropbox/scripts/Projects/immuno/diffexpr/output/syn_data/v1_N1e9_test3indn1_d'+str(trial)+'.npy')
+    indn2=np.load('/home/max/Dropbox/scripts/Projects/immuno/diffexpr/output/syn_data/v1_N1e9_test3indn2_d'+str(trial)+'.npy')
+    shift=np.load('/home/max/Dropbox/scripts/Projects/immuno/diffexpr/output/syn_data/v1_N1e9_test3shift_v1_N1e9_test3_'+str(trial)+'.npy')
+    print(shift)
+    ax.plot(uni1[indn1],uni2[indn2],'o')
+    ax.set_yscale('log')
+    ax.set_xscale('log')
+ax.plot(ax.get_xlim(),ax.get_xlim(),'k-')
+
+svec
 
 # +
 # script paras
-nfbins=800        #nuber of frequency bins
 smax = 25.0  #maximum absolute logfold change value
 s_step =0.1 #logfold change step size
 
@@ -75,14 +155,14 @@ NreadsII=NreadsI
 Nclones=int(1e8)
 alpha_rho=-2.05
 freq_dtype='float32'
-def fmin_func(logfmin,alpha_rho,nfbins,Nclones):
+def fmin_func(logfmin,alpha_rho,Nclones):
     fmin=np.power(10.,logfmin)
-    logrhofvec,logfvec = get_rhof(alpha_rho,nfbins,fmin,freq_dtype)
+    logrhofvec,logfvec = get_rhof(alpha_rho,fmin,freq_dtype)
     dlogf=np.diff(logfvec)/2.
     integ=np.exp(logrhofvec+2*logfvec,dtype='float64')
     return np.exp(np.log(Nclones)+np.log(np.sum(dlogf*(integ[1:] + integ[:-1]))))-1
 
-fmin_func_part=partial(fmin_func,alpha_rho=alpha_rho,nfbins=nfbins,Nclones=Nclones)
+fmin_func_part=partial(fmin_func,alpha_rho=alpha_rho,Nclones=Nclones)
 
 from scipy.optimize import fsolve
 

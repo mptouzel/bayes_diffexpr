@@ -24,13 +24,11 @@ if root_path not in sys.path:
 # %run -i '../lib/utils/ipynb_setup.py'
 import lib.utils.plotting
 from lib.utils.plotting import plot_n1_vs_n2,add_ticks
-from lib.utils.prob_utils import get_distsample
-from lib.proc import get_sparserep,import_data
+from lib.proc import get_sparserep,import_data,get_distsample
+from lib.model import get_rhof, NegBinParMtr,get_logPn_f,get_model_sample_obs
+from scipy.stats import nbinom
 # %load_ext autoreload
 # %autoreload 2
-from lib.model import get_rhof, NegBinParMtr,get_logPn_f,get_model_sample_obs
-from lib.utils.prob_utils import get_distsample
-from scipy.stats import nbinom
 
 
 import matplotlib.pyplot as pl
@@ -77,9 +75,6 @@ for find in range(0,len(logfvec),20):
 
         ax1.set_ylim([1e-300,1e3])
         ax1.set_xlim([1,nmax])#unicountvals_1[-1]])
-# -
-
-n1vec.shape
 
 # +
 case=2
