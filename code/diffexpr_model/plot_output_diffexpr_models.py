@@ -47,8 +47,6 @@ import seaborn as sns
 params= {'text.latex.preamble' : [r'\usepackage{amsmath}']}
 pl.rcParams.update(params)
 
-len(svec)*800
-
 # # import data
 
 params= {'text.latex.preamble' : [r'\usepackage{amsmath}']}
@@ -132,28 +130,11 @@ def plot_pair(runname,day,startind,pl):
     fig.savefig("surface_"+runname+"_"+str(day)+".pdf",format='pdf',dpi=500,bbox_inches='tight')
     Lsurface=LSurfacestore[:,startind:]
     print(str(np.max(Lsurface[Lsurface!=0.])))
+
     return outpath
 
 
 # -
-
-np.sum(np.exp(get_logPs_pm(alp,bet,sbar_m,sbar_p,smax,s_step,Ps_type)))
-
-outstruct=np.load(outpath+'diffexpr_outstruct.npy').item()
-
-np.power(10,outstruct.fun)+1.894
-
-smax=25
-stp=0.1
-smaxt=round(smax/stp)
-Ps=np.zeros(2*int(smaxt)+1)
-lambp=-stp/sbar_p
-Z_p=2*(np.exp((smaxt+1)*lambp)-1)/(np.exp(lambp)-1)-2 #no s=0 contribution
-Ps[:int(smaxt)]=np.exp(lambp*np.fabs(np.arange(0-int(smaxt),           0)))/Z_p
-Ps[int(smaxt)+1:]  =np.exp(lambp*np.fabs(np.arange(           1,int(smaxt)+1)))/Z_p
-Ps*=alp
-Ps[int(smaxt)]=(1-alp) #the sole contribution to s=0
-print(np.sum(Ps))
 
 Ps_type='rhs_only'
 day=15
@@ -270,11 +251,6 @@ print(str(np.max(Lsurface[Lsurface!=0.])))
 
 # -
 
-Lsurface
-
-svec=np.load(outpath+'svec.npy')
-
-
 Ps_type='offcent_gauss'
 # plot_pair('v1_ct_1_mt_2_st_cent_gauss_min0_maxinf',0,4,pl)
 plot_pair('v1_ct_1_mt_2_st_offcent_gauss_min0_maxinf',15,0,pl)
@@ -296,480 +272,220 @@ for sbar_m in sbarvec_m:
 ax.set_yscale('log')
 ax.set_ylim(1e-10,1e1)
 
-# + {"code_folding": []}
-output_path='../../../output/'
-donorstr='S2'
-null_pair=donorstr+'_0_F1_'+donorstr+'_0_F2'
-diff_pair=donorstr+'_0_F1_'+donorstr+'_0_F2'
+for Ps_type in ('rhs_only','cent_gauss'):
+    for day in [0,15]:
+        startind=4 if Ps_type=='rhs_only' else 6
+        outpath=plot_pair('v1_ct_1_mt_2_st_'+Ps_type+'_min0_maxinf',day,startind,pl)
 
-run_name='diffexpr_pair_'+null_pair+'_v1_ct_1_mt_2_st_rhs_only_min0_maxinf'
-outpath=output_path+diff_pair+'/'+run_name+'/'
-
-#Assemble grid
-alpvec=np.load(outpath+'alpvec.npy')
-sbarvec_p=np.load(outpath+'sbarvec_p.npy')
-# sbarvec_p=np.linspace(0.1,5.,20)
-LSurfacestore=np.zeros((len(alpvec),len(sbarvec_p)))
-nit_list=np.zeros((len(alpvec),len(sbarvec_p)))
-shiftMtr=np.zeros((len(alpvec),len(sbarvec_p)))
-Zstore=np.zeros((len(alpvec),len(sbarvec_p)))
-Zdashstore=np.zeros((len(alpvec),len(sbarvec_p)))
-time_elapsed=np.zeros((len(alpvec),len(sbarvec_p)))
-
-for bit,bet in enumerate(sbarvec_p):
-    dim=(slice(None),bit)
-    try:
-        LSurfacestore[dim]=np.load(outpath+'Lsurface'+str(bit)+'.npy')
-        nit_list[dim]=np.load(outpath+'nit_list'+str(bit)+'.npy')
-        shiftMtr[dim]=np.load(outpath+'shift'+str(bit)+'.npy')
-        Zstore[dim]=np.load(outpath+'Zstore'+str(bit)+'.npy')
-        Zdashstore[dim]=np.load(outpath+'Zdashstore'+str(bit)+'.npy')
-        time_elapsed[dim]=np.load(outpath+'time_elapsed'+str(bit)+'.npy')/3600.
-    except:
-        print(bit)
-LSurfacestore=LSurfacestore
-nit_list=nit_list
-shiftMtr=shiftMtr
-Zstore=Zstore
-Zdashstore=Zdashstore
-time_elapsed=time_elapsed
-
-
-#load data
-Lsurface=LSurfacestore[:,4:]
-minval=-1.95
-Lsurface[Lsurface==0]=minval#np.min(np.min(Lsurface))
-Lsurface[Lsurface<minval]=minval#np.min(np.min(Lsurface))
-
-alpvec=alpvec
-sbarvec=np.log10(sbarvec_p[4:])
-X, Y = np.meshgrid(sbarvec,np.log10(alpvec))
-
-fig,ax=pl.subplots(1,2,figsize=(20,10))
-
-maxL=np.max(np.max(Lsurface))
-p=ax[0].imshow(Lsurface,extent=[sbarvec[0], sbarvec[-1],np.log10(alpvec[0]), np.log10(alpvec[-1])], aspect='auto',origin='lower',interpolation='none')#,cmap='viridis')
-ax[0].contour(X, Y, Lsurface,levels = 5,colors=('w',),linestyles=('--',),linewidths=(5,))
-pl.colorbar(p,ax=ax[0])
-ax[0].set_ylabel(r'$\alpha$')
-ax[0].set_xlabel(r'$\bar{s}$');
-ax[0].set_ylim(np.log10(alpvec[0]),0)
-ax[0].set_title(r"$\langle \mathcal{L} \rangle$")
-# ax[0].set_aspect('equal')
-
-fac=np.inf
-fac=1+1e-2
-Lsurface[Lsurface<fac*maxL]=fac*maxL
-p2=ax[1].imshow(np.log10(-(Lsurface-maxL)),extent=[sbarvec[0], sbarvec[-1],np.log10(alpvec[0]), np.log10(alpvec[-1])], aspect='auto',origin='lower',interpolation='none')#,cmap='viridis')
-pl.colorbar(p2,ax=ax[1])
-ax[1].set_ylabel(r'$\alpha$')
-ax[1].set_xlabel(r'$\bar{s}$');
-ax[1].set_ylim(np.log10(alpvec[0]),0)
-ax[1].set_title(r"$\log_{10}\left(\langle \mathcal{L} \rangle -\langle \mathcal{L} \rangle_{\textrm{max}} \right)$") 
-
-# ax[1].set_aspect('equal')
-fig.tight_layout()
-# fig.savefig("surface.pdf",format='pdf',dpi=500,bbox_inches='tight')
-print(str(np.max(Lsurface[Lsurface!=0.])))
-
+# # RHS only
 
 # +
 output_path='../../../output/'
 donorstr='S2'
 null_pair=donorstr+'_0_F1_'+donorstr+'_0_F2'
-diff_pair=donorstr+'_0_F1_'+donorstr+'_15_F2'
 
-run_name='diffexpr_pair_'+null_pair+'_v1_ct_1_mt_2_st_rhs_only_min0_maxinf'
-outpath=output_path+diff_pair+'/'+run_name+'/'
+for testday in (0,15):
+    diff_pair=donorstr+'_0_F1_'+donorstr+'_'+str(testday)+'_F2'
+    v=1# if testday==0 else 2
+    run_name='diffexpr_pair_'+null_pair+'_v'+str(v)+'_ct_1_mt_2_st_rhs_only_min0_maxinf'
+    outpath=output_path+diff_pair+'/'+run_name+'/'
 
-#Assemble grid
-alpvec=np.load(outpath+'alpvec.npy')
-sbarvec_p=np.load(outpath+'sbarvec_p.npy')
-# sbarvec_p=np.linspace(0.1,5.,20)
-LSurfacestore=np.zeros((len(alpvec),len(sbarvec_p)))
-nit_list=np.zeros((len(alpvec),len(sbarvec_p)))
-shiftMtr=np.zeros((len(alpvec),len(sbarvec_p)))
-Zstore=np.zeros((len(alpvec),len(sbarvec_p)))
-Zdashstore=np.zeros((len(alpvec),len(sbarvec_p)))
-time_elapsed=np.zeros((len(alpvec),len(sbarvec_p)))
+    #Assemble grid
+    alpvec=np.load(outpath+'alpvec.npy')
+    sbarvec_p=np.load(outpath+'sbarvec_p.npy')
+    # sbarvec_p=np.linspace(0.1,5.,20)
+    LSurfacestore=np.zeros((len(alpvec),len(sbarvec_p)))
+    nit_list=np.zeros((len(alpvec),len(sbarvec_p)))
+    shiftMtr=np.zeros((len(alpvec),len(sbarvec_p)))
+    Zstore=np.zeros((len(alpvec),len(sbarvec_p)))
+    Zdashstore=np.zeros((len(alpvec),len(sbarvec_p)))
+    time_elapsed=np.zeros((len(alpvec),len(sbarvec_p)))
 
-for bit,bet in enumerate(sbarvec_p):
-    dim=(slice(None),bit)
-    try:
-        LSurfacestore[dim]=np.load(outpath+'Lsurface'+str(bit)+'.npy')
-        nit_list[dim]=np.load(outpath+'nit_list'+str(bit)+'.npy')
-        shiftMtr[dim]=np.load(outpath+'shift'+str(bit)+'.npy')
-        Zstore[dim]=np.load(outpath+'Zstore'+str(bit)+'.npy')
-        Zdashstore[dim]=np.load(outpath+'Zdashstore'+str(bit)+'.npy')
-        time_elapsed[dim]=np.load(outpath+'time_elapsed'+str(bit)+'.npy')/3600.
-    except:
-        print(bit)
-LSurfacestore=LSurfacestore
-nit_list=nit_list
-shiftMtr=shiftMtr
-Zstore=Zstore
-Zdashstore=Zdashstore
-time_elapsed=time_elapsed
-
-
-#load data
-Lsurface=LSurfacestore[:,4:]
-minval=-1.95
-Lsurface[Lsurface==0]=minval#np.min(np.min(Lsurface))
-Lsurface[Lsurface<minval]=minval#np.min(np.min(Lsurface))
-
-alpvec=alpvec
-sbarvec=np.log10(sbarvec_p[4:])
-X, Y = np.meshgrid(sbarvec,np.log10(alpvec))
-
-fig,ax=pl.subplots(1,2,figsize=(20,10))
-
-maxL=np.max(np.max(Lsurface))
-p=ax[0].imshow(Lsurface,extent=[sbarvec[0], sbarvec[-1],np.log10(alpvec[0]), np.log10(alpvec[-1])], aspect='auto',origin='lower',interpolation='none')#,cmap='viridis')
-ax[0].contour(X, Y, Lsurface,levels = 5,colors=('w',),linestyles=('--',),linewidths=(5,))
-pl.colorbar(p,ax=ax[0])
-ax[0].set_ylabel(r'$\alpha$')
-ax[0].set_xlabel(r'$\bar{s}$');
-ax[0].set_ylim(np.log10(alpvec[0]),0)
-ax[0].set_title(r"$\langle \mathcal{L} \rangle$")
-# ax[0].set_aspect('equal')
-
-fac=np.inf
-fac=1+1e-2
-Lsurface[Lsurface<fac*maxL]=fac*maxL
-p2=ax[1].imshow(np.log10(-(Lsurface-maxL)),extent=[sbarvec[0], sbarvec[-1],np.log10(alpvec[0]), np.log10(alpvec[-1])], aspect='auto',origin='lower',interpolation='none')#,cmap='viridis')
-pl.colorbar(p2,ax=ax[1])
-ax[1].set_ylabel(r'$\alpha$')
-ax[1].set_xlabel(r'$\bar{s}$');
-ax[1].set_ylim(np.log10(alpvec[0]),0)
-ax[1].set_title(r"$\log_{10}\left(\langle \mathcal{L} \rangle -\langle \mathcal{L} \rangle_{\textrm{max}} \right)$") 
-
-# ax[1].set_aspect('equal')
-fig.tight_layout()
-# fig.savefig("surface.pdf",format='pdf',dpi=500,bbox_inches='tight')
-print(str(np.max(Lsurface[Lsurface!=0.])))
+    for bit,bet in enumerate(sbarvec_p):
+        dim=(slice(None),bit)
+        try:
+            LSurfacestore[dim]=np.load(outpath+'Lsurface'+str(bit)+'.npy')
+            nit_list[dim]=np.load(outpath+'nit_list'+str(bit)+'.npy')
+            shiftMtr[dim]=np.load(outpath+'shift'+str(bit)+'.npy')
+            Zstore[dim]=np.load(outpath+'Zstore'+str(bit)+'.npy')
+            Zdashstore[dim]=np.load(outpath+'Zdashstore'+str(bit)+'.npy')
+            time_elapsed[dim]=np.load(outpath+'time_elapsed'+str(bit)+'.npy')/3600.
+        except:
+            print(bit)
+    LSurfacestore=LSurfacestore
+    nit_list=nit_list
+    shiftMtr=shiftMtr
+    Zstore=Zstore
+    Zdashstore=Zdashstore
+    time_elapsed=time_elapsed
 
 
-# +
-output_path='../../../output/'
-donorstr='S2'
-null_pair=donorstr+'_0_F1_'+donorstr+'_0_F2'
-diff_pair=donorstr+'_0_F1_'+donorstr+'_15_F2'
+    #load data
+    Lsurface=LSurfacestore[:,4:]
+    minval=-1.95
+    Lsurface[Lsurface==0]=minval#np.min(np.min(Lsurface))
+    Lsurface[Lsurface<minval]=minval#np.min(np.min(Lsurface))
 
-run_name='diffexpr_pair_'+null_pair+'_v1_ct_1_mt_2_st_rhs_only_min0_maxinf'
-outpath=output_path+diff_pair+'/'+run_name+'/'
+    alpvec=alpvec
+    sbarvec=np.log10(sbarvec_p[4:])
+    X, Y = np.meshgrid(sbarvec,np.log10(alpvec))
 
-#Assemble grid
-alpvec=np.load(outpath+'alpvec.npy')
-sbarvec_p=np.load(outpath+'sbarvec_p.npy')
-# sbarvec_p=np.linspace(0.1,5.,20)
-LSurfacestore=np.zeros((len(alpvec),len(sbarvec_p)))
-nit_list=np.zeros((len(alpvec),len(sbarvec_p)))
-shiftMtr=np.zeros((len(alpvec),len(sbarvec_p)))
-Zstore=np.zeros((len(alpvec),len(sbarvec_p)))
-Zdashstore=np.zeros((len(alpvec),len(sbarvec_p)))
-time_elapsed=np.zeros((len(alpvec),len(sbarvec_p)))
+    fig,ax=pl.subplots(1,2,figsize=(20,10))
 
-for bit,bet in enumerate(sbarvec_p):
-    dim=(slice(None),bit)
-    try:
-        LSurfacestore[dim]=np.load(outpath+'Lsurface'+str(bit)+'.npy')
-        nit_list[dim]=np.load(outpath+'nit_list'+str(bit)+'.npy')
-        shiftMtr[dim]=np.load(outpath+'shift'+str(bit)+'.npy')
-        Zstore[dim]=np.load(outpath+'Zstore'+str(bit)+'.npy')
-        Zdashstore[dim]=np.load(outpath+'Zdashstore'+str(bit)+'.npy')
-        time_elapsed[dim]=np.load(outpath+'time_elapsed'+str(bit)+'.npy')/3600.
-    except:
-        print(bit)
-LSurfacestore=LSurfacestore
-nit_list=nit_list
-shiftMtr=shiftMtr
-Zstore=Zstore
-Zdashstore=Zdashstore
-time_elapsed=time_elapsed
+    maxL=np.max(np.max(Lsurface))
+    p=ax[0].imshow(Lsurface,extent=[sbarvec[0], sbarvec[-1],np.log10(alpvec[0]), np.log10(alpvec[-1])], aspect='auto',origin='lower',interpolation='none')#,cmap='viridis')
+    ax[0].contour(X, Y, Lsurface,levels = 5,colors=('w',),linestyles=('--',),linewidths=(5,))
+    pl.colorbar(p,ax=ax[0])
+    ax[0].set_ylabel(r'$\alpha$')
+    ax[0].set_xlabel(r'$\bar{s}$');
+    ax[0].set_ylim(np.log10(alpvec[0]),0)
+    ax[0].set_title(r"$\langle \mathcal{L} \rangle$")
+    # ax[0].set_aspect('equal')
 
+    fac=np.inf
+    fac=1+1e-2
+    Lsurface[Lsurface<fac*maxL]=fac*maxL
+    p2=ax[1].imshow(np.log10(-(Lsurface-maxL)),extent=[sbarvec[0], sbarvec[-1],np.log10(alpvec[0]), np.log10(alpvec[-1])], aspect='auto',origin='lower',interpolation='none')#,cmap='viridis')
+    pl.colorbar(p2,ax=ax[1])
+    ax[1].set_ylabel(r'$\alpha$')
+    ax[1].set_xlabel(r'$\bar{s}$');
+    ax[1].set_ylim(np.log10(alpvec[0]),0)
+    ax[1].set_title(r"$\log_{10}\left(\langle \mathcal{L} \rangle -\langle \mathcal{L} \rangle_{\textrm{max}} \right)$") 
+    fig.suptitle(run_name.split('_')+['0-'+str(testday)],y=1.02)
 
-#load data
-Lsurface=LSurfacestore[:,4:]
-minval=-1.95
-Lsurface[Lsurface==0]=minval#np.min(np.min(Lsurface))
-Lsurface[Lsurface<minval]=minval#np.min(np.min(Lsurface))
+    # ax[1].set_aspect('equal')
+    fig.tight_layout()
+    # fig.savefig("surface.pdf",format='pdf',dpi=500,bbox_inches='tight')
+    print(str(np.max(Lsurface[Lsurface!=0.])))
+    if testday==15:
+        opt_paras=np.load(outpath+'svec.npy')
+        opt_paras=np.load(outpath+'opt_diffexpr_paras.npy')
+        print(opt_paras)
+        ax[1].plot([np.log10(opt_paras[1])],[np.log10(opt_paras[0])],'ko',ms=10)
 
-alpvec=alpvec
-sbarvec=np.log10(sbarvec_p[4:])
-X, Y = np.meshgrid(sbarvec,np.log10(alpvec))
-
-fig,ax=pl.subplots(1,2,figsize=(20,10))
-
-maxL=np.max(np.max(Lsurface))
-p=ax[0].imshow(Lsurface,extent=[sbarvec[0], sbarvec[-1],np.log10(alpvec[0]), np.log10(alpvec[-1])], aspect='auto',origin='lower',interpolation='none')#,cmap='viridis')
-ax[0].contour(X, Y, Lsurface,levels = 5,colors=('w',),linestyles=('--',),linewidths=(5,))
-pl.colorbar(p,ax=ax[0])
-ax[0].set_ylabel(r'$\alpha$')
-ax[0].set_xlabel(r'$\bar{s}$');
-ax[0].set_ylim(np.log10(alpvec[0]),0)
-ax[0].set_title(r"$\langle \mathcal{L} \rangle$")
-# ax[0].set_aspect('equal')
-
-fac=np.inf
-fac=1+1e-2
-Lsurface[Lsurface<fac*maxL]=fac*maxL
-p2=ax[1].imshow(np.log10(-(Lsurface-maxL)),extent=[sbarvec[0], sbarvec[-1],np.log10(alpvec[0]), np.log10(alpvec[-1])], aspect='auto',origin='lower',interpolation='none')#,cmap='viridis')
-pl.colorbar(p2,ax=ax[1])
-ax[1].set_ylabel(r'$\alpha$')
-ax[1].set_xlabel(r'$\bar{s}$');
-ax[1].set_ylim(np.log10(alpvec[0]),0)
-ax[1].set_title(r"$\log_{10}\left(\langle \mathcal{L} \rangle -\langle \mathcal{L} \rangle_{\textrm{max}} \right)$") 
-
-# ax[1].set_aspect('equal')
-fig.tight_layout()
-# fig.savefig("surface.pdf",format='pdf',dpi=500,bbox_inches='tight')
-print(str(np.max(Lsurface[Lsurface!=0.])))
-
-
-# + {"code_folding": []}
-#load data
-Lsurface=LSurfacestore
-sbarvec=np.log10(sbarvec_p)
-# sbarvec=sbarvec_p
-fig,ax=pl.subplots(1,1,figsize=(10,10))
-# Lsurface[:,0]=np.min(np.min(Lsurface))
-maxL=np.max(np.max(Lsurface))
-Lmin=-2.2
-Lsurface[Lsurface<Lmin]=Lmin
-p=ax.imshow(np.log10(-(Lsurface-maxL)),extent=[sbarvec[0], sbarvec[-1],np.log10(alpvec[0]), np.log10(alpvec[-1])], aspect='equal',origin='lower',interpolation='none')#,cmap='viridis')
-X, Y = np.meshgrid(sbarvec,np.log10(alpvec))
-# ax.set_xscale('log')
-# ax.contour(X, Y, np.log10(-(Lsurface-maxL)),levels = 20,colors=('w',),linestyles=('--',),linewidths=(5,))
-ax.set_title(donorstr+r' $-L=-\sum_i \log P(n_i,n\prime_i)$')#' \bar{s}_{opt}='+str(np.load(path+'optsbar.npy').flatten()[0])+r' \log\alpha_{opt}='+str(np.log10(np.load(path+'optalp.npy').flatten()[0]))+r'$')
-print(str(np.max(Lsurface[Lsurface!=0.])))
-
-# ax.scatter(np.load(path+'optsbar.npy').flatten()[0],np.log10(np.load(path+'optalp.npy').flatten()[0]),marker='o',c='w',s=500)
-# optinds=np.unravel_index(np.argmin(np.log10(-Lsurface)),(len(sbarvec),len(alpvec)))
-# print(optinds)
-# ax.scatter(sbarvec[optinds[0]],np.log10(alpvec[optinds[1]]),marker='o',c='k',s=300)
-pl.colorbar(p)
-
-ax.set_ylabel(r'$\alpha$')
-ax.set_xlabel(r'$\bar{s}$');
-# ax.set_xlim(0,sbarvec[-1])
-ax.set_ylim(np.log10(alpvec[0]),0)
-ax.set_aspect('equal')
-# fig.savefig("surface.pdf",format='pdf',dpi=500,bbox_inches='tight')
 # -
 
-fig,ax=pl.subplots(1,2,figsize=(15,15))
-ax[0].plot(range(10))
-ax[1].plot(range(10))
-ax[0].set_aspect('equal')
-ax[1].set_aspect('equal')
 
+# # Centered Gaussian
 
-
-c
-
-# +
 output_path='../../../output/'
 donorstr='S2'
 null_pair=donorstr+'_0_F1_'+donorstr+'_0_F2'
-diff_pair=donorstr+'_0_F1_'+donorstr+'_15_F2'
+for testday in (0,15):
+    diff_pair=donorstr+'_0_F1_'+donorstr+'_'+str(testday)+'_F2'
 
-run_name='diffexpr_pair_'+null_pair+'_v1_ct_1_mt_2_st_cent_gauss_min0_maxinf'
-outpath=output_path+diff_pair+'/'+run_name+'/'
+    run_name='diffexpr_pair_'+null_pair+'_v1_ct_1_mt_2_st_cent_gauss_min0_maxinf'
+    
+    outpath=output_path+diff_pair+'/'+run_name+'/'
 
-#Assemble grid
-alpvec=np.load(outpath+'alpvec.npy')
-sbarvec_p=np.load(outpath+'sbarvec_p.npy')
-# sbarvec_p=np.linspace(0.1,5.,20)
-LSurfacestore=np.zeros((len(alpvec),len(sbarvec_p)))
-nit_list=np.zeros((len(alpvec),len(sbarvec_p)))
-shiftMtr=np.zeros((len(alpvec),len(sbarvec_p)))
-Zstore=np.zeros((len(alpvec),len(sbarvec_p)))
-Zdashstore=np.zeros((len(alpvec),len(sbarvec_p)))
-time_elapsed=np.zeros((len(alpvec),len(sbarvec_p)))
+    #Assemble grid
+    alpvec=np.load(outpath+'alpvec.npy')
+    sbarvec_p=np.load(outpath+'sbarvec_p.npy')
+    # sbarvec_p=np.linspace(0.1,5.,20)
+    LSurfacestore=np.zeros((len(alpvec),len(sbarvec_p)))
+    nit_list=np.zeros((len(alpvec),len(sbarvec_p)))
+    shiftMtr=np.zeros((len(alpvec),len(sbarvec_p)))
+    Zstore=np.zeros((len(alpvec),len(sbarvec_p)))
+    Zdashstore=np.zeros((len(alpvec),len(sbarvec_p)))
+    time_elapsed=np.zeros((len(alpvec),len(sbarvec_p)))
 
-for bit,bet in enumerate(sbarvec_p):
-    dim=(slice(None),bit)
-    try:
-        LSurfacestore[dim]=np.load(outpath+'Lsurface'+str(bit)+'.npy')
-        nit_list[dim]=np.load(outpath+'nit_list'+str(bit)+'.npy')
-        shiftMtr[dim]=np.load(outpath+'shift'+str(bit)+'.npy')
-        Zstore[dim]=np.load(outpath+'Zstore'+str(bit)+'.npy')
-        Zdashstore[dim]=np.load(outpath+'Zdashstore'+str(bit)+'.npy')
-        time_elapsed[dim]=np.load(outpath+'time_elapsed'+str(bit)+'.npy')/3600.
-    except:
-        print(bit)
-LSurfacestore=LSurfacestore
-nit_list=nit_list
-shiftMtr=shiftMtr
-Zstore=Zstore
-Zdashstore=Zdashstore
-time_elapsed=time_elapsed
-
-
-#load data
-Lsurface=LSurfacestore#[:,6:]
-minval=-1.95
-Lsurface[Lsurface==0]=minval#np.min(np.min(Lsurface))
-Lsurface[Lsurface<minval]=minval#np.min(np.min(Lsurface))
-
-alpvec=alpvec
-sbarvec=np.log10(sbarvec_p)#[6:])#[4:])
-fig,ax=pl.subplots(1,1,figsize=(10,10))
-maxL=np.max(np.max(Lsurface))
-fac=np.inf
-# fac=1+1e-2
-# Lsurface[Lsurface<fac*maxL]=fac*maxL
-# p=ax.imshow(np.log10(-(Lsurface-maxL)),extent=[sbarvec[0], sbarvec[-1],np.log10(alpvec[0]), np.log10(alpvec[-1])], aspect='equal',origin='lower',interpolation='none')#,cmap='viridis')
-p=ax.imshow(Lsurface,extent=[sbarvec[0], sbarvec[-1],np.log10(alpvec[0]), np.log10(alpvec[-1])], aspect='equal',origin='lower',interpolation='none')#,cmap='viridis')
-X, Y = np.meshgrid(sbarvec,np.log10(alpvec))
-# ax.set_xscale('log')
-ax.contour(X, Y, Lsurface,levels = 5,colors=('w',),linestyles=('--',),linewidths=(5,))
-ax.set_title(donorstr+r' $-L=-\sum_i \log P(n_i,n\prime_i)$')#' \bar{s}_{opt}='+str(np.load(path+'optsbar.npy').flatten()[0])+r' \log\alpha_{opt}='+str(np.log10(np.load(path+'optalp.npy').flatten()[0]))+r'$')
-print(str(np.max(Lsurface[Lsurface!=0.])))
-
-# ax.scatter(np.load(path+'optsbar.npy').flatten()[0],np.log10(np.load(path+'optalp.npy').flatten()[0]),marker='o',c='w',s=500)
-# optinds=np.unravel_index(np.argmin(np.log10(-Lsurface)),(len(sbarvec),len(alpvec)))
-# print(optinds)
-# ax.scatter(sbarvec[optinds[0]],np.log10(alpvec[optinds[1]]),marker='o',c='k',s=300)
-pl.colorbar(p)
-
-ax.set_ylabel(r'$\alpha$')
-ax.set_xlabel(r'$\bar{s}$');
-# ax.set_xlim(0,sbarvec[-1])
-ax.set_ylim(np.log10(alpvec[0]),0)
-ax.set_aspect('equal')
-# fig.savefig("surface.pdf",format='pdf',dpi=500,bbox_inches='tight')
-
-# +
-output_path='../../../output/'
-donorstr='S2'
-null_pair=donorstr+'_0_F1_'+donorstr+'_0_F2'
-diff_pair=donorstr+'_0_F1_'+donorstr+'_15_F2'
-
-run_name='diffexpr_pair_'+null_pair+'_v1_ct_1_mt_2_st_cent_gauss_min0_maxinf'
-outpath=output_path+diff_pair+'/'+run_name+'/'
-
-#Assemble grid
-alpvec=np.load(outpath+'alpvec.npy')
-sbarvec_p=np.load(outpath+'sbarvec_p.npy')
-# sbarvec_p=np.linspace(0.1,5.,20)
-LSurfacestore=np.zeros((len(alpvec),len(sbarvec_p)))
-nit_list=np.zeros((len(alpvec),len(sbarvec_p)))
-shiftMtr=np.zeros((len(alpvec),len(sbarvec_p)))
-Zstore=np.zeros((len(alpvec),len(sbarvec_p)))
-Zdashstore=np.zeros((len(alpvec),len(sbarvec_p)))
-time_elapsed=np.zeros((len(alpvec),len(sbarvec_p)))
-
-for bit,bet in enumerate(sbarvec_p):
-    dim=(slice(None),bit)
-    try:
-        LSurfacestore[dim]=np.load(outpath+'Lsurface'+str(bit)+'.npy')
-        nit_list[dim]=np.load(outpath+'nit_list'+str(bit)+'.npy')
-        shiftMtr[dim]=np.load(outpath+'shift'+str(bit)+'.npy')
-        Zstore[dim]=np.load(outpath+'Zstore'+str(bit)+'.npy')
-        Zdashstore[dim]=np.load(outpath+'Zdashstore'+str(bit)+'.npy')
-        time_elapsed[dim]=np.load(outpath+'time_elapsed'+str(bit)+'.npy')/3600.
-    except:
-        print(bit)
-LSurfacestore=LSurfacestore
-nit_list=nit_list
-shiftMtr=shiftMtr
-Zstore=Zstore
-Zdashstore=Zdashstore
-time_elapsed=time_elapsed
+    for bit,bet in enumerate(sbarvec_p):
+        dim=(slice(None),bit)
+        try:
+            LSurfacestore[dim]=np.load(outpath+'Lsurface'+str(bit)+'.npy')
+            nit_list[dim]=np.load(outpath+'nit_list'+str(bit)+'.npy')
+            shiftMtr[dim]=np.load(outpath+'shift'+str(bit)+'.npy')
+            Zstore[dim]=np.load(outpath+'Zstore'+str(bit)+'.npy')
+            Zdashstore[dim]=np.load(outpath+'Zdashstore'+str(bit)+'.npy')
+            time_elapsed[dim]=np.load(outpath+'time_elapsed'+str(bit)+'.npy')/3600.
+        except:
+            print(bit)
+    LSurfacestore=LSurfacestore
+    nit_list=nit_list
+    shiftMtr=shiftMtr
+    Zstore=Zstore
+    Zdashstore=Zdashstore
+    time_elapsed=time_elapsed
 
 
-#load data
-Lsurface=LSurfacestore[:,6:]
-alpvec=alpvec
-sbarvec=np.log10(sbarvec_p[6:])#[4:])
-fig,ax=pl.subplots(1,1,figsize=(10,10))
-maxL=np.max(np.max(Lsurface[Lsurface!=0]))
-fac=np.inf
-# fac=1+1e-2
-Lsurface[Lsurface<fac*maxL]=fac*maxL
-p=ax.imshow(np.log10(-(Lsurface-maxL)),extent=[sbarvec[0], sbarvec[-1],np.log10(alpvec[0]), np.log10(alpvec[-1])], aspect='equal',origin='lower',interpolation='none')#,cmap='viridis')
-X, Y = np.meshgrid(sbarvec,np.log10(alpvec))
-# ax.set_xscale('log')
-# ax.contour(X, Y, np.log10(-(Lsurface-maxL)),levels = 20,colors=('w',),linestyles=('--',),linewidths=(5,))
-ax.set_title(donorstr+r' $-L=-\sum_i \log P(n_i,n\prime_i)$')#' \bar{s}_{opt}='+str(np.load(path+'optsbar.npy').flatten()[0])+r' \log\alpha_{opt}='+str(np.log10(np.load(path+'optalp.npy').flatten()[0]))+r'$')
-print(str(np.max(Lsurface[Lsurface!=0.])))
+    #load data
+    # Lsurface=LSurfacestore
+    Lsurface=LSurfacestore[:,6:]
+    minval=-1.95
+    Lsurface[Lsurface==0]=minval#np.min(np.min(Lsurface))
+    Lsurface[Lsurface<minval]=minval#np.min(np.min(Lsurface))
 
-# ax.scatter(np.load(path+'optsbar.npy').flatten()[0],np.log10(np.load(path+'optalp.npy').flatten()[0]),marker='o',c='w',s=500)
-# optinds=np.unravel_index(np.argmin(np.log10(-Lsurface)),(len(sbarvec),len(alpvec)))
-# print(optinds)
-# ax.scatter(sbarvec[optinds[0]],np.log10(alpvec[optinds[1]]),marker='o',c='k',s=300)
-pl.colorbar(p)
+    alpvec=alpvec
+    sbarvec=np.log10(sbarvec_p[6:])
+    # sbarvec=np.log10(sbarvec_p)
+    X, Y = np.meshgrid(sbarvec,np.log10(alpvec))
 
-ax.set_ylabel(r'$\alpha$')
-ax.set_xlabel(r'$\bar{s}$');
-# ax.set_xlim(0,sbarvec[-1])
-ax.set_ylim(np.log10(alpvec[0]),0)
-ax.set_aspect('equal')
-# fig.savefig("surface.pdf",format='pdf',dpi=500,bbox_inches='tight')
+    fig,ax=pl.subplots(1,2,figsize=(20,10))
 
-# +
-#load data
-Lsurface=LSurfacestore[:20,:]
-sbarvec=np.log10(sbarvec_p[:20])
-alpvec=np.log10(alpvec[:20])
-# sbarvec=sbarvec_p
-fig,ax=pl.subplots(1,1,figsize=(10,10))
-# Lsurface[:,0]=np.min(np.min(Lsurface))
-maxL=np.max(np.max(Lsurface))
-Lmin=-2.2
-Lsurface[Lsurface<Lmin]=Lmin
-p=ax.imshow(np.log10(-(Lsurface-maxL)),extent=[sbarvec[0], sbarvec[-1],np.log10(alpvec[0]), np.log10(alpvec[-1])], aspect='equal',origin='lower',interpolation='none')#,cmap='viridis')
-X, Y = np.meshgrid(sbarvec,np.log10(alpvec))
-# ax.set_xscale('log')
-# ax.contour(X, Y, np.log10(-(Lsurface-maxL)),levels = 20,colors=('w',),linestyles=('--',),linewidths=(5,))
-ax.set_title(donorstr+r' $-L=-\sum_i \log P(n_i,n\prime_i)$')#' \bar{s}_{opt}='+str(np.load(path+'optsbar.npy').flatten()[0])+r' \log\alpha_{opt}='+str(np.log10(np.load(path+'optalp.npy').flatten()[0]))+r'$')
-print(str(np.max(Lsurface[Lsurface!=0.])))
+    maxL=np.max(np.max(Lsurface))
+    p=ax[0].imshow(Lsurface,extent=[sbarvec[0], sbarvec[-1],np.log10(alpvec[0]), np.log10(alpvec[-1])], aspect='auto',origin='lower',interpolation='none')#,cmap='viridis')
+    ax[0].contour(X, Y, Lsurface,levels = 5,colors=('w',),linestyles=('--',),linewidths=(5,))
+    pl.colorbar(p,ax=ax[0])
+    ax[0].set_ylabel(r'$\alpha$')
+    ax[0].set_xlabel(r'$\bar{s}$');
+    ax[0].set_ylim(np.log10(alpvec[0]),0)
+    ax[0].set_title(r"$\langle \mathcal{L} \rangle$")
+    # ax[0].set_aspect('equal')
 
-# ax.scatter(np.load(path+'optsbar.npy').flatten()[0],np.log10(np.load(path+'optalp.npy').flatten()[0]),marker='o',c='w',s=500)
-# optinds=np.unravel_index(np.argmin(np.log10(-Lsurface)),(len(sbarvec),len(alpvec)))
-# print(optinds)
-# ax.scatter(sbarvec[optinds[0]],np.log10(alpvec[optinds[1]]),marker='o',c='k',s=300)
-pl.colorbar(p)
+    fac=np.inf
+    fac=1+1e-2
+    Lsurface[Lsurface<fac*maxL]=fac*maxL
+    p2=ax[1].imshow(np.log10(-(Lsurface-maxL)),extent=[sbarvec[0], sbarvec[-1],np.log10(alpvec[0]), np.log10(alpvec[-1])], aspect='auto',origin='lower',interpolation='none')#,cmap='viridis')
+    pl.colorbar(p2,ax=ax[1])
+    ax[1].set_ylabel(r'$\alpha$')
+    ax[1].set_xlabel(r'$\bar{s}$');
+    ax[1].set_ylim(np.log10(alpvec[0]),0)
+    ax[1].set_title(r"$\log_{10}\left(\langle \mathcal{L} \rangle -\langle \mathcal{L} \rangle_{\textrm{max}} \right)$") 
+    fig.suptitle(run_name.split('_')+['0-'+str(testday)],y=1.02)
 
-ax.set_ylabel(r'$\alpha$')
-ax.set_xlabel(r'$\bar{s}$');
-# ax.set_xlim(0,sbarvec[-1])
-ax.set_ylim(np.log10(alpvec[0]),0)
-ax.set_aspect('equal')
-# fig.savefig("surface.pdf",format='pdf',dpi=500,bbox_inches='tight')
+    if testday==15:
+        opt_paras=np.load(outpath+'opt_diffexpr_paras.npy')
+        struct=np.load(outpath+'diffexpr_outstruct.npy')
+        print(struct)
+#         print(opt_paras)
+        ax[1].plot([np.log10(opt_paras[1])],[np.log10(opt_paras[0])],'ko',ms=10)
+        opt_paras=np.load(outpath+'opt_diffexpr_paras_Nelder.npy')
+#         print(opt_paras)
+        struct=np.load(outpath+'diffexpr_outstruct_Nelder.npy')
+        print(struct)
+        
+        ax[1].plot([np.log10(opt_paras[1])],[np.log10(opt_paras[0])],'kx',ms=10)
 
-# +
-#load data
-Lsurface=LSurfacestore
-sbarvec=np.log10(sbarvec_p)
-# sbarvec=sbarvec_p
-fig,ax=pl.subplots(1,1,figsize=(10,10))
-# Lsurface[:,0]=np.min(np.min(Lsurface))
-maxL=np.max(np.max(Lsurface))
-Lmin=-2.2
-Lsurface[Lsurface<Lmin]=Lmin
-p=ax.imshow(np.log10(-(Lsurface-maxL)),extent=[sbarvec[0], sbarvec[-1],np.log10(alpvec[0]), np.log10(alpvec[-1])], aspect='equal',origin='lower',interpolation='none')#,cmap='viridis')
-X, Y = np.meshgrid(sbarvec,np.log10(alpvec))
-# ax.set_xscale('log')
-# ax.contour(X, Y, np.log10(-(Lsurface-maxL)),levels = 20,colors=('w',),linestyles=('--',),linewidths=(5,))
-ax.set_title(donorstr+r' $-L=-\sum_i \log P(n_i,n\prime_i)$')#' \bar{s}_{opt}='+str(np.load(path+'optsbar.npy').flatten()[0])+r' \log\alpha_{opt}='+str(np.log10(np.load(path+'optalp.npy').flatten()[0]))+r'$')
-print(str(np.max(Lsurface[Lsurface!=0.])))
+    # ax[1].set_aspect('equal')
+    fig.tight_layout()
+    # fig.savefig("surface.pdf",format='pdf',dpi=500,bbox_inches='tight')
+    print(str(np.max(Lsurface[Lsurface!=0.])))
 
-# ax.scatter(np.load(path+'optsbar.npy').flatten()[0],np.log10(np.load(path+'optalp.npy').flatten()[0]),marker='o',c='w',s=500)
-# optinds=np.unravel_index(np.argmin(np.log10(-Lsurface)),(len(sbarvec),len(alpvec)))
-# print(optinds)
-# ax.scatter(sbarvec[optinds[0]],np.log10(alpvec[optinds[1]]),marker='o',c='k',s=300)
-pl.colorbar(p)
+?
+?
+?
+?
+?
+?
+?
+?
+?
+?
+?
+?
+?
+?
+?
+?
+?
+?
+?
+?
+?
 
-ax.set_ylabel(r'$\alpha$')
-ax.set_xlabel(r'$\bar{s}$');
-# ax.set_xlim(0,sbarvec[-1])
-ax.set_ylim(np.log10(alpvec[0]),0)
-ax.set_aspect('equal')
-# fig.savefig("surface.pdf",format='pdf',dpi=500,bbox_inches='tight')
-# -
+
+
+# Potentially useful code:
 
 donorstrvec=['P1','P2','Q1','Q2','S1','S2']
 from matplotlib import rc

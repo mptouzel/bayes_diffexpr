@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.16 (MiKTeX 2.9) (preloaded format=pdflatex 2015.12.2)  28 JUN 2019 17:20
+This is pdfTeX, Version 3.14159265-2.6-1.40.16 (MiKTeX 2.9) (preloaded format=pdflatex 2015.12.2)  19 AUG 2019 12:58
 entering extended mode
 **C:/Users/mptouzel/Dropbox/scripts/Projects/immuno/diffexpr/bayes_diffexpr/paper/diffexpr_MAIN_TEXT
 (C:/Users/mptouzel/Dropbox/scripts/Projects/immuno/diffexpr/bayes_diffexpr/paper/diffexpr_MAIN_TEXT.tex
@@ -460,215 +460,214 @@ LaTeX Font Info:    Try loading font information for U+esint on input line 111.
  ("C:\Program Files (x86)\MiKTeX 2.9\tex\latex\esint\uesint.fd"
 File: uesint.fd 
 ) [1{C:/Users/mptouzel/AppData/Local/MiKTeX/2.9/pdftex/config/pdftex.map}]
-Overfull \hbox (12.7718pt too wide) in paragraph at lines 139--139
+Overfull \hbox (12.7718pt too wide) in paragraph at lines 144--144
 [] 
  []
 
 
-LaTeX Warning: Reference `fig:constr_compare' on page 2 undefined on input line 141.
+LaTeX Warning: Reference `fig:constr_compare' on page 2 undefined on input line 146.
 
 
-LaTeX Warning: Reference `fig:constr' on page 2 undefined on input line 147.
+LaTeX Warning: Reference `fig:constr' on page 2 undefined on input line 152.
 
 [2] <fig1_nullmodel_v3.pdf, id=217, 226.5524pt x 348.86035pt>
 File: fig1_nullmodel_v3.pdf Graphic file (type pdf)
  <use fig1_nullmodel_v3.pdf>
-Package pdftex.def Info: fig1_nullmodel_v3.pdf used on input line 225.
+Package pdftex.def Info: fig1_nullmodel_v3.pdf used on input line 230.
 (pdftex.def)             Requested size: 226.55183pt x 348.8595pt.
  <fig1_nullmodel_v5.pdf, id=220, 265.08836pt x 90.46838pt>
 File: fig1_nullmodel_v5.pdf Graphic file (type pdf)
  <use fig1_nullmodel_v5.pdf>
-Package pdftex.def Info: fig1_nullmodel_v5.pdf used on input line 237.
+Package pdftex.def Info: fig1_nullmodel_v5.pdf used on input line 242.
 (pdftex.def)             Requested size: 265.0877pt x 90.46815pt.
 
-Overfull \hbox (19.0877pt too wide) in paragraph at lines 237--239
+Overfull \hbox (19.0877pt too wide) in paragraph at lines 242--244
  [][] 
  []
 
 
-LaTeX Warning: Reference `fig:modelstruct' on page 3 undefined on input line 241.
+LaTeX Warning: Reference `fig:modelstruct' on page 3 undefined on input line 246.
 
 
-LaTeX Warning: Reference `fig:modelstruct' on page 3 undefined on input line 241.
+LaTeX Warning: Reference `fig:modelstruct' on page 3 undefined on input line 246.
 
 <fig3_learnednullparas.pdf, id=221, 270.02881pt x 382.20605pt>
 File: fig3_learnednullparas.pdf Graphic file (type pdf)
  <use fig3_learnednullparas.pdf>
-Package pdftex.def Info: fig3_learnednullparas.pdf used on input line 246.
+Package pdftex.def Info: fig3_learnednullparas.pdf used on input line 251.
 (pdftex.def)             Requested size: 270.02814pt x 382.20511pt.
 
-Overfull \hbox (24.02814pt too wide) in paragraph at lines 246--248
+Overfull \hbox (24.02814pt too wide) in paragraph at lines 251--253
  [][] 
  []
 
 <conditional_marginal.png, id=222, 633.36626pt x 321.2pt>
 File: conditional_marginal.png Graphic file (type png)
  <use conditional_marginal.png>
-Package pdftex.def Info: conditional_marginal.png used on input line 254.
+Package pdftex.def Info: conditional_marginal.png used on input line 259.
 (pdftex.def)             Requested size: 246.0pt x 124.75287pt.
  <fig4_div_estimates.pdf, id=223, 272.03632pt x 158.16891pt>
 File: fig4_div_estimates.pdf Graphic file (type pdf)
  <use fig4_div_estimates.pdf>
-Package pdftex.def Info: fig4_div_estimates.pdf used on input line 263.
+Package pdftex.def Info: fig4_div_estimates.pdf used on input line 268.
 (pdftex.def)             Requested size: 272.03564pt x 158.16852pt.
 
-Overfull \hbox (26.03564pt too wide) in paragraph at lines 263--265
+Overfull \hbox (26.03564pt too wide) in paragraph at lines 268--270
  [][] 
  []
 
 [3]
 
-LaTeX Warning: A float is stuck (cannot be placed); try class option [floatfix] on input line 289.
+LaTeX Warning: A float is stuck (cannot be placed); try class option [floatfix] on input line 294.
 
 [4 <./fig1_nullmodel_v3.pdf> <./fig1_nullmodel_v5.pdf>]
 
-LaTeX Warning: A float is stuck (cannot be placed); try class option [floatfix] on input line 305.
+LaTeX Warning: A float is stuck (cannot be placed); try class option [floatfix] on input line 307.
 
 [5 <./fig3_learnednullparas.pdf> <./conditional_marginal.png> <./fig4_div_estimates.pdf>]
-Overfull \hbox (18.59087pt too wide) in paragraph at lines 397--397
+Overfull \hbox (18.59087pt too wide) in paragraph at lines 405--405
 [] 
  []
 
 
 Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `math shift' on input line 432.
+(hyperref)                removing `math shift' on input line 440.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `\rho' on input line 432.
+(hyperref)                removing `\rho' on input line 440.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `math shift' on input line 432.
+(hyperref)                removing `math shift' on input line 440.
 
 [6] <fig5_diffexpr_eval.pdf, id=739, 219.86441pt x 436.72661pt>
 File: fig5_diffexpr_eval.pdf Graphic file (type pdf)
  <use fig5_diffexpr_eval.pdf>
-Package pdftex.def Info: fig5_diffexpr_eval.pdf used on input line 447.
+Package pdftex.def Info: fig5_diffexpr_eval.pdf used on input line 455.
 (pdftex.def)             Requested size: 219.86386pt x 436.72552pt.
 
 
-LaTeX Warning: Float too large for page by 5.62233pt on input line 459.
+LaTeX Warning: Float too large for page by 5.62233pt on input line 467.
 
-LaTeX Font Info:    Try loading font information for U+bbold on input line 466.
+LaTeX Font Info:    Try loading font information for U+bbold on input line 474.
 (C:\Users\mptouzel\AppData\Roaming\MiKTeX\2.9\tex\latex\bbold\ubbold.fd) [7 <./fig5_diffexpr_eval.pdf>]
-Overfull \hbox (15.09666pt too wide) in paragraph at lines 474--476
+Overfull \hbox (15.09666pt too wide) in paragraph at lines 482--484
 \T1/cmr/m/n/10 so that $[] \OT1/cmr/m/n/10 = [][] [][] d\OML/cmm/m/it/10 s\OT1/cmr/m/n/10 (\OML/cmm/m/it/10 s\OMS/cmsy/m/n/10 j\OML/cmm/m/it/10 n; n[]; []\OT1/cmr/m/n/10 )[] =
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 482--484
+Underfull \hbox (badness 10000) in paragraph at lines 490--492
 \T1/cmr/m/n/10 The lat-ter in-te-gral is com-puted nu-mer-i-
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 482--484
+Underfull \hbox (badness 10000) in paragraph at lines 490--492
 \T1/cmr/m/n/10 cally from the model us-ing $\OML/cmm/m/it/10 \OT1/cmr/m/n/10 (\OML/cmm/m/it/10 s\OMS/cmsy/m/n/10 j\OML/cmm/m/it/10 n; n[]; []\OT1/cmr/m/n/10 ) =
  []
 
 
-Underfull \hbox (badness 2401) in paragraph at lines 482--484
+Underfull \hbox (badness 2401) in paragraph at lines 490--492
 \OML/cmm/m/it/10 P\OT1/cmr/m/n/10 (\OML/cmm/m/it/10 n; n[]; s\OMS/cmsy/m/n/10 j[]\OT1/cmr/m/n/10 )\OML/cmm/m/it/10 = [][] P\OT1/cmr/m/n/10 (\OML/cmm/m/it/10 n; n[]; s\OMS/cmsy/m/n/10 j[]\OT1/cmr/m/n/10 )d\OML/cmm/m/it/10 s$\T1/cmr/m/n/10 . $\OML/cmm/m/it/10 Q$ \T1/cmr/m/n/10 is max-i-mized
  []
 
-
-Underfull \hbox (badness 1472) in paragraph at lines 644--645
+[8]
+Underfull \hbox (badness 1472) in paragraph at lines 652--653
  []\T1/cmr/m/n/10 used repli-cates to de-ter-mine ex-per-i-men-tal
  []
 
-[8]
-Underfull \hbox (badness 2818) in paragraph at lines 646--647
+
+Underfull \hbox (badness 2818) in paragraph at lines 654--655
  []\T1/cmr/m/n/10 used to de-ter-mine sig-nif-i-cantly ex-panded
  []
 
-[9]
-Overfull \hbox (13.0272pt too wide) detected at line 744
+[9] [10]
+Overfull \hbox (13.0272pt too wide) detected at line 752
 []\OT1/cmr/m/n/10 1 = \OML/cmm/m/it/10 N\OMS/cmsy/m/n/10 h\OML/cmm/m/it/10 f\OMS/cmsy/m/n/10 i[] \OT1/cmr/m/n/10 = \OML/cmm/m/it/10 P\OT1/cmr/m/n/10 (0\OML/cmm/m/it/10 ; \OT1/cmr/m/n/10 0)\OML/cmm/m/it/10 N\OMS/cmsy/m/n/10 h\OML/cmm/m/it/10 f\OMS/cmsy/m/n/10 i[] \OT1/cmr/m/n/10 + []\OMS/cmsy/m/n/10 h\OML/cmm/m/it/10 f\OMS/cmsy/m/n/10 i[] \OML/cmm/m/it/10 :
  []
 
-[10]
 
-LaTeX Warning: Reference `fig:Ps' on page 11 undefined on input line 755.
+LaTeX Warning: Reference `fig:Ps' on page 11 undefined on input line 763.
 
 
-LaTeX Warning: Reference `Tbl1:Priors' on page 11 undefined on input line 755.
+LaTeX Warning: Reference `Tbl1:Priors' on page 11 undefined on input line 763.
 
-<NB_Pois_nullpara_fits.pdf, id=828, 1117.63863pt x 279.7081pt>
+<NB_Pois_nullpara_fits.pdf, id=827, 1117.63863pt x 279.7081pt>
 File: NB_Pois_nullpara_fits.pdf Graphic file (type pdf)
  <use NB_Pois_nullpara_fits.pdf>
-Package pdftex.def Info: NB_Pois_nullpara_fits.pdf used on input line 761.
+Package pdftex.def Info: NB_Pois_nullpara_fits.pdf used on input line 769.
 (pdftex.def)             Requested size: 246.0pt x 61.56584pt.
 
-Underfull \hbox (badness 2409) in paragraph at lines 775--776
+Underfull \hbox (badness 2409) in paragraph at lines 783--784
 \T1/cmr/m/n/10 avoid sam-pling the nu-mer-ous clones that pro-duce
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 779--780
+Underfull \hbox (badness 10000) in paragraph at lines 787--788
 []\T1/cmr/m/n/10 We com-pute the mass in $\OML/cmm/m/it/10 D$ \T1/cmr/m/n/10 as $\OML/cmm/m/it/10 P[] \OT1/cmr/m/n/10 =
  []
 
-
-Underfull \hbox (badness 5119) in paragraph at lines 788--790
+[11 <./NB_Pois_nullpara_fits.pdf>]
+Underfull \hbox (badness 5119) in paragraph at lines 796--798
 \T1/cmr/m/n/10 such that the sec-ond con-di-tion's fre-quen-cies are
  []
 
-[11 <./NB_Pois_nullpara_fits.pdf>]
-Overfull \hbox (91.62025pt too wide) in paragraph at lines 795--795
+
+Overfull \hbox (91.62025pt too wide) in paragraph at lines 803--803
 [] 
  []
 
 
-Overfull \hbox (71.30281pt too wide) in paragraph at lines 799--799
+Overfull \hbox (71.30281pt too wide) in paragraph at lines 807--807
 [] 
  []
 
 
-Overfull \hbox (6.21483pt too wide) in paragraph at lines 807--807
+Overfull \hbox (6.21483pt too wide) in paragraph at lines 815--815
 [] 
  []
 
 
-Underfull \hbox (badness 1701) in paragraph at lines 807--809
+Underfull \hbox (badness 1701) in paragraph at lines 815--817
 \OML/cmm/m/it/10 n[] > \OT1/cmr/m/n/10 0)$\T1/cmr/m/n/10 . The shift en-ters in $\OML/cmm/m/it/10 P\OT1/cmr/m/n/10 (\OML/cmm/m/it/10 n[]; n[]; f; s\OT1/cmr/m/n/10 ) =
  []
 
 
-Overfull \hbox (35.39958pt too wide) in paragraph at lines 812--812
+Overfull \hbox (35.39958pt too wide) in paragraph at lines 820--820
 [] 
  []
 
 
-Overfull \hbox (2.02438pt too wide) in paragraph at lines 816--816
+Overfull \hbox (2.02438pt too wide) in paragraph at lines 824--824
 [] 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 819--821
+Underfull \hbox (badness 10000) in paragraph at lines 827--829
 []\T1/cmr/m/n/10 Alternatively, the av-er-age can be com-
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 819--821
+Underfull \hbox (badness 10000) in paragraph at lines 827--829
 \T1/cmr/m/n/10 puted over the data di-rectly, via $\OMS/cmsy/m/n/10 h\OML/cmm/m/it/10 fe[]\OMS/cmsy/m/n/10 i \OT1/cmr/m/n/10 =
  []
 
 
-Underfull \hbox (badness 6995) in paragraph at lines 819--821
+Underfull \hbox (badness 6995) in paragraph at lines 827--829
 [] [][]\OMS/cmsy/m/n/10 h\OML/cmm/m/it/10 fe[]\OMS/cmsy/m/n/10 i[]$\T1/cmr/m/n/10 . The should con-
  []
 
 
-Underfull \hbox (badness 1067) in paragraph at lines 870--871
+Underfull \hbox (badness 1067) in paragraph at lines 878--879
 \T1/cmr/m/n/10 pro-duced with any num-ber of cells, so cell counts
  []
 
-
-Overfull \hbox (11.19965pt too wide) in paragraph at lines 873--873
+[12]
+Overfull \hbox (11.19965pt too wide) in paragraph at lines 881--881
 [] 
  []
 
-[12] (diffexpr_MAIN_TEXT.bbl
+(diffexpr_MAIN_TEXT.bbl
 Underfull \hbox (badness 3758) in paragraph at lines 82--86
  []\T1/cmr/m/n/9 Thierry Mora and Alek-san-dra Wal-czak, ``Quan-ti-fy-
  []
@@ -679,27 +678,27 @@ Underfull \hbox (badness 1924) in paragraph at lines 82--86
  []
 
 ) [13]
-Package atveryend Info: Empty hook `AfterLastShipout' on input line 898.
+Package atveryend Info: Empty hook `AfterLastShipout' on input line 906.
  (diffexpr_MAIN_TEXT.aux)
-Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 898.
-Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 898.
+Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 906.
+Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 906.
 Package rerunfilecheck Info: File `diffexpr_MAIN_TEXT.out' has not changed.
-(rerunfilecheck)             Checksum: D61932DE7A9F8E3F709668C17B504CAD;9060.
+(rerunfilecheck)             Checksum: 7177F3E79D851677029567BCD672BB09;9101.
 
 
 LaTeX Warning: There were undefined references.
 
  ) 
 Here is how much of TeX's memory you used:
- 13416 strings out of 493673
- 183013 string characters out of 3141521
- 321370 words of memory out of 3000000
- 16459 multiletter control sequences out of 15000+200000
+ 13418 strings out of 493673
+ 183033 string characters out of 3141521
+ 326264 words of memory out of 3000000
+ 16461 multiletter control sequences out of 15000+200000
  17996 words of font info for 55 fonts, out of 3000000 for 9000
  1025 hyphenation exceptions out of 8191
  42i,18n,48p,1869b,626s stack positions out of 5000i,500n,10000p,200000b,50000s
  <C:\Users\mptouzel\AppData\Local\MiKTeX\2.9\fonts\pk\ljfour\public\bbold\dpi600\bbold10.pk>{C:/Users/mptouzel/AppData/Roaming/MiKTeX/2.9/fonts/enc/dvips/cm-super/cm-super-t1.enc}<C:/Program Files (x86)/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmex10.pfb><C:/Program Files (x86)/MiKTeX 2.9/fonts/type1/public/amsfonts/cmextra/cmex9.pfb><C:/Program Files (x86)/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmmi10.pfb><C:/Program Files (x86)/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmmi12.pfb><C:/Program Files (x86)/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmmi5.pfb><C:/Program Files (x86)/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmmi6.pfb><C:/Program Files (x86)/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmmi7.pfb><C:/Program Files (x86)/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmmi8.pfb><C:/Program Files (x86)/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmmi9.pfb><C:/Program Files (x86)/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmr10.pfb><C:/Program Files (x86)/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmr12.pfb><C:/Program Files (x86)/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmr5.pfb><C:/Program Files (x86)/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmr6.pfb><C:/Program Files (x86)/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmr7.pfb><C:/Program Files (x86)/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmr8.pfb><C:/Program Files (x86)/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmr9.pfb><C:/Program Files (x86)/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmsy10.pfb><C:/Program Files (x86)/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmsy5.pfb><C:/Program Files (x86)/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmsy6.pfb><C:/Program Files (x86)/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmsy7.pfb><C:/Program Files (x86)/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmsy9.pfb><C:/Program Files (x86)/MiKTeX 2.9/fonts/type1/public/esint/esint10.pfb><C:/Users/mptouzel/AppData/Roaming/MiKTeX/2.9/fonts/type1/public/cm-super/sfbx0900.pfb><C:/Users/mptouzel/AppData/Roaming/MiKTeX/2.9/fonts/type1/public/cm-super/sfbx1000.pfb><C:/Users/mptouzel/AppData/Roaming/MiKTeX/2.9/fonts/type1/public/cm-super/sfbx1200.pfb><C:/Users/mptouzel/AppData/Roaming/MiKTeX/2.9/fonts/type1/public/cm-super/sfrm0500.pfb><C:/Users/mptouzel/AppData/Roaming/MiKTeX/2.9/fonts/type1/public/cm-super/sfrm0600.pfb><C:/Users/mptouzel/AppData/Roaming/MiKTeX/2.9/fonts/type1/public/cm-super/sfrm0700.pfb><C:/Users/mptouzel/AppData/Roaming/MiKTeX/2.9/fonts/type1/public/cm-super/sfrm0900.pfb><C:/Users/mptouzel/AppData/Roaming/MiKTeX/2.9/fonts/type1/public/cm-super/sfrm1000.pfb><C:/Users/mptouzel/AppData/Roaming/MiKTeX/2.9/fonts/type1/public/cm-super/sfti0900.pfb><C:/Users/mptouzel/AppData/Roaming/MiKTeX/2.9/fonts/type1/public/cm-super/sfti1000.pfb>
-Output written on diffexpr_MAIN_TEXT.pdf (13 pages, 3208288 bytes).
+Output written on diffexpr_MAIN_TEXT.pdf (13 pages, 3208598 bytes).
 PDF statistics:
  1042 PDF objects out of 1200 (max. 8388607)
  115 named destinations out of 1000 (max. 500000)

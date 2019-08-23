@@ -1,6 +1,7 @@
 import numpy as np
 from lib.model import *
 from scipy.optimize import minimize
+import numpy.polynomial.polynomial as poly
 
 def callback(paras,prtfn,nparas): 
     '''prints iteration info. called by scipy.minimize'''
@@ -114,8 +115,9 @@ def get_diffexpr_likelihood(diffexpr_paras,null_paras,sparse_rep,acq_model_type,
     if output_unseen:
         return np.dot(sparse_rep_counts/float(np.sum(sparse_rep_counts)),log_Pn1n2-np.log(1-Pn0n0)), Pn0n0
     else:
-        return np.dot(sparse_rep_counts/float(np.sum(sparse_rep_counts)),log_Pn1n2-np.log(1-Pn0n0))             
-
+        #return np.log10(-1.894-np.dot(sparse_rep_counts/float(np.sum(sparse_rep_counts)),log_Pn1n2-np.log(1-Pn0n0))) #regularizes algorthim for donor S2
+        return np.dot(sparse_rep_counts/float(np.sum(sparse_rep_counts)),log_Pn1n2-np.log(1-Pn0n0))
+    
 def diffexpr_constr_fn(diffexpr_paras,null_paras,sparse_rep,acq_model_type,logfvec,logfvecwide,svec,smax,s_step,Ps_type,f2s_step,logPn1_f,logrhofvec):
     
     logPsvec = get_logPs_pm(diffexpr_paras[:-1],smax,s_step,Ps_type)
@@ -188,17 +190,130 @@ def learn_diffexpr_model(init_paras,parameter_labels,null_paras,sparse_rep,acq_m
     condict={'type':'eq','fun':diffexpr_constr_fn,'args': (null_paras,sparse_rep,acq_model_type,logfvec,logfvecwide,svec,smax,s_step,Ps_type,f2s_step,logPn1_f,logrhofvec)}
     
     nullfunctol=1e-6
-    nullmaxiter=2
+    nullmaxiter=300
     header=['Iter']+parameter_labels
     prtfn(''.join(['{'+str(it)+':9s} ' for it in range(len(init_paras)+1)]).format(*header))
     global curr_iter
     curr_iter = 1
     callbackp=partial(callback,prtfn=prtfn,nparas=len(init_paras))
-    outstruct = minimize(partialobjfunc, init_paras, method='SLSQP', callback=callbackp, constraints=condict,options={'ftol':nullfunctol ,'disp': True,'maxiter':nullmaxiter})
+    method_name='SLSQP' #handles constraints
+    outstruct = minimize(partialobjfunc, init_paras, method=method_name, callback=callbackp, constraints=condict,options={'ftol':nullfunctol ,'disp': True,'maxiter':nullmaxiter})
     constr_value=diffexpr_constr_fn(outstruct.x,null_paras,sparse_rep,acq_model_type,logfvec,logfvecwide,svec,smax,s_step,Ps_type,f2s_step,logPn1_f,logrhofvec)
     
     return outstruct,constr_value
 
+def MSError_fcn(para,data,diag_pair):
+    M=np.diag(diag_pair) #precision matrix
+    M[0,1]=para
+    M[1,0]=para
+    res=0
+    for val in data.itertuples():
+        res+=np.power(val.y-(-M.dot(val.x).dot(val.x)/2),2)
+    return res/len(data)
+
+def eigsorted(cov):
+    vals, vecs = np.linalg.eigh(cov)
+    order = vals.argsort()[::-1]
+    return vals[order], vecs[:,order]
+
+def get_fisherinfo_diffexpr_model(outstruct,null_paras,sparse_rep,acq_model_type,logfvec,logfvecwide,\
+                         svec,smax,s_step,Ps_type,f2s_step,logPn1_f,logrhofvec,prtfn=print): #constraint type 1 gives only low error modes, see paper for details.
+    '''
+    get linearized constraint equation:
+        -at p_opt, estimate derivatives dC/dp=(C(eps/2)-C(-eps/2)/eps in each of p=p1,p2,p3 directions, -eps/2, +eps/2, iterative procedure to find eps: half eps until (change in dC)/dC falls below threshold
+        -parametrize grid: get grid data from uvec=eps_u*(-2,-1,0,1,2)*du,vvec=eps_v*(-2,-1,0,1,2)*dv
+        -map grid to p-space using normal eqn: dC(p_opt).(p-p_opt)=0: (p1,p2,p3)=p_opt + (u/(1-dC/dp1),v/(1-dC/dp2),(0-dC/dp1*u/(1-dC/dp1)-dC/dp1*v/(1-dC/dp2))*dp3/dC)
+        -eval likelihood at grid
+        -obtain quadrative fit of likelihoods in (u,v) as 2-form
+        -invert and diagonalize to get u and v eigenvectors and two eigenvalues of covariance matrix
+        -map eigenvalue*eigenvector in (u,v) space to p-space using above mapping
+        -ignore 3rd (shift) component
+    '''
+    
+    _,_,sparse_rep_counts,_,_,_,_=sparse_rep
+    Nclones=np.sum(sparse_rep_counts)
+    
+    opt_paras=outstruct.x
+    partialdiffexpr_constr_fn=partial(diffexpr_constr_fn, null_paras=null_paras,sparse_rep=sparse_rep,acq_model_type=acq_model_type,logfvec=logfvec,logfvecwide=logfvecwide,svec=svec,smax=smax,s_step=s_step,Ps_type=Ps_type,f2s_step=f2s_step,logPn1_f=logPn1_f,logrhofvec=logrhofvec)
+    Cval=partialdiffexpr_constr_fn(opt_paras)
+    
+    partialobjfunc=partial(get_diffexpr_likelihood,null_paras=null_paras,sparse_rep=sparse_rep,acq_model_type=acq_model_type,logfvec=logfvec,logfvecwide=logfvecwide,\
+                                                    svec=svec,smax=smax,s_step=s_step,Ps_type=Ps_type,f2s_step=f2s_step,logPn1_f=logPn1_f,logrhofvec=logrhofvec)
+    Lval=partialobjfunc(opt_paras)
+    print('L:'+str(Lval)+' C:'+str(Cval))
+    
+    eps_tol=1e-6
+    gradC=[]
+    for it,para in enumerate(opt_paras):
+        eps=para/10
+        dCdpold=0
+        paras_tmp_plus=deepcopy(opt_paras)
+        paras_tmp_minus=deepcopy(opt_paras)
+        paras_tmp_plus[it]+=eps/2
+        paras_tmp_minus[it]-=eps/2
+        dCdp=(partialdiffexpr_constr_fn(paras_tmp_plus)-partialdiffexpr_constr_fn(paras_tmp_minus))/eps
+        while np.fabs((dCdp-dCdpold)/dCdp)>eps_tol:
+            dCdpold=deepcopy(dCdp)
+            eps/=2
+            paras_tmp_plus=deepcopy(opt_paras)
+            paras_tmp_minus=deepcopy(opt_paras)
+            paras_tmp_plus[it]+=eps/2
+            paras_tmp_minus[it]-=eps/2
+            dCdp=(partialdiffexpr_constr_fn(paras_tmp_plus)-partialdiffexpr_constr_fn(paras_tmp_minus))/eps
+            print((dCdp-dCdpold)/dCdp)
+        gradC.append(dCdp)
+    nvec=gradC/np.linalg.norm(gradC) #normal vector
+    
+    e_u=np.asarray([nvec[1],-nvec[0],0])
+    e_u=e_u/np.linalg.norm(e_u)    
+    e_v=np.cross(nvec,e_u)
+    #e_v*=-1
+    eps_u=1e-2
+    eps_v=1e-2
+    eps_vec=(eps_u,eps_v)
+    uvec=eps_u*np.arange(-2,3)
+    vvec=eps_v*np.arange(-2,3)
+    grid_data_u,grid_data_v=np.meshgrid(uvec,vvec)
+    dpara_data=[pair[0]*e_u+pair[1]*e_v for pair in zip(grid_data_u.flatten(),grid_data_v.flatten())]
+    L_data=np.reshape(np.asarray([partialobjfunc(np.asarray(opt_paras)+dpara) for dpara in dpara_data] ),(len(uvec),len(vvec)))*Nclones
+
+    #learn diags
+    coeffs=np.zeros((2,3))
+    cind=2
+    for pit,paravec in enumerate([uvec,vvec]):
+        coeffs[pit,:]=poly.polyfit(paravec-paravec[cind], -(L_data[pit,:]-L_data[pit,cind]), 2)
+        fvals=(coeffs[pit,2]*(paravec-paravec[cind])**2+coeffs[pit,1]*(paravec-paravec[cind])+coeffs[pit,0])
+        print(fvals)
+    diag_entries=2*coeffs[:,2] #correction from taylor
+    
+    #learn off diags
+    para1vec=uvec
+    para2vec=vvec
+    data_df=pd.DataFrame()
+    for pit1,para1 in enumerate(para1vec):
+        for pit2,para2 in enumerate(para2vec):
+            data_df=data_df.append(pd.Series({'x':np.array([para1-para1vec[cind],para2-para2vec[cind]]),'y':-(L_data[pit1,pit2]-L_data[cind,cind])}),ignore_index=True)
+    partial_MSError_fcn=partial(MSError_fcn,data=data_df,diag_pair=diag_entries)
+    initparas=1.
+    outstruct_quad = minimize(partial_MSError_fcn, initparas, method='Nelder-Mead', tol=1e-10,options={'ftol':1e-10 ,'disp': False,'maxiter':200})
+
+    M=np.diag(diag_entries)
+    M[0,1]=outstruct_quad.x
+    M[1,0]=outstruct_quad.x
+    
+    #diagonalize covariance
+    Cov=np.linalg.inv(M)
+    #e_val,e_vec=np.linalg.eig(Cov.T)
+    cov = np.flipud(np.fliplr(Cov)) #fliplr gets coordinate order right
+    vals, vecs = eigsorted(cov)
+    
+    ell_1=np.sqrt(vals[0])*vecs[0]/np.linalg.norm(vecs[0])
+    ell_2=np.sqrt(vals[1])*vecs[1]/np.linalg.norm(vecs[1])
+    
+    ell_1_p=ell_1[0]*e_u+ell_1[1]*e_v
+    ell_2_p=ell_2[0]*e_u+ell_2[1]*e_v
+    
+    return ell_1_p,ell_2_p
 
 #for imposing constraint when running grid search
 def get_shift(logPsvec,null_paras,sparse_rep,acq_model_type,shift,logfvec,logfvecwide,svec,f2s_step,logPn1_f,logrhofvec,tol=1e-3):

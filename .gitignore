@@ -1,4 +1,10 @@
 __pycache__
 .ipynb_checkpoints/
-*.ipynb
-*.npy
+**.ipynb
+**.npy
+**.pdf
+**.swp
+**.lprof
+**.out
+tmp
+**.txt

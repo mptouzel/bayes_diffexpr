@@ -11,9 +11,9 @@ if root_path not in sys.path:
     
 #load local functions
 from lib.proc import get_sparserep,import_data
-from lib.learning import callback,learn_null_model,get_shift,learn_diffexpr_model,get_diffexpr_likelihood
+from lib.learning import callback,learn_null_model,get_shift,learn_diffexpr_model,get_diffexpr_likelihood,get_fisherinfo_diffexpr_model
 from lib.utils.readouts import setup_outpath_and_logs
-from lib.model import get_svec,get_logPn_f,get_logPs_pm,get_rhof
+from lib.model import get_fvec_and_svec,get_logPn_f,get_logPs_pm,get_rhof
 
 #inputs to mkl library used by numpy to parallelize np.dot 
 import ctypes
@@ -33,7 +33,7 @@ def main(null_pair_1,null_pair_2,test_pair_1,test_pair_2,run_index,input_data_pa
     acq_model_type=2 #which P(n|f) model to use (0:NB->Pois,1:Pois->NB,2:NBonly,3:Pois only)
     
     #rhs only, sbar scan for each alpha
-    npoints=20
+    npoints=40
             
     Ps_type='rhs_only'
     #alpvec=np.logspace(-6.,0., 2*npoints)
@@ -57,8 +57,11 @@ def main(null_pair_1,null_pair_2,test_pair_1,test_pair_2,run_index,input_data_pa
     #sbarvec_m=np.linspace(0.1,15,10)
         
     parvernull = 'v1_ct_'+str(constr_type)+'_mt_'+str(acq_model_type) #prefix label for null model data path
-    parvertest = 'v2smax_ct_'+str(constr_type)+'_mt_'+str(acq_model_type)+'_st_'+Ps_type #prefix label for diff expr model data path
-    parvertest = 'v3zoom_ct_'+str(constr_type)+'_mt_'+str(acq_model_type)+'_st_'+Ps_type #prefix label for diff expr model data path
+    parvertest = 'v1_ct_'+str(constr_type)+'_mt_'+str(acq_model_type)+'_st_'+Ps_type #prefix label for diff expr model data path
+
+    
+
+    #parvertest = 'v3zoom_ct_'+str(constr_type)+'_mt_'+str(acq_model_type)+'_st_'+Ps_type #prefix label for diff expr model data path
 
 ######################################Preprocessing###########################################3
 
@@ -216,17 +219,17 @@ def main(null_pair_1,null_pair_2,test_pair_1,test_pair_2,run_index,input_data_pa
     diffexpr=True
     if diffexpr:
         logrhofvec,logfvec = get_rhof(null_paras[0],np.power(10,null_paras[-1]))
+        svec,logfvec,logfvecwide,f2s_step,smax,s_step=get_fvec_and_svec(null_paras,s_step,smax)
+        #svec,logfvecwide,f2s_step,smax,s_step=get_svec(null_paras,s_step,smax)
         dlogfby2=np.diff(logfvec)/2. #1/2 comes from trapezoid integration below
-
-        svec,logfvecwide,f2s_step,smax,s_step=get_svec(null_paras,s_step,smax)
         np.save(outpath+'svec.npy',svec)
         indn1,indn2,sparse_rep_counts,unicountvals_1,unicountvals_2,NreadsI,NreadsII=sparse_rep
         Nsamp=np.sum(sparse_rep_counts)
         logPn1_f=get_logPn_f(unicountvals_1,NreadsI,logfvec,acq_model_type,null_paras)
         
         #flags for 3 remaining code blocks:
-        learn_surface=True
-        polish_estimate=False
+        learn_surface=False
+        polish_estimate=True
         output_table=False
             
         if learn_surface:
@@ -309,7 +312,10 @@ def main(null_pair_1,null_pair_2,test_pair_1,test_pair_2,run_index,input_data_pa
             #2D
             #np.save(outpath+'offset',sbarvec_m)
             
-        if polish_estimate:
+    if polish_estimate:
+        if False:
+            sbarvec_p=np.load(outpath+'sbarvec_p.npy')
+            alpvec=np.load(outpath+'alpvec.npy')
             
             #get max
             dims=(len(alpvec),len(sbarvec_p))
@@ -333,8 +339,7 @@ def main(null_pair_1,null_pair_2,test_pair_1,test_pair_2,run_index,input_data_pa
             parameter_labels+=['shift']
 
             outstruct,constr_value=learn_diffexpr_model(init_paras,parameter_labels,null_paras,sparse_rep,acq_model_type,logfvec,logfvecwide,\
-                         svec,smax,s_step,Ps_type,f2s_step,logPn1_f,logrhofvec,prtfn=prtfn)
-            
+                            svec,smax,s_step,Ps_type,f2s_step,logPn1_f,logrhofvec,prtfn=prtfn)    
             prtfn('constr value:')
             prtfn(constr_value)
             prtfn('learning took '+str(time.time()-st))                    
@@ -346,17 +351,26 @@ def main(null_pair_1,null_pair_2,test_pair_1,test_pair_2,run_index,input_data_pa
             np.save(outpath + 'diffexpr_success', outstruct.success)
             np.save(outpath + 'diffexpr_outstruct', outstruct)
             
-        if output_table: #TODO update!
-            st=time.time()
-            prtfn('write table: ')
-            opt_diffexpr_paras=np.load(outpath + 'opt_diffexpr_paras.npy')
-            logPsvec = get_logPs_pm(opt_diffexpr_paras[:-1],smax,s_step,Ps_type)
+        if True:
+            prtfn('get confidence ellipse:')
+            outstruct=np.load(outpath + 'diffexpr_outstruct.npy').item()
+            ell_axis1,ell_axis2=get_fisherinfo_diffexpr_model(outstruct,null_paras,sparse_rep,acq_model_type,logfvec,logfvecwide,\
+                            svec,smax,s_step,Ps_type,f2s_step,logPn1_f,logrhofvec,prtfn=prtfn)
+            np.save(outpath + 'ellaxis1.npy',ellaxis_1)        
+            np.save(outpath + 'ellaxis2.npy',ellaxis_2)
+            
+        
+    if output_table: #TODO update!
+        st=time.time()
+        prtfn('write table: ')
+        opt_diffexpr_paras=np.load(outpath + 'opt_diffexpr_paras.npy')
+        logPsvec = get_logPs_pm(opt_diffexpr_paras[:-1],smax,s_step,Ps_type)
 
-            pval_expanded=True #which end of the rank list to pull out. else: most contracted
-            pval_threshold=0.05  #output all clones with pval below this threshold
-            smed_threshold=3.46 #ln(2^5)
-            save_table(outpath+datasetstr+"table",pval_expanded,smed_threshold,pval_threshold,svec,logPsvec,subset,sparse_rep)
-            prtfn(" elapsed " + str(np.round(time.time() - st))+'\n')
+        pval_expanded=True #which end of the rank list to pull out. else: most contracted
+        pval_threshold=0.05  #output all clones with pval below this threshold
+        smed_threshold=3.46 #ln(2^5)
+        save_table(outpath+datasetstr+"table",pval_expanded,smed_threshold,pval_threshold,svec,logPsvec,subset,sparse_rep)
+        prtfn(" elapsed " + str(np.round(time.time() - st))+'\n')
 
     # end computations
     prtfn('program elapsed:' + str( time.time() - starttime))

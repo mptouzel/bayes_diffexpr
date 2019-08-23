@@ -27,7 +27,7 @@ if root_path not in sys.path:
 from lib.model import get_logPs_pm,get_rhof,get_distsample
 from functools import partial
 
-# from lib.learning import constr_fn,callback,learn_null_model
+from lib.learning import callback,learn_null_model,get_fisherinfo_diffexpr_model
 # import lib.learning
 # %load_ext autoreload
 # %autoreload 2
@@ -50,7 +50,9 @@ pl.rcParams.update(params)
 
 # Test on one sample:
 
-null_paras=np.load()
+outpath=''
+
+null_paras=np.load(outpath+'paras.npy')
 
 # +
 logrhofvec,logfvec = get_rhof(null_paras[0],np.power(10,null_paras[-1]))
@@ -96,7 +98,7 @@ n2_samples=n2_samples[seen]
 print("samples n1: "+str(np.mean(n1_samples))+" | "+str(max(n1_samples))+", n2 "+str(np.mean(n2_samples))+" | "+str(max(n2_samples)))
 # -
 
-output_path='../output/syn_data/'
+output_path='../../../output/syn_data/'
 fig,ax=pl.subplots(1,1)
 for trial in range(10):
     outstruct=np.load(output_path+'v1_N1e9_test3outstruct_v1_N1e9_test3_'+str(trial)+'.npy').item()
@@ -106,27 +108,7 @@ ax.set_xlim(0,5)
 ax.set_ylim(1e-4,1e0)
 ax.set_yscale('log')
 
-output_path='../output/syn_data/'
-fig,ax=pl.subplots(1,1)
-for trial in range(10):
-    outstruct=np.load(output_path+'v1_N1e9_test3outstruct_v1_N1e9_test3_'+str(trial)+'.npy').item()
-    optparas=outstruct.x
-    ax.scatter(optparas[0],optparas[1])
-    uni1=np.load('/home/max/Dropbox/scripts/Projects/immuno/diffexpr/output/syn_data/v1_N1e9_test3unicountvals_1_d'+str(trial)+'.npy')
-    uni2=np.load('/home/max/Dropbox/scripts/Projects/immuno/diffexpr/output/syn_data/v1_N1e9_test3unicountvals_2_d'+str(trial)+'.npy')
-    indn1=np.load('/home/max/Dropbox/scripts/Projects/immuno/diffexpr/output/syn_data/v1_N1e9_test3indn1_d'+str(trial)+'.npy')
-    indn2=np.load('/home/max/Dropbox/scripts/Projects/immuno/diffexpr/output/syn_data/v1_N1e9_test3indn2_d'+str(trial)+'.npy')
-    shift=np.load('/home/max/Dropbox/scripts/Projects/immuno/diffexpr/output/syn_data/v1_N1e9_test3shift_v1_N1e9_test3_'+str(trial)+'.npy')
-    print(shift)
-    n1=uni1[indn1]
-    n2=uni2[indn2]
-    ax.plot()
-    ax.plot(uni1[indn1],uni2[indn2],'o')
-    ax.set_yscale('log')
-    ax.set_xscale('log')
-ax.plot(ax.get_xlim(),ax.get_xlim(),'k-')
-
-output_path='../output/syn_data/'
+output_path='../../../output/syn_data/'
 fig,ax=pl.subplots(1,1)
 for trial in range(10):
     outstruct=np.load(output_path+'v1_N1e9_test3outstruct_v1_N1e9_test3_'+str(trial)+'.npy').item()
@@ -143,7 +125,7 @@ for trial in range(10):
     ax.set_xscale('log')
 ax.plot(ax.get_xlim(),ax.get_xlim(),'k-')
 
-svec
+# Run sample code:
 
 # +
 # script paras
@@ -157,7 +139,7 @@ alpha_rho=-2.05
 freq_dtype='float32'
 def fmin_func(logfmin,alpha_rho,Nclones):
     fmin=np.power(10.,logfmin)
-    logrhofvec,logfvec = get_rhof(alpha_rho,fmin,freq_dtype)
+    logrhofvec,logfvec = get_rhof(alpha_rho,fmin,freq_dtype=freq_dtype)
     dlogf=np.diff(logfvec)/2.
     integ=np.exp(logrhofvec+2*logfvec,dtype='float64')
     return np.exp(np.log(Nclones)+np.log(np.sum(dlogf*(integ[1:] + integ[:-1]))))-1
@@ -174,7 +156,7 @@ logfmax=1
 paras_null=[alpha_rho,np.log10(fmin)]
 paras=deepcopy(paras_null)
 
-logrhofvec,logfvec = get_rhof(alpha_rho,nfbins,fmin,freq_dtype)
+logrhofvec,logfvec = get_rhof(alpha_rho,fmin,freq_dtype=freq_dtype)
 dlogf=np.diff(logfvec)/2.
 #svec
 logf_step=logfvec[1] - logfvec[0] #use natural log here since f2 increments in increments in exp().
@@ -198,8 +180,7 @@ logfsamples=logfvec[get_distsample(dlogf*(integ[:-1]+integ[1:]),Nclones)]
 
 alp=0.01
 realsbar=1.0
-bet=1.0
-logf2samples=logfsamples+np.random.permutation(svec[get_distsample(get_Ps_pm(alp,bet,realsbar,realsbar,smax,s_step),Nclones)])
+logf2samples=logfsamples+np.random.permutation(svec[get_distsample(np.exp(get_logPs_pm([alp,realsbar],smax,s_step,'rhs_only')),Nclones)])
 
 Zf=np.sum(np.exp(logfsamples))
 print('f1norm='+str(Zf))
@@ -214,10 +195,10 @@ n2_samples=n2_samples[seen]
 
 # +
 fig,ax=pl.subplots(1,2,figsize=(25,10))
-counts,bins=np.histogram(s_samples,svec)
-ax[0].plot(bins[:-1],counts)
-ax[0].set_yscale('log')
-ax[0].set_ylim(1e0,1e10)
+# counts,bins=np.histogram(s_samples,svec)
+# ax[0].plot(bins[:-1],counts)
+# ax[0].set_yscale('log')
+# ax[0].set_ylim(1e0,1e10)
 
 counts,bins=np.histogram(logf2samples,np.log(fvecwide))
 ax[1].plot(bins[:-1],counts,'v')
@@ -241,7 +222,7 @@ import numpy.polynomial.polynomial as poly
 from scipy.optimize import minimize
 
 
-# +
+# + {"code_folding": [36, 93]}
 
 case=3
 st=time.time()
@@ -505,6 +486,11 @@ np.save('LSurface.npy',LSurface)
 np.save('Zfp_data_store.npy',Zfp_data_store)
 np.save('Zf_data_store.npy',Zf_data_store)
 
+shiftMtr=np.load('shiftMtr.npy')
+LSurface=np.load('LSurface.npy')
+Zfp_data_store=np.load('Zfp_data_store.npy')
+Zf_data_store=np.load('Zf_data_store.npy')
+
 
 # +
 def MSError_fcn(para,data,diag_pair):
@@ -528,10 +514,12 @@ fig,axarr=pl.subplots(1,2)
 outstructs=list()
 # for trial in range(50):
 trial=1
+# output_path='../../../output/syn_data/'
+
 #load in 5x5 likelihood surface
-Nc=np.sum(countpaircounts_d)#np.load('../infer_sim/countpaircounts_d'+str(trial)+'.npy'))
-LSurfacetmp=LSurface[trial,:,:]#np.load('../infer_sim/LSurface_'+str(trial)+'.npy')*Nc
-parasopt=(alp,realsbar)#np.load('../infer_sim/outstruct_v1_test3_'+str(trial)+'.npy').flatten()[0].x
+Nc=np.sum(np.load(outpath+'v1_N1e9_test3countpaircounts_d'+str(trial)+'.npy')))
+LSurfacetmp=np.load('../infer_sim/LSurface_'+str(trial)+'.npy')*Nc #LSurface[trial,:,:]*Nc
+parasopt=np.load('../infer_sim/outstruct_v1_test3_'+str(trial)+'.npy').flatten()[0].x #(alp,realsbar)#
 npoints=len(LSurfacetmp)                
 cind=int((npoints-1)/2)
 logLikelihood_NBPois_diag=np.zeros((len(parasopt),npoints))
