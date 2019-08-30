@@ -83,14 +83,15 @@ def learn_null_model(sparse_rep,acq_model_type,init_paras,constr_type=1,prtfn=pr
     curr_iter = 1
     callbackp=partial(callback,prtfn=prtfn,nparas=len(init_paras))
     outstruct = minimize(partialobjfunc, init_paras, method='SLSQP', callback=callbackp, constraints=condict,options={'ftol':nullfunctol ,'disp': True,'maxiter':nullmaxiter})
-    constr_value=constr_fn(outstruct.x,-1,sparse_rep,acq_model_type,constr_type)
+    constr_value=nullmodel_constr_fn(outstruct.x,-1,sparse_rep,acq_model_type,constr_type)
+    
     prtfn(outstruct)
     return outstruct,constr_value
 
 
 #-------diffexpr model----------
 
-def get_diffexpr_likelihood(diffexpr_paras,null_paras,sparse_rep,acq_model_type,logfvec,logfvecwide,svec,smax,s_step,Ps_type,f2s_step,logPn1_f,logrhofvec,output_unseen=False):
+def get_diffexpr_likelihood(diffexpr_paras,null_paras,sparse_rep,acq_model_type,logfvec,logfvecwide,svec,smax,s_step,Ps_type,f2s_step,logPn1_f,logrhofvec,output_unseen=False,maxL=0):
     
     logPsvec = get_logPs_pm(diffexpr_paras[:-1],smax,s_step,Ps_type)
     shift=diffexpr_paras[-1]
@@ -115,8 +116,9 @@ def get_diffexpr_likelihood(diffexpr_paras,null_paras,sparse_rep,acq_model_type,
     if output_unseen:
         return np.dot(sparse_rep_counts/float(np.sum(sparse_rep_counts)),log_Pn1n2-np.log(1-Pn0n0)), Pn0n0
     else:
-        #return np.log10(-1.894-np.dot(sparse_rep_counts/float(np.sum(sparse_rep_counts)),log_Pn1n2-np.log(1-Pn0n0))) #regularizes algorthim for donor S2
-        return np.dot(sparse_rep_counts/float(np.sum(sparse_rep_counts)),log_Pn1n2-np.log(1-Pn0n0))
+        return np.log10(-np.dot(sparse_rep_counts/float(np.sum(sparse_rep_counts)),log_Pn1n2-np.log(1-Pn0n0))) #regularizes algorthim for donor  0.95*maxL
+        #return np.log10(-1.597-np.dot(sparse_rep_counts/float(np.sum(sparse_rep_counts)),log_Pn1n2-np.log(1-Pn0n0))) #regularizes algorthim for donor S2
+        #return np.dot(sparse_rep_counts/float(np.sum(sparse_rep_counts)),log_Pn1n2-np.log(1-Pn0n0))
     
 def diffexpr_constr_fn(diffexpr_paras,null_paras,sparse_rep,acq_model_type,logfvec,logfvecwide,svec,smax,s_step,Ps_type,f2s_step,logPn1_f,logrhofvec):
     
@@ -242,7 +244,7 @@ def get_fisherinfo_diffexpr_model(outstruct,null_paras,sparse_rep,acq_model_type
     Lval=partialobjfunc(opt_paras)
     print('L:'+str(Lval)+' C:'+str(Cval))
     
-    eps_tol=1e-6
+    eps_tol=1e-7
     gradC=[]
     for it,para in enumerate(opt_paras):
         eps=para/10
@@ -260,29 +262,31 @@ def get_fisherinfo_diffexpr_model(outstruct,null_paras,sparse_rep,acq_model_type
             paras_tmp_plus[it]+=eps/2
             paras_tmp_minus[it]-=eps/2
             dCdp=(partialdiffexpr_constr_fn(paras_tmp_plus)-partialdiffexpr_constr_fn(paras_tmp_minus))/eps
-            print((dCdp-dCdpold)/dCdp)
+            print('(dCdp-dCdpold)/dCdp='+str((dCdp-dCdpold)/dCdp))
         gradC.append(dCdp)
     nvec=gradC/np.linalg.norm(gradC) #normal vector
     
     e_u=np.asarray([nvec[1],-nvec[0],0])
     e_u=e_u/np.linalg.norm(e_u)    
     e_v=np.cross(nvec,e_u)
-    #e_v*=-1
-    eps_u=1e-2
-    eps_v=1e-2
+    
+    eps_u=1e-6
+    eps_v=1e-6
     eps_vec=(eps_u,eps_v)
     uvec=eps_u*np.arange(-2,3)
     vvec=eps_v*np.arange(-2,3)
     grid_data_u,grid_data_v=np.meshgrid(uvec,vvec)
     dpara_data=[pair[0]*e_u+pair[1]*e_v for pair in zip(grid_data_u.flatten(),grid_data_v.flatten())]
     L_data=np.reshape(np.asarray([partialobjfunc(np.asarray(opt_paras)+dpara) for dpara in dpara_data] ),(len(uvec),len(vvec)))*Nclones
-
+    #import ipdb
+    #ipdb.set_trace()
+    print(L_data-np.max(L_data))
     #learn diags
     coeffs=np.zeros((2,3))
     cind=2
     for pit,paravec in enumerate([uvec,vvec]):
         coeffs[pit,:]=poly.polyfit(paravec-paravec[cind], -(L_data[pit,:]-L_data[pit,cind]), 2)
-        fvals=(coeffs[pit,2]*(paravec-paravec[cind])**2+coeffs[pit,1]*(paravec-paravec[cind])+coeffs[pit,0])
+        fvals=(coeffs[pit,2]*(paravec-paravec[cind])**2 + coeffs[pit,1]*(paravec-paravec[cind]) + coeffs[pit,0])
         print(fvals)
     diag_entries=2*coeffs[:,2] #correction from taylor
     
@@ -306,7 +310,8 @@ def get_fisherinfo_diffexpr_model(outstruct,null_paras,sparse_rep,acq_model_type
     #e_val,e_vec=np.linalg.eig(Cov.T)
     cov = np.flipud(np.fliplr(Cov)) #fliplr gets coordinate order right
     vals, vecs = eigsorted(cov)
-    
+    print('eigenvalues:')
+    print(vals)
     ell_1=np.sqrt(vals[0])*vecs[0]/np.linalg.norm(vecs[0])
     ell_2=np.sqrt(vals[1])*vecs[1]/np.linalg.norm(vecs[1])
     

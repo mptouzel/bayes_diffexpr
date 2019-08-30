@@ -49,16 +49,12 @@ pl.rcParams.update(params)
 
 # # import data
 
-params= {'text.latex.preamble' : [r'\usepackage{amsmath}']}
-pl.rcParams.update(params)
-
 np.log10(np.exp(25))
 
 
-# + {"code_folding": []}
-def plot_pair(runname,day,startind,pl):
+# + {"code_folding": [0]}
+def plot_pair(donorstr,runname,day,startind,pl):
     output_path='../../../output/'
-    donorstr='S2'
     null_pair=donorstr+'_0_F1_'+donorstr+'_0_F2'
     diff_pair=donorstr+'_0_F1_'+donorstr+'_'+str(day)+'_F2'
 
@@ -94,7 +90,7 @@ def plot_pair(runname,day,startind,pl):
     Zstore=Zstore[:,startind:]
     
     #handle 0 values
-    minval=-1.95#np.min(np.min(Lsurface))
+    minval=np.max(Lsurface)*1.1
     Lsurface[Lsurface==0]=minval
     Lsurface[Lsurface<minval]=minval
 
@@ -139,7 +135,8 @@ def plot_pair(runname,day,startind,pl):
 Ps_type='rhs_only'
 day=15
 startind=0
-outpath=plot_pair('v2smax_ct_1_mt_2_st_'+Ps_type+'_min0_maxinf',day,startind,pl)
+donorstr='S2'
+outpath=plot_pair(donorstr,'v2smax_ct_1_mt_2_st_'+Ps_type+'_min0_maxinf',day,startind,pl)
 pl.scatter([np.log10(0.64)],[np.log10(0.29)])
 
 for Ps_type in ('rhs_only','cent_gauss','sym_exp'):
@@ -460,6 +457,13 @@ for testday in (0,15):
     fig.tight_layout()
     # fig.savefig("surface.pdf",format='pdf',dpi=500,bbox_inches='tight')
     print(str(np.max(Lsurface[Lsurface!=0.])))
+
+Ps_type='rhs_only'
+day=15
+startind=0
+donorstr='P1'
+outpath=plot_pair(donorstr,'v4_ct_1_mt_2_st_'+Ps_type+'_min0_maxinf',day,startind,pl)
+pl.scatter([np.log10(0.64)],[np.log10(0.29)])
 
 ?
 ?

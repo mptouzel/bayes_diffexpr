@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+from functools import partial
 
 def import_data(path,filename1,filename2,mincount,maxcount,colnames1,colnames2):
     '''
@@ -79,43 +80,57 @@ def get_distsample(pmf,Nsamp,dtype='uint32'):
     sampled_inds = np.array(index[np.argsort(index[:,0])],dtype=dtype)
     return sampled_inds
 
-def save_table(outpath, print_expanded,smedthresh, pthresh, svec,logPsvec,subset, sparse_rep,):
+
+def get_pvalue(row,svec,cdfPs_n1n2ps):
+    '''
+    when applied to dataframe, generates 'p-value'-like (null hypo) probability, 1-P(s>0|n1_i,n2_i), where i is the row (i.e. the clone)
+    '''
+    return cdfPs_n1n2ps[np.argmin(np.fabs(svec)),row.sparse_ind]
+
+def get_sparse_ind(row,unicountvals_1,unicountvals_2,n1_n2_to_n1n2):
+    '''
+    when applied to dataframe, generates unidimensional index from count pair
+    '''
+    return n1_n2_to_n1n2[row['Clone_count_1']==unicountvals_1,row['Clone_count_2']==unicountvals_2]
+                   
+def suffstats_table(pthresh, svec,logPsvec,subset, sparse_rep,logPn1n2_s):
     #'''
     #takes learned diffexpr model, Pn1n2_s*Ps, computes posteriors over (n1,n2) pairs, and writes to file a table of data with clones as rows and columns as measures of thier posteriors 
-    #print_expanded=True orders table as ascending by , else descending
-    #pthresh is the threshold in 'p-value'-like (null hypo) probability, 1-P(s>0|n1_i,n2_i), where i is the row (i.e. the clone) n.b. lower null prob implies larger probability of expansion
-    #smedthresh is the threshold on the posterior median, below which clones are discarded
+    #pthresh is the threshold in 'p-value'-like (null hypo) probability, 1-P(s>0|n1_i,n2_i), where i is the row (i.e. the clone) n.b. lower null prob implies larger probability of expansion. Used to reduce table to managable size.
     #'''
 
-    Psn1n2_ps=Pn1n2_s*Ps[:,np.newaxis,np.newaxis] 
+    indn1,indn2,sparse_rep_counts,unicountvals_1,unicountvals_2,NreadsI,NreadsII=sparse_rep
+
+    Psn1n2_ps=np.exp(logPn1n2_s+logPsvec[:,np.newaxis]) 
     
     #compute marginal likelihood (neglect renormalization , since it cancels in conditional below) 
     Pn1n2_ps=np.sum(Psn1n2_ps,0)
 
-    Ps_n1n2ps=Pn1n2_s*Ps[:,np.newaxis,np.newaxis]/Pn1n2_ps[np.newaxis,:,:]
+    Ps_n1n2ps=np.exp(logPn1n2_s+logPsvec[:,np.newaxis])/Pn1n2_ps[np.newaxis,:]
     #compute cdf to get p-value to threshold on to reduce output size
     cdfPs_n1n2ps=np.cumsum(Ps_n1n2ps,0)
-    
 
-    def dummy(row,cdfPs_n1n2ps,unicountvals_1_d,unicountvals_2_d):
-        '''
-        when applied to dataframe, generates 'p-value'-like (null hypo) probability, 1-P(s>0|n1_i,n2_i), where i is the row (i.e. the clone)
-        '''
-        return cdfPs_n1n2ps[np.argmin(np.fabs(svec)),row['Clone_count_1']==unicountvals_1_d,row['Clone_count_2']==unicountvals_2_d][0]
-    dummy_part=partial(dummy,cdfPs_n1n2ps=cdfPs_n1n2ps,unicountvals_1_d=unicountvals_1_d,unicountvals_2_d=unicountvals_2_d)
-    
+    n1_n2_to_n1n2=np.zeros((len(unicountvals_1),len(unicountvals_2)),dtype=int)
+    for n1it,n1 in enumerate(unicountvals_1):
+        for n2it,n2 in enumerate(unicountvals_2):
+            ind=np.where(np.logical_and(n1==unicountvals_1[indn1],n2==unicountvals_2[indn2]))[0]
+            if not ind:
+                continue
+            else:
+                n1_n2_to_n1n2[n1it,n2it]=int(ind)                
+    get_sparseind_part=partial(get_sparse_ind,unicountvals_1=unicountvals_1,unicountvals_2=unicountvals_2,n1_n2_to_n1n2=n1_n2_to_n1n2)        
+    subset['sparse_ind']=subset.apply(get_sparseind_part, axis=1)
+    subset.sparse_ind=subset.sparse_ind.astype('int32')
+    get_pvalue_part=partial(get_pvalue,svec=svec,cdfPs_n1n2ps=cdfPs_n1n2ps)
     cdflabel=r'$1-P(s>0)$'
-    subset[cdflabel]=subset.apply(dummy_part, axis=1)
+    subset[cdflabel]=subset.apply(get_pvalue_part, axis=1)
+    
+    #decrease clone list size by pvalue
     subset=subset[subset[cdflabel]<pthresh].reset_index(drop=True)
-
-    #go from clone count pair (n1,n2) to index in unicountvals_1_d and unicountvals_2_d
-    data_pairs_ind_1=np.zeros((len(subset),),dtype=int)
-    data_pairs_ind_2=np.zeros((len(subset),),dtype=int)
-    for it in range(len(subset)):
-        data_pairs_ind_1[it]=np.where(int(subset.iloc[it].Clone_count_1)==unicountvals_1_d)[0]
-        data_pairs_ind_2[it]=np.where(int(subset.iloc[it].Clone_count_2)==unicountvals_2_d)[0]   
+    subset=subset.sort_values(by=cdflabel)    
+    
     #posteriors over data clones
-    Ps_n1n2ps_datpairs=Ps_n1n2ps[:,data_pairs_ind_1,data_pairs_ind_2]
+    Ps_n1n2ps_datpairs=Ps_n1n2ps[:,subset.sparse_ind.values]
     
     #compute posterior metrics
     mean_est=np.zeros((len(subset),))
@@ -137,6 +152,7 @@ def save_table(outpath, print_expanded,smedthresh, pthresh, svec,logPsvec,subset
         inds=np.where((forwardcmf[:-1]<pvalvec[2]) & (forwardcmf[1:]>=pvalvec[2]))[0]
         shighvec[it]=np.mean(svec[inds+np.ones((len(inds),),dtype=int)])
     
+    subset.drop(columns='sparse_ind')
     colnames=(r'$\bar{s}$',r'$s_{max}$',r'$s_{3,high}$',r'$s_{2,med}$',r'$s_{1,low}$')
     for it,coldata in enumerate((mean_est,max_est,shighvec,smedvec,slowvec)):
         subset.insert(0,colnames[it],coldata)
@@ -144,14 +160,14 @@ def save_table(outpath, print_expanded,smedthresh, pthresh, svec,logPsvec,subset
     newcolnames=('CDR3_AA', 'CDR3_nt',        r'$n_1$',        r'$n_2$',           r'$f_1$',           r'$f_2$')
     subset=subset.rename(columns=dict(zip(oldcolnames, newcolnames)))
     
-    #select only clones whose posterior median pass the given threshold
-    subset=subset[subset[r'$s_{2,med}$']>smedthresh]
-    
-    print("writing to: "+outpath)
-    if print_expanded:
-        subset=subset.sort_values(by=cdflabel,ascending=True)
-        strout='expanded'
-    else:
-        subset=subset.sort_values(by=cdflabel,ascending=False)
-        strout='contracted'
-    subset.to_csv(outpath+'top_'+strout+'.csv',sep='\t',index=False)
+    return subset
+
+
+    ##go from clone count pair (n1,n2) to index in unicountvals_1_d and unicountvals_2_d
+    #data_pairs_ind_1=np.zeros((len(subset),),dtype=int)
+    #data_pairs_ind_2=np.zeros((len(subset),),dtype=int)
+    #n1n2_ind=np.zeros((len(subset),),dtype=int)
+    #for it in range(len(subset)):
+        #data_pairs_ind_1[it]=np.where(int(subset.iloc[it].Clone_count_1)==unicountvals_1)[0]
+        #data_pairs_ind_2[it]=np.where(int(subset.iloc[it].Clone_count_2)==unicountvals_2)[0]
+        #n1n2_ind[it]=np.logical_and(data_pairs_ind_1[it],unicountvals_1[indn1],data_pairs_ind_2[it],unicountvals_2[indn2])

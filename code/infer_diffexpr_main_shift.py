@@ -10,7 +10,7 @@ if root_path not in sys.path:
     sys.path.append(root_path)
     
 #load local functions
-from lib.proc import get_sparserep,import_data
+from lib.proc import get_sparserep,import_data,suffstats_table
 from lib.learning import callback,learn_null_model,get_shift,learn_diffexpr_model,get_diffexpr_likelihood,get_fisherinfo_diffexpr_model
 from lib.utils.readouts import setup_outpath_and_logs
 from lib.model import get_fvec_and_svec,get_logPn_f,get_logPs_pm,get_rhof
@@ -18,7 +18,7 @@ from lib.model import get_fvec_and_svec,get_logPn_f,get_logPs_pm,get_rhof
 #inputs to mkl library used by numpy to parallelize np.dot 
 import ctypes
 mkl_rt = ctypes.CDLL('libmkl_rt.so')
-num_threads=8 #number of cores available on local machine
+num_threads=2 #number of cores available on local machine
 mkl_set_num_threads = mkl_rt.MKL_Set_Num_Threads(num_threads)
 print(str(num_threads)+' cores available')
 
@@ -33,15 +33,15 @@ def main(null_pair_1,null_pair_2,test_pair_1,test_pair_2,run_index,input_data_pa
     acq_model_type=2 #which P(n|f) model to use (0:NB->Pois,1:Pois->NB,2:NBonly,3:Pois only)
     
     #rhs only, sbar scan for each alpha
-    npoints=40
+    npoints=20
             
     Ps_type='rhs_only'
     #alpvec=np.logspace(-6.,0., 2*npoints)
     #sbarvec_p=np.logspace(-1,1.5,npoints)
     #alpvec=np.logspace(-3.,0., npoints)
     #sbarvec_p=np.logspace(-1,0.5,npoints)
-    alpvec=np.logspace(-1.,0., npoints)
-    sbarvec_p=np.logspace(-0.5,0,npoints)
+    alpvec=np.logspace(-2.,0., npoints)
+    sbarvec_p=np.logspace(-1.,0.5,npoints)
 
     #Ps_type='sym_exp'
     #alpvec=np.logspace(-8.,0., 2*npoints)
@@ -55,9 +55,13 @@ def main(null_pair_1,null_pair_2,test_pair_1,test_pair_2,run_index,input_data_pa
     #alpvec=np.logspace(-6.,0., npoints)
     #sbarvec_p=np.logspace(-2,1,npoints)
     #sbarvec_m=np.linspace(0.1,15,10)
-        
+
+
     parvernull = 'v1_ct_'+str(constr_type)+'_mt_'+str(acq_model_type) #prefix label for null model data path
-    parvertest = 'v1_ct_'+str(constr_type)+'_mt_'+str(acq_model_type)+'_st_'+Ps_type #prefix label for diff expr model data path
+    parvertest = 'v2_ct_'+str(constr_type)+'_mt_'+str(acq_model_type)+'_st_'+Ps_type #prefix label for diff expr model data path
+        
+    #parvernull = 'v3testloc_ct_'+str(constr_type)+'_mt_'+str(acq_model_type) #prefix label for null model data path
+    #parvertest = 'v3testloc_ct_'+str(constr_type)+'_mt_'+str(acq_model_type)+'_st_'+Ps_type #prefix label for diff expr model data path
 
     
 
@@ -216,22 +220,16 @@ def main(null_pair_1,null_pair_2,test_pair_1,test_pair_2,run_index,input_data_pa
             assert len(null_paras)==nparas, "loaded paras for wrong acq model!"
 
     ###############################diffexpr learning
-    diffexpr=True
+    diffexpr=False
     if diffexpr:
         logrhofvec,logfvec = get_rhof(null_paras[0],np.power(10,null_paras[-1]))
         svec,logfvec,logfvecwide,f2s_step,smax,s_step=get_fvec_and_svec(null_paras,s_step,smax)
-        #svec,logfvecwide,f2s_step,smax,s_step=get_svec(null_paras,s_step,smax)
-        dlogfby2=np.diff(logfvec)/2. #1/2 comes from trapezoid integration below
         np.save(outpath+'svec.npy',svec)
         indn1,indn2,sparse_rep_counts,unicountvals_1,unicountvals_2,NreadsI,NreadsII=sparse_rep
         Nsamp=np.sum(sparse_rep_counts)
         logPn1_f=get_logPn_f(unicountvals_1,NreadsI,logfvec,acq_model_type,null_paras)
         
-        #flags for 3 remaining code blocks:
         learn_surface=False
-        polish_estimate=True
-        output_table=False
-            
         if learn_surface:
             
             #who is who
@@ -266,7 +264,7 @@ def main(null_pair_1,null_pair_2,test_pair_1,test_pair_2,run_index,input_data_pa
             shift=0
             sst=time.time()
             for it in range(np.prod(dims)):
-            #for it,alp in enumerate(alpvec): 
+            
                 inds=np.unravel_index(it,dims)
 
                 st=time.time()    
@@ -281,21 +279,22 @@ def main(null_pair_1,null_pair_2,test_pair_1,test_pair_2,run_index,input_data_pa
                 shift,Z,Zdash,shift_it=get_shift(logPsvec,null_paras,sparse_rep,acq_model_type,shift,logfvec,logfvecwide,svec,f2s_step,logPn1_f,logrhofvec)
                 
                 if shift_it==-1:
-                    LSurface[inds]=np.nan#np.dot(sparse_rep_counts/float(Nsamp),log_Pn1n2-np.log(1-Pn0n0))
+                    LSurface[inds]=np.nan
                     Pnng0_Store[inds]=0
                     shiftMtr[inds]=shift
                     nit_list[inds]=shift_it
                     Zstore[inds]=Z
                     Zdashstore[inds]=Zdash 
                     continue
-                diffexpr_paras=Ps_paras+[shift]
-                L,Pn0n0= get_diffexpr_likelihood(diffexpr_paras,null_paras,sparse_rep,acq_model_type,logfvec,logfvecwide,svec,smax,s_step,Ps_type,f2s_step,logPn1_f,logrhofvec,True)
-                LSurface[inds]=L
-                Pnng0_Store[inds]=Pn0n0
-                shiftMtr[inds]=shift
-                nit_list[inds]=shift_it
-                Zstore[inds]=Z
-                Zdashstore[inds]=Zdash 
+                else:
+                    diffexpr_paras=Ps_paras+[shift]
+                    L,Pn0n0= get_diffexpr_likelihood(diffexpr_paras,null_paras,sparse_rep,acq_model_type,logfvec,logfvecwide,svec,smax,s_step,Ps_type,f2s_step,logPn1_f,logrhofvec,True)
+                    LSurface[inds]=L
+                    Pnng0_Store[inds]=Pn0n0
+                    shiftMtr[inds]=shift
+                    nit_list[inds]=shift_it
+                    Zstore[inds]=Z
+                    Zdashstore[inds]=Zdash 
         
                 prtfn('its:('+str(run_index)+', '+str(it)+') shift:'+str(shift)+' Z:'+str(Z)+' Zdash:'+str(Zdash)+':'+str(time.time()-st))
                 
@@ -309,26 +308,47 @@ def main(null_pair_1,null_pair_2,test_pair_1,test_pair_2,run_index,input_data_pa
             np.save(outpath+'sbarvec_p',sbarvec_p)
             np.save(outpath+'alpvec',alpvec)
             
-            #2D
-            #np.save(outpath+'offset',sbarvec_m)
+        #2D
+        #np.save(outpath+'offset',sbarvec_m)
+        
+        #assembel from multiple jobs
+        if run_index==0:
+            still_running=True
+            while still_running:
+                not_written=[]
+                for it in range(npoints):
+                    not_written.append(not os.path.exists(outpath+'Lsurface'+str(it)+'.npy'))
+                still_running=any(not_written)
+                prtfn(not_written)
+                time.sleep(1)#60)
             
-    if polish_estimate:
-        if False:
             sbarvec_p=np.load(outpath+'sbarvec_p.npy')
             alpvec=np.load(outpath+'alpvec.npy')
             
             #get max
             dims=(len(alpvec),len(sbarvec_p))
             LSurface=np.zeros(dims)
-            for ait in range(len(sbarvec_p)):
-                LSurface[:,ait]=np.load(outpath+'Lsurface'+str(ait)+'.npy')
+            shiftMtr=np.zeros(dims)
+            for var_str in ['Lsurface','shift','Pnng0_Store','nit_list','Zstore','Zdashstore','time_elapsed']:
+                tmp=np.zeros(dims)
+                for sit in range(len(sbarvec_p)):
+                    tmp[:,sit]=np.load(outpath+var_str+str(sit)+'.npy')
+                np.save(outpath+var_str,tmp)
+            
+        polish_estimate=True
+        if polish_estimate and run_index==0:
+            
+            LSurface=np.load(outpath+'Lsurface.npy')
+            prtfn(LSurface)
             maxind=np.unravel_index(np.argmax(LSurface),dims)
+            prtfn(maxind)
             prtfn('max L:'+str(LSurface[maxind]))
-                        
+            shiftMtr=np.load(outpath+'shift.npy')
+            
             prtfn('polish parameter estimate')
             st=time.time()
             
-            init_shift=0
+            init_shift=shiftMtr[maxind]
             if Ps_type=='sym_exp' or Ps_type=='rhs_only' or Ps_type=='cent_gauss':
                 init_paras=[alpvec[maxind[0]],sbarvec_p[maxind[1]]]
                 parameter_labels=['alpha', 'sbar']
@@ -337,7 +357,8 @@ def main(null_pair_1,null_pair_2,test_pair_1,test_pair_2,run_index,input_data_pa
                 parameter_labels=['alpha', 'sbar_p','second_pos']
             init_paras+=[init_shift]
             parameter_labels+=['shift']
-
+            prtfn('init_paras:')
+            prtfn(init_paras)
             outstruct,constr_value=learn_diffexpr_model(init_paras,parameter_labels,null_paras,sparse_rep,acq_model_type,logfvec,logfvecwide,\
                             svec,smax,s_step,Ps_type,f2s_step,logPn1_f,logrhofvec,prtfn=prtfn)    
             prtfn('constr value:')
@@ -351,25 +372,59 @@ def main(null_pair_1,null_pair_2,test_pair_1,test_pair_2,run_index,input_data_pa
             np.save(outpath + 'diffexpr_success', outstruct.success)
             np.save(outpath + 'diffexpr_outstruct', outstruct)
             
-        if True:
-            prtfn('get confidence ellipse:')
-            outstruct=np.load(outpath + 'diffexpr_outstruct.npy').item()
-            ell_axis1,ell_axis2=get_fisherinfo_diffexpr_model(outstruct,null_paras,sparse_rep,acq_model_type,logfvec,logfvecwide,\
-                            svec,smax,s_step,Ps_type,f2s_step,logPn1_f,logrhofvec,prtfn=prtfn)
-            np.save(outpath + 'ellaxis1.npy',ellaxis_1)        
-            np.save(outpath + 'ellaxis2.npy',ellaxis_2)
-            
-        
-    if output_table: #TODO update!
+            if False:
+                prtfn('get confidence ellipse:')
+                outstruct=np.load(outpath + 'diffexpr_outstruct.npy').item()
+                ell_axis1,ell_axis2=get_fisherinfo_diffexpr_model(outstruct,null_paras,sparse_rep,acq_model_type,logfvec,logfvecwide,\
+                                svec,smax,s_step,Ps_type,f2s_step,logPn1_f,logrhofvec,prtfn=prtfn)
+                np.save(outpath + 'ellaxis1.npy',ellaxis_1)        
+                np.save(outpath + 'ellaxis2.npy',ellaxis_2)
+                
+    output_table=True    
+    if output_table:
         st=time.time()
         prtfn('write table: ')
+        smax=25
+        s_step=0.1
+        logrhofvec,logfvec = get_rhof(null_paras[0],np.power(10,null_paras[-1]))
+        svec,logfvec,logfvecwide,f2s_step,smax,s_step=get_fvec_and_svec(null_paras,s_step,smax)
+        np.save(outpath+'svec.npy',svec)
+        indn1,indn2,sparse_rep_counts,unicountvals_1,unicountvals_2,NreadsI,NreadsII=sparse_rep
+        Nsamp=np.sum(sparse_rep_counts)
+        logPn1_f=get_logPn_f(unicountvals_1,NreadsI,logfvec,acq_model_type,null_paras)
         opt_diffexpr_paras=np.load(outpath + 'opt_diffexpr_paras.npy')
         logPsvec = get_logPs_pm(opt_diffexpr_paras[:-1],smax,s_step,Ps_type)
-
-        pval_expanded=True #which end of the rank list to pull out. else: most contracted
+        shift=opt_diffexpr_paras[-1]
+        
+        fvecwide_shift=np.exp(logfvecwide-shift) #implements shift in Pn2_fs
+        svec_shift=svec-shift
+        logPn2_f=get_logPn_f(unicountvals_2,NreadsII,np.log(fvecwide_shift),acq_model_type,null_paras)
+        logPn1n2_s=np.zeros((len(svec),len(sparse_rep_counts)))
+        dlogfby2=np.diff(logfvec)/2
+        for s_it in range(len(svec)):
+            integ=np.exp(logPn1_f[:,indn1] + logPn2_f[f2s_step*s_it:f2s_step*s_it+len(logfvec),indn2] + logrhofvec[:,np.newaxis] + logfvec[:,np.newaxis])
+            logPn1n2_s[s_it,:]=np.log(np.sum(dlogfby2[:,np.newaxis]*(integ[1:,:]+integ[:-1,:]),axis=0)) #can't use dot since multidimensional
+        
         pval_threshold=0.05  #output all clones with pval below this threshold
-        smed_threshold=3.46 #ln(2^5)
-        save_table(outpath+datasetstr+"table",pval_expanded,smed_threshold,pval_threshold,svec,logPsvec,subset,sparse_rep)
+        min_pair_sum=0
+        table=suffstats_table(pval_threshold,svec,logPsvec,subset.loc[subset.Clone_count_1+subset.Clone_count_2>=min_pair_sum],sparse_rep,logPn1n2_s)
+        prtfn('elapsed: '+str(time.time()-st))
+        
+        #select only clones whose posterior median pass the given threshold
+        smed_threshold=3.46 #ln(2^5) threshold on the posterior median, below which clones are discarded
+        table=table[table[r'$s_{2,med}$']>smed_threshold]
+    
+        prtfn("writing to: "+outpath)
+        pval_expanded=True #which end of the rank list to pull out. else: most contracted
+        cdflabel=r'$1-P(s>0)$'
+        if pval_expanded:
+            table=table.sort_values(by=cdflabel,ascending=True)
+            strout='expanded'
+        else:
+            table=table.sort_values(by=cdflabel,ascending=False)
+            strout='contracted'
+        table.to_csv(outpath+datasetstr+'table_top_'+strout+'.csv',sep='\t',index=False)
+        
         prtfn(" elapsed " + str(np.round(time.time() - st))+'\n')
 
     # end computations
@@ -394,10 +449,10 @@ if __name__ == "__main__":
     except IndexError:
         run_index=0
     try:
-        output_data_path=sys.argv[6]    #custom path
-        input_data_path=sys.argv[7]     #custom path
+        input_data_path=sys.argv[6]    #custom path
+        output_data_path=sys.argv[7]     #custom path
     except IndexError:
-        output_data_path='../../data/Yellow_fever/prepostvaccine/'
-        input_data_path='../../output/'
+        input_data_path='../../data/Yellow_fever/prepostvaccine/'
+        output_data_path='../../output/'
                 
-    main(inputnull_1,inputnull_2,inputtest_1,inputtest_2,run_index,output_data_path,input_data_path)
+    main(inputnull_1,inputnull_2,inputtest_1,inputtest_2,run_index,input_data_path,output_data_path)

@@ -595,7 +595,7 @@ def main(ntrials):
         np.save(outpath+'shift_'+runname+'_'+str(trial)+'.npy',shift)
         ett=time.time()
         prtfn(ett-stt)
-        
+
         #eval likelihood on grid around maximum
         #nsbarpoints=5
         #shiftMtr =np.zeros((nsbarpoints,nsbarpoints))
@@ -604,7 +604,7 @@ def main(ntrials):
         #Zstore =np.zeros((nsbarpoints,nsbarpoints))
         #Zdashstore =np.zeros((nsbarpoints,nsbarpoints))
         #LSurface=np.zeros((nsbarpoints,nsbarpoints))
-        
+
         #logalpopt=outstruct.x[0]
         #logsbaropt=outstruct.x[1]
         #fac=0.95
@@ -617,37 +617,37 @@ def main(ntrials):
             #addshift=0
             #for ait,alptest in enumerate(alpvec):
                 #LSurface[ait,sit]=-partialobjfunc([alptest,sbar])
-                
+
         #np.save(outpath+'LSurface_'+str(trial)+'.npy',LSurface)
         #np.save(outpath+'ShiftMtr_'+str(trial)+'.npy',shiftMtr)
+
         
-        
-        
+
         ##for 
         ###learn 2-form approximation
-        
+
         ###invert
-        
+
         ###diagnalize
-        
+
         ###write evs and evecs to disk
-        
-        
+
+
         ##posteriors
         ##pick counts to evaluate at:
         #unicountvals_1_d
         #unicountvals_2_d
-        
+
         ##get model
         #logPn_f1
         #logPn_f2
         #integ= logPn_f1 logPn_f1 logrhofvec
-        
-        
+
+
         #logPn1n2_s=sum integ
+
         
-        
-        
+
 if __name__ == "__main__": 
     ntrials=int(sys.argv[1])
     

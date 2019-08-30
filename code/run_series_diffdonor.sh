@@ -14,12 +14,13 @@ fi
 # diffexpr model
 if true; then
   donor="S2" # "S1" "P1" "P2" "Q1" "Q2"; do 
-  #for ait in {0..2}; do
+  #for ait in {0..19}; do
+  ait="0"
   daynull="0"
   day="15"
-  #  nohup python infer_diffexpr_main_shift.py "${donor}_${daynull}_F1_.txt" "${donor}_${daynull}_F2_.txt" "${donor}_${daynull}_F1_.txt" "${donor}_${day}_F1_.txt" ${ait} &
+    python infer_diffexpr_main_shift.py "${donor}_${daynull}_F1_.txt" "${donor}_${daynull}_F2_.txt" "${donor}_${daynull}_F1_.txt" "${donor}_${day}_F2_.txt" ${ait}
   #  print python infer_diffexpr_main_shift.py "${donor}_${daynull}_F1_.txt" "${donor}_${daynull}_F2_.txt" "${donor}_${daynull}_F1_.txt" "${donor}_${day}_F2_.txt" &
-  python infer_diffexpr_main_shift.py "${donor}_${daynull}_F1_.txt" "${donor}_${daynull}_F2_.txt" "${donor}_${daynull}_F1_.txt" "${donor}_${day}_F2_.txt"
-# done
+  #python infer_diffexpr_main_shift.py "${donor}_${daynull}_F1_.txt" "${donor}_${daynull}_F2_.txt" "${donor}_${daynull}_F1_.txt" "${donor}_${day}_F2_.txt"
+ #done
 #  done
 fi
