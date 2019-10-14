@@ -6,7 +6,7 @@
 %Control: page (1) range
 %Control: year (0) verbatim
 %Control: production of eprint (0) enabled
-\begin{thebibliography}{3}%
+\begin{thebibliography}{10}%
 \makeatletter
 \providecommand \@ifxundefined [1]{%
  \@ifx{#1\undefined}
@@ -50,6 +50,74 @@
 \providecommand \BibitemShut  [1]{\csname bibitem#1\endcsname}%
 \let\auto@bib@innerbib\@empty
 %</preamble>
+\bibitem [{\citenamefont {Benichou}\ and\ \citenamefont
+  {Louzoun}(2011)}]{Benichou2011}%
+  \BibitemOpen
+  \bibfield  {author} {\bibinfo {author} {\bibfnamefont {Jennifer}\
+  \bibnamefont {Benichou}}\ and\ \bibinfo {author} {\bibfnamefont {Yoram}\
+  \bibnamefont {Louzoun}},\ }\bibfield  {title} {\enquote {\bibinfo {title}
+  {{Rep-Seq : uncovering the immunological repertoire through next-generation
+  sequencing}},}\ }\href {\doibase 10.1111/j.1365-2567.2011.03527.x} {\bibfield
+   {journal} {\bibinfo  {journal} {Immunology}\ ,\ \bibinfo {pages} {183--191}}
+  (\bibinfo {year} {2011})}\BibitemShut {NoStop}%
+\bibitem [{\citenamefont {Glanville}\ \emph {et~al.}(2017)\citenamefont
+  {Glanville}, \citenamefont {Huang}, \citenamefont {Nau}, \citenamefont
+  {Hatton}, \citenamefont {Wagar}, \citenamefont {Rubelt}, \citenamefont {Ji},
+  \citenamefont {Han}, \citenamefont {Krams}, \citenamefont {Pettus},
+  \citenamefont {Haas}, \citenamefont {Arlehamn}, \citenamefont {Sette},
+  \citenamefont {Boyd}, \citenamefont {Scriba}, \citenamefont {Martinez},\ and\
+  \citenamefont {Davis}}]{Glanville2017}%
+  \BibitemOpen
+  \bibfield  {author} {\bibinfo {author} {\bibfnamefont {Jacob}\ \bibnamefont
+  {Glanville}}, \bibinfo {author} {\bibfnamefont {Huang}\ \bibnamefont
+  {Huang}}, \bibinfo {author} {\bibfnamefont {Allison}\ \bibnamefont {Nau}},
+  \bibinfo {author} {\bibfnamefont {Olivia}\ \bibnamefont {Hatton}}, \bibinfo
+  {author} {\bibfnamefont {Lisa~E}\ \bibnamefont {Wagar}}, \bibinfo {author}
+  {\bibfnamefont {Florian}\ \bibnamefont {Rubelt}}, \bibinfo {author}
+  {\bibfnamefont {Xuhuai}\ \bibnamefont {Ji}}, \bibinfo {author} {\bibfnamefont
+  {Arnold}\ \bibnamefont {Han}}, \bibinfo {author} {\bibfnamefont {Sheri~M}\
+  \bibnamefont {Krams}}, \bibinfo {author} {\bibfnamefont {Christina}\
+  \bibnamefont {Pettus}}, \bibinfo {author} {\bibfnamefont {Nikhil}\
+  \bibnamefont {Haas}}, \bibinfo {author} {\bibfnamefont {Cecilia S~Lindestam}\
+  \bibnamefont {Arlehamn}}, \bibinfo {author} {\bibfnamefont {Alessandro}\
+  \bibnamefont {Sette}}, \bibinfo {author} {\bibfnamefont {Scott~D}\
+  \bibnamefont {Boyd}}, \bibinfo {author} {\bibfnamefont {Thomas~J}\
+  \bibnamefont {Scriba}}, \bibinfo {author} {\bibfnamefont {Olivia~M}\
+  \bibnamefont {Martinez}}, \ and\ \bibinfo {author} {\bibfnamefont {Mark~M}\
+  \bibnamefont {Davis}},\ }\bibfield  {title} {\enquote {\bibinfo {title}
+  {{Identifying specificity groups in the T cell receptor repertoire}},}\
+  }\href {\doibase 10.1038/nature22976} {\bibfield  {journal} {\bibinfo
+  {journal} {Nature Publishing Group}\ }\textbf {\bibinfo {volume} {547}},\
+  \bibinfo {pages} {94--98} (\bibinfo {year} {2017})}\BibitemShut {NoStop}%
+\bibitem [{\citenamefont {Chu}\ \emph {et~al.}(2019)\citenamefont {Chu},
+  \citenamefont {Bi}, \citenamefont {Emerson}, \citenamefont {Sherwood},
+  \citenamefont {Birnbaum}, \citenamefont {Robins},\ and\ \citenamefont
+  {Alm}}]{Chu2019}%
+  \BibitemOpen
+  \bibfield  {author} {\bibinfo {author} {\bibfnamefont {Nathaniel~D}\
+  \bibnamefont {Chu}}, \bibinfo {author} {\bibfnamefont {Haixin~Sarah}\
+  \bibnamefont {Bi}}, \bibinfo {author} {\bibfnamefont {Ryan~O}\ \bibnamefont
+  {Emerson}}, \bibinfo {author} {\bibfnamefont {Anna~M}\ \bibnamefont
+  {Sherwood}}, \bibinfo {author} {\bibfnamefont {Michael~E}\ \bibnamefont
+  {Birnbaum}}, \bibinfo {author} {\bibfnamefont {Harlan~S}\ \bibnamefont
+  {Robins}}, \ and\ \bibinfo {author} {\bibfnamefont {Eric~J}\ \bibnamefont
+  {Alm}},\ }\bibfield  {title} {\enquote {\bibinfo {title} {{Longitudinal
+  immunosequencing in healthy people reveals persistent T cell receptors rich
+  in highly public receptors}},}\ }\href {\doibase
+  https://doi.org/10.1186/s12865-019-0300-5} {\bibfield  {journal} {\bibinfo
+  {journal} {BMC Immunology}\ }\textbf {\bibinfo {volume} {20}},\ \bibinfo
+  {pages} {1--12} (\bibinfo {year} {2019})}\BibitemShut {NoStop}%
+\bibitem [{\citenamefont {Love}\ \emph {et~al.}(2014)\citenamefont {Love},
+  \citenamefont {Huber},\ and\ \citenamefont {Anders}}]{Love2014}%
+  \BibitemOpen
+  \bibfield  {author} {\bibinfo {author} {\bibfnamefont {Michael~I}\
+  \bibnamefont {Love}}, \bibinfo {author} {\bibfnamefont {Wolfgang}\
+  \bibnamefont {Huber}}, \ and\ \bibinfo {author} {\bibfnamefont {Simon}\
+  \bibnamefont {Anders}},\ }\bibfield  {title} {\enquote {\bibinfo {title}
+  {{Moderated estimation of fold change and dispersion for RNA-seq data with
+  DESeq2.}}}\ }\href {\doibase 10.1186/s13059-014-0550-8} {\bibfield  {journal}
+  {\bibinfo  {journal} {Genome biology}\ }\textbf {\bibinfo {volume} {15}},\
+  \bibinfo {pages} {550} (\bibinfo {year} {2014})}\BibitemShut {NoStop}%
 \bibitem [{\citenamefont {Robinson}\ and\ \citenamefont
   {Smyth}(2008)}]{Robinson2008}%
   \BibitemOpen
@@ -59,6 +127,34 @@
   estimation of negative binomial dispersion , with applications to SAGE
   data}},}\ }\href {\doibase 10.1093/biostatistics/kxm030} {\ ,\ \bibinfo
   {pages} {321--332} (\bibinfo {year} {2008})}\BibitemShut {NoStop}%
+\bibitem [{\citenamefont {Pogorelyy}\ \emph {et~al.}(2018)\citenamefont
+  {Pogorelyy}, \citenamefont {Minervina}, \citenamefont {Touzel}, \citenamefont
+  {Sycheva}, \citenamefont {Komech}, \citenamefont {Kovalenko}, \citenamefont
+  {Karganova}, \citenamefont {Egorov}, \citenamefont {Komkov}, \citenamefont
+  {Chudakov}, \citenamefont {Mamedov}, \citenamefont {Mora}, \citenamefont
+  {Walczak},\ and\ \citenamefont {Lebedev}}]{Pogorelyy12704}%
+  \BibitemOpen
+  \bibfield  {author} {\bibinfo {author} {\bibfnamefont {Mikhail~V}\
+  \bibnamefont {Pogorelyy}}, \bibinfo {author} {\bibfnamefont {Anastasia~A}\
+  \bibnamefont {Minervina}}, \bibinfo {author} {\bibfnamefont
+  {Maximilian~Puelma}\ \bibnamefont {Touzel}}, \bibinfo {author} {\bibfnamefont
+  {Anastasiia~L}\ \bibnamefont {Sycheva}}, \bibinfo {author} {\bibfnamefont
+  {Ekaterina~A}\ \bibnamefont {Komech}}, \bibinfo {author} {\bibfnamefont
+  {Elena~I}\ \bibnamefont {Kovalenko}}, \bibinfo {author} {\bibfnamefont
+  {Galina~G}\ \bibnamefont {Karganova}}, \bibinfo {author} {\bibfnamefont
+  {Evgeniy~S}\ \bibnamefont {Egorov}}, \bibinfo {author} {\bibfnamefont
+  {Alexander~Yu.}\ \bibnamefont {Komkov}}, \bibinfo {author} {\bibfnamefont
+  {Dmitriy~M}\ \bibnamefont {Chudakov}}, \bibinfo {author} {\bibfnamefont
+  {Ilgar~Z}\ \bibnamefont {Mamedov}}, \bibinfo {author} {\bibfnamefont
+  {Thierry}\ \bibnamefont {Mora}}, \bibinfo {author} {\bibfnamefont
+  {Aleksandra~M}\ \bibnamefont {Walczak}}, \ and\ \bibinfo {author}
+  {\bibfnamefont {Yuri~B}\ \bibnamefont {Lebedev}},\ }\bibfield  {title}
+  {\enquote {\bibinfo {title} {{Precise tracking of vaccine-responding T cell
+  clones reveals convergent and personalized response in identical twins}},}\
+  }\href {\doibase 10.1073/pnas.1809642115} {\bibfield  {journal} {\bibinfo
+  {journal} {Proceedings of the National Academy of Sciences}\ }\textbf
+  {\bibinfo {volume} {115}},\ \bibinfo {pages} {12704--12709} (\bibinfo {year}
+  {2018})}\BibitemShut {NoStop}%
 \bibitem [{\citenamefont {Best}\ \emph {et~al.}(2015)\citenamefont {Best},
   \citenamefont {Oakes}, \citenamefont {Heather}, \citenamefont
   {Shawe-Taylor},\ and\ \citenamefont {Chain}}]{Best2015a}%
@@ -75,12 +171,41 @@
   reports}\ }\textbf {\bibinfo {volume} {5}},\ \bibinfo {pages} {14629}
   (\bibinfo {year} {2015})}\BibitemShut {NoStop}%
 \bibitem [{\citenamefont {Mora}\ and\ \citenamefont
-  {Walczak}(2016)}]{Mora2016}%
+  {Walczak}(2018)}]{Mora2018}%
   \BibitemOpen
   \bibfield  {author} {\bibinfo {author} {\bibfnamefont {Thierry}\ \bibnamefont
-  {Mora}}\ and\ \bibinfo {author} {\bibfnamefont {Aleksandra}\ \bibnamefont
+  {Mora}}\ and\ \bibinfo {author} {\bibfnamefont {Aleksandra~M}\ \bibnamefont
   {Walczak}},\ }\bibfield  {title} {\enquote {\bibinfo {title} {{Quantifying
-  lymphocyte receptor diversity}},}\ }\href {\doibase 10.1101/046870} {\ ,\
-  \bibinfo {pages} {1--10} (\bibinfo {year} {2016})},\ \Eprint
-  {http://arxiv.org/abs/1604.00487} {arXiv:1604.00487} \BibitemShut {NoStop}%
+  lymphocyte receptor diversity}},}\ }in\ \href@noop {} {\emph {\bibinfo
+  {booktitle} {Systems Immunology: An Introduction to Modeling Methods for
+  Scientists}}},\ \bibinfo {editor} {edited by\ \bibinfo {editor} {\bibnamefont
+  {{J. Das}}}\ and\ \bibinfo {editor} {\bibfnamefont {C.}~\bibnamefont
+  {Jayaprakash}}}\ (\bibinfo  {publisher} {CRC Press},\ \bibinfo {year}
+  {2018})\BibitemShut {NoStop}%
+\bibitem [{\citenamefont {Mora}\ and\ \citenamefont
+  {Walczak}(2019)}]{Mora2019}%
+  \BibitemOpen
+  \bibfield  {author} {\bibinfo {author} {\bibfnamefont {Thierry}\ \bibnamefont
+  {Mora}}\ and\ \bibinfo {author} {\bibfnamefont {Aleksandra~M}\ \bibnamefont
+  {Walczak}},\ }\href@noop {} {\enquote {\bibinfo {title} {{How many different
+  clonotypes do immune repertoires contain? ´}},}\ } (\bibinfo {year}
+  {2019}),\ \Eprint {http://arxiv.org/abs/arXiv:1907.08230v1}
+  {arXiv:arXiv:1907.08230v1} \BibitemShut {NoStop}%
+\bibitem [{\citenamefont {Qi}\ \emph {et~al.}(2014)\citenamefont {Qi},
+  \citenamefont {Liu}, \citenamefont {Cheng}, \citenamefont {Glanville},
+  \citenamefont {Zhang}, \citenamefont {Lee},\ and\ \citenamefont
+  {Olshen}}]{Qi2014}%
+  \BibitemOpen
+  \bibfield  {author} {\bibinfo {author} {\bibfnamefont {Qian}\ \bibnamefont
+  {Qi}}, \bibinfo {author} {\bibfnamefont {Yi}~\bibnamefont {Liu}}, \bibinfo
+  {author} {\bibfnamefont {Yong}\ \bibnamefont {Cheng}}, \bibinfo {author}
+  {\bibfnamefont {Jacob}\ \bibnamefont {Glanville}}, \bibinfo {author}
+  {\bibfnamefont {David}\ \bibnamefont {Zhang}}, \bibinfo {author}
+  {\bibfnamefont {Ji-yeun}\ \bibnamefont {Lee}}, \ and\ \bibinfo {author}
+  {\bibfnamefont {Richard~A}\ \bibnamefont {Olshen}},\ }\bibfield  {title}
+  {\enquote {\bibinfo {title} {{Diversity and clonal selection in the human
+  T-cell repertoire}},}\ }\href {\doibase 10.1073/pnas.1409155111} {\bibfield
+  {journal} {\bibinfo  {journal} {Proceedings of the National Academy of
+  Sciences}\ }\textbf {\bibinfo {volume} {111}} (\bibinfo {year} {2014}),\
+  10.1073/pnas.1409155111}\BibitemShut {NoStop}%
 \end{thebibliography}%

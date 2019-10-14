@@ -1,0 +1,16 @@
+Next generation sequencing allows us to gain access to repertoire-wide data supporting more comprehensive repertoire analysis and more robust vaccine design \citep{Benichou2011}. 
+Despite large-scale efforts\citep{Glanville2017}, how repertoire statistics respond to such acute perturbations is unknown. 
+Longitudinal repertoire sequencing (RepSeq) makes possible the characterization of repertoire dynamics. 
+Despite the large number of samples (clones) in these datasets lending it to model-based inference, there are few existing model-based approaches to this analysis. 
+Most current approaches (e.g. \citep{Chu2019}) quantify repertoire response properties using measurement statistics that are limited to what is observed in the sample, rather than what transpires in the individual.
+Model-based approaches, in contrast, can in principle capture features of the actual repertoire response to, for instance ongoing, natural stimuli, modeled as a point process of infections, and giving rise to diffusion-like response dynamics. 
+Another regime for model-based approaches is the response to a single, strong perturbation, such as a vaccine, giving rise to a stereotyped, transient response dynamics.
+In either case, a measurement model is needed since what is observed (molecule counts) is indirect.
+We also only observe a small fraction of the total number of clones, so some extrapolation is necessary. 
+Finally, both the underlying clonal population dynamics and the transformation applied by the measurement is stochastic, each contributing its own variability, making inferences based on sample ratios of molecule counts inaccurate.
+
+Inference of frequency variation from sequencing data has been intensely researched in other areas of systems biology, such as in RNAseq studies. There, approaches are becoming standardized (DESEQ2 \citep{Love2014},EdgeR \citep{Robinson2008}, etc.) and technical problems have been formulated and partly addressed.
+The differences between RNAseq and RepSeq data, however, means that direct translation of these methods is questionable. Moreover, the known structure of clonal populations may be leveraged for model-based inference using RepSeq, potentially providing advantages over existing RNAseq-based approaches.
+
+Here, we take a generative modeling approach to repertoire dynamics. Our model incorporates known features of clonal frequency statistics and the statistics of the sequencing process. The models we consider are designed to be learnable using RepSeq data, and then used to infer properties of the repertoires of the individuals providing the samples. To guide its development, we have analyzed a longitudinal dataset around yellow fever vaccination (some results of this analysis are published \citep{Pogorelyy12704}). Yellow fever serves as model of acute infection in humans and here we present analyses of this data set that highlights the inferential power of our approach to uncover perturbed repertoire dynamics. 
+

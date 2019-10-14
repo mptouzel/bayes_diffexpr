@@ -45,7 +45,7 @@ standart_experiment_DE_YF<-function(DTlist,thres=4,grp=diff_group_yf){
 }
 
 #load data
-YF_all<-import_folder_dt_fread("../../YellowFever/prepostvaccine/")
+YF_all<-import_folder_dt_fread("../../data/Yellow_fever/prepostvaccine/test/")
 
 #subset for F replicates and pass it through edger pipeline
 S2_exp<-standart_experiment_DE_YF(YF_all[grepl("F",names(YF_all))&grepl("S2",names(YF_all))])

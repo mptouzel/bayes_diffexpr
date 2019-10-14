@@ -10,3 +10,5 @@ tmp
 **.txt
 **.csv
 **.kate-swp
+*.RDataTmp
+*.Rhistory

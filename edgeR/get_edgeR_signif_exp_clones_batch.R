@@ -28,7 +28,7 @@ merge_dt_list<-function(DTlist,colname="Read.proportion",bycol="CDR3.nucleotide.
   DTlistm[, Mean :=Sum/(length(grep(colname, names(DTlistm)))),][]
 }
 
-diff_group_yf<-c("d0","d0","d15","d15","d45","d45","d7","d7","dp0","dp0")
+diff_group_yf<-c("d0","d0","d15","d15")#,"d45","d45","d7","d7","dp0","dp0")
 
 standart_experiment_DE_YF<-function(DTlist,thres=4,grp=diff_group_yf){
   mdt<-merge_dt_list(DTlist = DTlist,bycol = "CDR3.nucleotide.sequence",colname = "Read.count")
@@ -44,17 +44,19 @@ standart_experiment_DE_YF<-function(DTlist,thres=4,grp=diff_group_yf){
 }
 
 #load data
-YF_all<-import_folder_dt_fread("/Volumes/Data/YF_assemble_1/mixcr/Fulls/")
+YF_all<-import_folder_dt_fread("../../data/Yellow_fever/prepostvaccine/test/")
 #susbset for F replicates and pass it through edger pipeline
-GS_exp<-standart_experiment_DE_YF(YF_all[grepl("F",names(YF_all))&grepl("GS",names(YF_all))])
-Kar_exp<-standart_experiment_DE_YF(YF_all[grepl("F",names(YF_all))&grepl("Kar",names(YF_all))])
-Luci_exp<-standart_experiment_DE_YF(YF_all[grepl("F",names(YF_all))&grepl("Luci",names(YF_all))])
-Azh_exp<-standart_experiment_DE_YF(YF_all[grepl("F",names(YF_all))&grepl("Azh",names(YF_all))])
-Yzh_exp<-standart_experiment_DE_YF(YF_all[grepl("F",names(YF_all))&grepl("Yzh",names(YF_all))])
-KB_exp<-standart_experiment_DE_YF(YF_all[grepl("F",names(YF_all))&grepl("KB",names(YF_all))])
-exp_list<-list(Azh=Azh_exp,Yzh=Yzh_exp,KB=KB_exp,GS=GS_exp,Kar=Kar_exp,Luci=Luci_exp)
+P1_exp<-standart_experiment_DE_YF(YF_all[grepl("F",names(YF_all))&grepl("P1",names(YF_all))])
+Q1_exp<-standart_experiment_DE_YF(YF_all[grepl("F",names(YF_all))&grepl("Q1",names(YF_all))])
+Q2_exp<-standart_experiment_DE_YF(YF_all[grepl("F",names(YF_all))&grepl("Q2",names(YF_all))])
+S2_exp<-standart_experiment_DE_YF(YF_all[grepl("F",names(YF_all))&grepl("S2",names(YF_all))])
+S1_exp<-standart_experiment_DE_YF(YF_all[grepl("F",names(YF_all))&grepl("S1",names(YF_all))])
+P2_exp<-standart_experiment_DE_YF(YF_all[grepl("F",names(YF_all))&grepl("P2",names(YF_all))])
+exp_list<-list(S2=S2_exp,S1=S1_exp,P2=P2_exp,P1=P1_exp,Q1=Q1_exp,Q2=Q2_exp)
 
 #select significantly expanded clones and filter them by log2FC threshold 
 top15_3<-lapply(exp_list,function(x){topTags(exactTest(x,pair = c("d0","d15"),dispersion = "trended"),n=5000,p.value = 0.01)$table})
 top15_3<-lapply(top15_3,function(x){x$CDR3nt<-row.names(x);x})
 top15_3_sign<-lapply(top15_3,function(x)x[x$logFC>5,])
+
+for (i in seq_along(top15_3_sign)){write.csv(top15_3_sign[names(top15_3_sign)[i]],file=names(top15_3_sign)[i])}

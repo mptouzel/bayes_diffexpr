@@ -1,5 +1,5 @@
 import numpy as np
-import matplotlib.pyplot as pl
+#import matplotlib.pyplot as pl
 #pl.rc("figure", facecolor="gray",figsize = (8,8))
 #pl.rc('lines',markeredgewidth = 2)
 #pl.rc('font',size = 24)
@@ -7,7 +7,7 @@ import matplotlib.pyplot as pl
 #import seaborn as sns
 #sns.set_style("whitegrid", {'axes.grid' : True})
 
-def plot_n1_vs_n2(sp,savename,savepath,save,figsize=(8,8),thresh=0.05,mkrsz=70,minmkrsz=5,ftsz=20):
+def plot_n1_vs_n2(sp,savename,savepath,save,pl,colorbar=False,figsize=(8,8),thresh=0.05,mkrsz=70,minmkrsz=5,ftsz=20):
     if save:
         figsize=(5.5/3,5.5/3)
         thresh=1e-7
@@ -39,18 +39,31 @@ def plot_n1_vs_n2(sp,savename,savepath,save,figsize=(8,8),thresh=0.05,mkrsz=70,m
     
     ax1.set_yscale('log')
     ax1.set_xscale('log')
-    ax1.set_xlabel(r'$n_1$',fontsize=ftsz)
-    ax1.set_ylabel(r'$n_2$',fontsize=ftsz)
+    ax1.set_xlabel(r'$n$',fontsize=ftsz)
+    ax1.set_ylabel(r'$n^\prime$',fontsize=ftsz)
     ax1.set_xticks([10**n for n in range(5)])
     ax1.set_yticks([10**n for n in range(5)])
-        
-    add_ticks(ax1,[zeroval],['$0$'],'x',ftsz)
-    add_ticks(ax1,[zeroval],['$0$'],'y',ftsz)
-        
+    fig1.suptitle(r'$p(n,n^\prime)$')    
+    add_ticks(ax1,[zeroval],[r'$0$'],'x',ftsz,pl)
+    add_ticks(ax1,[zeroval],[r'$0$'],'y',ftsz,pl)
+
+    if colorbar:
+        import matplotlib
+        ax2 = fig1.add_axes([.95, 0.12, 0.05, 0.76])
+        cmap = pl.cm.gray
+        norm = matplotlib.colors.Normalize(vmin=np.log10(1/float(np.sum(countpaircounts_d))), vmax=0)
+        cb1 = matplotlib.colorbar.ColorbarBase(ax2, cmap=cmap,
+                                    norm=norm,
+                                    orientation='vertical',
+                                    ticks=[-6,-4,-2,0.])
+        cb1.set_ticklabels([r'$10^{-6}$',r'$10^{-4}$',r'$10^{-2}$',r'$10^{0}$'])#,r'$10^-3$',r'$10^-2$',r'$10^-1$'])
+
     if save:
         fig1.savefig(savepath+savename+'.pdf',format= 'pdf',dpi=1000, bbox_inches='tight')
+    
+    return fig1
         
-def add_ticks(ax,newLocs,newLabels,pos,ftsz):
+def add_ticks(ax,newLocs,newLabels,pos,ftsz,pl):
     # Draw to get ticks
     pl.draw()
 

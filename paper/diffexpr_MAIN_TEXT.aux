@@ -16,92 +16,162 @@
 \gdef\HyperFirstAtBeginDocument#1{#1}
 \providecommand\HyField@AuxAddToFields[1]{}
 \providecommand\HyField@AuxAddToCoFields[2]{}
+\citation{Benichou2011}
+\citation{Glanville2017}
+\citation{Chu2019}
+\citation{Love2014}
+\citation{Robinson2008}
+\citation{Pogorelyy12704}
 \newlabel{FirstPage}{{}{1}{}{section*.1}{}}
+\newlabel{FirstPage@cref}{{}{1}}
 \@writefile{toc}{\contentsline {title}{Inferring repertoire dynamics from repertoire sequencing}{1}{section*.2}}
 \@writefile{toc}{\contentsline {abstract}{Abstract}{1}{section*.1}}
-\@writefile{toc}{\contentsline {section}{\numberline {}Results}{1}{section*.3}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {}A repertoire model family learnable using RepSeq}{1}{section*.4}}
-\@writefile{toc}{\contentsline {subsubsection}{\numberline {}Model family definition}{1}{section*.5}}
-\citation{Robinson2008}
+\@writefile{toc}{\contentsline {section}{\numberline {}Results}{2}{section*.3}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {A}A repertoire model family learnable from pair RepSeq datasets}{2}{section*.4}}
+\newlabel{sec:model}{{\tmspace  +\thinmuskip {.1667em}A}{2}{}{section*.4}{}}
+\newlabel{sec:model@cref}{{[subsection][1][0]\tmspace  +\thinmuskip {.1667em}A}{2}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {}Model family definition}{2}{section*.5}}
 \newlabel{eq:jointf}{{1}{2}{}{equation.0.1}{}}
+\newlabel{eq:jointf@cref}{{[subsection][1][0]\tmspace  +\thinmuskip {.1667em}A}{2}}
 \newlabel{eq:norm_constr}{{2}{2}{}{equation.0.2}{}}
+\newlabel{eq:norm_constr@cref}{{[equation][2][]2}{2}}
 \@writefile{toc}{\contentsline {subsubsection}{\numberline {}Normalization}{2}{section*.6}}
 \newlabel{eq:orignorm}{{4}{2}{}{equation.0.4}{}}
-\newlabel{eq:postnorm}{{5}{2}{}{equation.0.5}{}}
-\newlabel{eq:fprimeconst}{{6}{2}{}{equation.0.6}{}}
-\@writefile{toc}{\contentsline {subsubsection}{\numberline {}Model Assumptions}{2}{section*.7}}
-\@writefile{toc}{\contentsline {subsubsection}{\numberline {}Learning procedure}{2}{section*.8}}
+\newlabel{eq:orignorm@cref}{{[equation][4][]4}{2}}
+\citation{Robinson2008}
+\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces  \emph  {Data and modeling method}. \leavevmode {\color  {red}restructure} Left: Data sets consist of pairs of bar-coded repertoire-sequenced (RepSeq) blood samples, either from same or different days. Each data set is summarized in its pair count histogram. Right: Clone frequency distribution, $\rho (f)$, is set as a power law, parameterized by the power, $\alpha _f$ and the minimum frequency, $f_{\textrm  {min}}$. With a choice of the measurement model, the null model is then specified and learned using a replicate pair data set. Using these parameters and choosing a form for the log fold-change prior, the differential expression model is specified and learned on a differentially expressed pair data set. Once learned, the model is used for posterior inference performed on all observed clones. }}{3}{figure.1}}
+\newlabel{fig:fullmodel}{{1}{3}{\emph {Data and modeling method}. \re {restructure} Left: Data sets consist of pairs of bar-coded repertoire-sequenced (RepSeq) blood samples, either from same or different days. Each data set is summarized in its pair count histogram. Right: Clone frequency distribution, $\rho (f)$, is set as a power law, parameterized by the power, $\alpha _f$ and the minimum frequency, $f_{\textrm {min}}$. With a choice of the measurement model, the null model is then specified and learned using a replicate pair data set. Using these parameters and choosing a form for the log fold-change prior, the differential expression model is specified and learned on a differentially expressed pair data set. Once learned, the model is used for posterior inference performed on all observed clones}{figure.1}{}}
+\newlabel{fig:fullmodel@cref}{{[figure][1][]1}{3}}
+\newlabel{eq:postnorm}{{5}{3}{}{equation.0.5}{}}
+\newlabel{eq:postnorm@cref}{{[equation][5][]5}{3}}
+\newlabel{eq:fprimeconst}{{6}{3}{}{equation.0.6}{}}
+\newlabel{eq:fprimeconst@cref}{{[equation][6][]6}{3}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {}Parameter sharing}{3}{section*.7}}
 \citation{Robinson2008}
 \citation{Best2015a}
-\@writefile{toc}{\contentsline {subsection}{\numberline {}A null model for replicate clone size variation}{3}{section*.9}}
-\@writefile{toc}{\contentsline {subsubsection}{\numberline {}Model description}{3}{section*.10}}
-\@writefile{toc}{\contentsline {subsubsection}{\numberline {}Selecting an unbiased normalization constraint}{3}{section*.11}}
-\@writefile{toc}{\contentsline {subsubsection}{\numberline {}Refinements to the measurement model}{3}{section*.12}}
-\@writefile{toc}{\contentsline {subsubsection}{\numberline {}Measurement model parameters}{3}{section*.13}}
-\citation{Mora2016}
-\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces  \emph  {Repertoire model}. (a) Clone frequency distribution, $\rho (f)$, is set as a power law, parameterized by the power, $\alpha $ and the minimum frequency, $f_{min}$. (b) (c) Differential expression model structure and learning procedure. Null model parameters are learned by marginalizing over clone frequency, $f$, and maximizing this marginal likelihood with respect to the parameters. Sampled repertoires can then be generated using the ML estimate. $P(n|f)$ is set as a negative binomial distribution in cell counts controlling the scale parameter of a Poisson distribution of molecule counts. In the differentially expressed condition (prime-decorated quantities), the parameters, $\theta _{\textrm  {diff}}$, of the prior distribution, $\rho (c)$, of fold-change, $c$, are learned by maximizing the marginal likelihood (see section \textit  {Fold change prior}) with respect to $\theta _{\textrm  {diff}}$, keeping the remaining parameters, $\theta _{\textrm  {null}}$, fixed to their ML estimates, $\mathaccentV {hat}05E{\theta }_{\textrm  {null}}$, previously obtained using same-day replicate data (see fig. \ref  {fig:nullstats}). }}{4}{figure.1}}
-\newlabel{fig:fullmodel}{{1}{4}{\emph {Repertoire model}. (a) Clone frequency distribution, $\rho (f)$, is set as a power law, parameterized by the power, $\alpha $ and the minimum frequency, $f_{min}$. (b) (c) Differential expression model structure and learning procedure. Null model parameters are learned by marginalizing over clone frequency, $f$, and maximizing this marginal likelihood with respect to the parameters. Sampled repertoires can then be generated using the ML estimate. $P(n|f)$ is set as a negative binomial distribution in cell counts controlling the scale parameter of a Poisson distribution of molecule counts. In the differentially expressed condition (prime-decorated quantities), the parameters, $\theta _{\textrm {diff}}$, of the prior distribution, $\rho (c)$, of fold-change, $c$, are learned by maximizing the marginal likelihood (see section \textit {Fold change prior}) with respect to $\theta _{\textrm {diff}}$, keeping the remaining parameters, $\theta _{\textrm {null}}$, fixed to their ML estimates, $\hat {\theta }_{\textrm {null}}$, previously obtained using same-day replicate data (see fig. \ref {fig:nullstats})}{figure.1}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces  \emph  {Learning a null model}. Models and data comparison using molecule pair count statistics (example donor: S2; day 0-day 0 comparison). The learned model for Poisson distributed $P(n|f)$ (left) and for $P(n|f)$ set as a negative binomial distribution in cell counts controlling the scale parameter of a Poisson distribution of molecule counts (center; fig.\ref  {fig:modelstruct}). Right: empirical pair count histogram. }}{4}{figure.2}}
-\newlabel{fig:nullstats}{{2}{4}{\emph {Learning a null model}. Models and data comparison using molecule pair count statistics (example donor: S2; day 0-day 0 comparison). The learned model for Poisson distributed $P(n|f)$ (left) and for $P(n|f)$ set as a negative binomial distribution in cell counts controlling the scale parameter of a Poisson distribution of molecule counts (center; fig.\ref {fig:modelstruct}). Right: empirical pair count histogram}{figure.2}{}}
-\@writefile{toc}{\contentsline {subsubsection}{\numberline {}Inference of diversity \& fraction observed}{4}{section*.14}}
-\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces  \emph  {Learned null model parameters} plotted separately for each donor and time point. Error bars are the inverse standard deviation of a Gaussian approximation around the maximum of the likelihood acting as a lower bound for the variance of the estimates. }}{5}{figure.3}}
-\newlabel{fig:nullparas_timeseries}{{3}{5}{\emph {Learned null model parameters} plotted separately for each donor and time point. Error bars are the inverse standard deviation of a Gaussian approximation around the maximum of the likelihood acting as a lower bound for the variance of the estimates}{figure.3}{}}
-\@writefile{toc}{\contentsline {subsubsection}{\numberline {}Pushing the null model into the temporal domain}{5}{section*.15}}
-\@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces  \emph  {Null model marginals and conditionals}. The marginal, $P(n_1|\theta _n)=\DOTSB \sum@ \slimits@ _{n_2}P(n_1,n_2|\theta _n)$ (a), and conditional $P(n_1|n_2\theta _n)=P(n_1,n_2|\theta _n)/P(n_1|\theta _n)$ (b), distributions.{\color  {red} Add conditional $P(n|n'=0)$ and $P(n'|n=0)$. clean up figure (remove grey etc.)} }}{5}{figure.4}}
-\newlabel{fig:modelfit}{{4}{5}{\emph {Null model marginals and conditionals}. The marginal, $P(n_1|\theta _n)=\sum _{n_2}P(n_1,n_2|\theta _n)$ (a), and conditional $P(n_1|n_2\theta _n)=P(n_1,n_2|\theta _n)/P(n_1|\theta _n)$ (b), distributions.{\color {red} Add conditional $P(n|n'=0)$ and $P(n'|n=0)$. clean up figure (remove grey etc.)}}{figure.4}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {5}{\ignorespaces  \emph  {Diversity estimates.} Shown are diversity estimates obtained from the Renyi entropies, $H_\beta $, of the inferred clone frequency distributions for $\beta =0$ (estimated total number of clones, $N$), $\beta =1$ (Shannon entropy) and $\beta =2$ (Simpson index), across donors and days. }}{5}{figure.5}}
-\newlabel{fig:div_estimates}{{5}{5}{\emph {Diversity estimates.} Shown are diversity estimates obtained from the Renyi entropies, $H_\beta $, of the inferred clone frequency distributions for $\beta =0$ (estimated total number of clones, $N$), $\beta =1$ (Shannon entropy) and $\beta =2$ (Simpson index), across donors and days}{figure.5}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {}Differential expression model}{6}{section*.16}}
-\@writefile{toc}{\contentsline {subsubsection}{\numberline {}Model description}{6}{section*.17}}
-\@writefile{toc}{\contentsline {subsubsection}{\numberline {}Example 1: base prior and mouse vs. human repertoires}{6}{section*.18}}
-\newlabel{eq:Ps_ex1}{{10}{6}{}{equation.0.10}{}}
-\@writefile{toc}{\contentsline {subsubsection}{\numberline {}Learning $\rho (s)$ on real data}{6}{section*.19}}
-\@writefile{toc}{\contentsline {subsubsection}{\numberline {}Inferring global properties of the differentially expressed repertoire}{7}{section*.20}}
-\@writefile{toc}{\contentsline {subsubsection}{\numberline {}Prior solvable via expectation maximization}{7}{section*.21}}
-\@writefile{lof}{\contentsline {figure}{\numberline {6}{\ignorespaces  \emph  {Inference on synthetic data.}(a) $\rho (s)$, eq. \ref  {eq:Ps_ex1}, is parametrized by an effect size, $\mathaccentV {bar}016{s}$, describing the expansion of the responding fraction, $\alpha $ of the repertoire. Expansion is relative to the functions center, $s_0$, which is fixed by the homeostatic constraint $\delimiter "426830A f \delimiter "526930B =\delimiter "426830A f' \delimiter "526930B $. (b) Inferring $\theta ^*=(\mathaccentV {bar}016{s}^*,\alpha ^* )=(1.0,10^{-2})$ (black dot). Maximums of the log-likelihood, $\ell _\textrm  {max}=\ell (\mathaccentV {hat}05E{\theta }_r)$, for many realizations, $r=1,\dots  ,50$, are given by gray crosses, with their average, $\mathaccentV {bar}016{\mathaccentV {hat}05E{\theta }}$, shown as the black cross. The log-likelihood, $\ell (\theta )$, for one realization is shown over logarithmically-spaced gray contours decreasing from the maximum, $\ell _{\textrm  {max}}$. The inverse Fisher information, $\mathcal  {I}^{-1}$, for a realization is shown as the black-lined ellipse centered around its maximum, $\mathaccentV {bar}016{\mathaccentV {hat}05E{\theta }}$, provides a lower bound to the variance of our ML estimate. The gray scale contours increasing to the upper-right denote the excess in the used normalization, $Z=e^{s_0}$, above $1$. (c) Posteriors of the learned model, $P(s|n,n')$ over pairs $(n,n')$ for $n'=n$, with $n$ varying over a logarithmically-spaced set of counts (left), and for $n'$ given by the reverse order of this set (right). The black dot in both plots denotes the $1-\alpha $ non-responding component, $\delta (s-s_0)$. (Parameters: $N=10^6$,$\epsilon =10^-2$.) }}{7}{figure.6}}
-\newlabel{fig:diffexpr_ex1}{{6}{7}{\emph {Inference on synthetic data.}(a) $\rho (s)$, eq. \ref {eq:Ps_ex1}, is parametrized by an effect size, $\bar {s}$, describing the expansion of the responding fraction, $\alpha $ of the repertoire. Expansion is relative to the functions center, $s_0$, which is fixed by the homeostatic constraint $\langle f \rangle =\langle f' \rangle $. (b) Inferring $\theta ^*=(\bar {s}^*,\alpha ^* )=(1.0,10^{-2})$ (black dot). Maximums of the log-likelihood, $\ell _\textrm {max}=\ell (\hat {\theta }_r)$, for many realizations, $r=1,\dots ,50$, are given by gray crosses, with their average, $\bar {\hat {\theta }}$, shown as the black cross. The log-likelihood, $\ell (\theta )$, for one realization is shown over logarithmically-spaced gray contours decreasing from the maximum, $\ell _{\textrm {max}}$. The inverse Fisher information, $\mathcal {I}^{-1}$, for a realization is shown as the black-lined ellipse centered around its maximum, $\bar {\hat {\theta }}$, provides a lower bound to the variance of our ML estimate. The gray scale contours increasing to the upper-right denote the excess in the used normalization, $Z=e^{s_0}$, above $1$. (c) Posteriors of the learned model, $P(s|n,n')$ over pairs $(n,n')$ for $n'=n$, with $n$ varying over a logarithmically-spaced set of counts (left), and for $n'$ given by the reverse order of this set (right). The black dot in both plots denotes the $1-\alpha $ non-responding component, $\delta (s-s_0)$. (Parameters: $N=10^6$,$\epsilon =10^-2$.)}{figure.6}{}}
-\@writefile{toc}{\contentsline {subsubsection}{\numberline {}Posteriors of log fold-change}{8}{section*.22}}
-\@writefile{toc}{\contentsline {section}{\numberline {I}Rest is work in progress}{8}{section*.23}}
-\@writefile{lof}{\contentsline {figure}{\numberline {7}{\ignorespaces  \emph  {Supp. Fig: Self-consistent reinference of diffexpr model}. }}{8}{figure.7}}
-\newlabel{fig:suppfig2_reinf_diffexpr}{{7}{8}{\emph {Supp. Fig: Self-consistent reinference of diffexpr model}}{figure.7}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {8}{\ignorespaces  \emph  {Analysis of sloppiness of model: description of max-Likelihood manifold and possibly reduced description} }}{8}{figure.8}}
-\newlabel{fig:Data}{{8}{8}{\emph {Analysis of sloppiness of model: description of max-Likelihood manifold and possibly reduced description}}{figure.8}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {9}{\ignorespaces  \emph  {Evolution of parameters}. }}{8}{figure.9}}
-\newlabel{fig:timeevo}{{9}{8}{\emph {Evolution of parameters}}{figure.9}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {}Ensemble-level application: Time-tracking of ensemble parameters}{8}{section*.24}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {}Clone-level application: Identification of responding clones}{8}{section*.25}}
-\@writefile{lof}{\contentsline {figure}{\numberline {10}{\ignorespaces  \emph  {Posteriors}. Some example posteriors. Distributions of slow, smed, shigh, and Pval. Volcano plot. }}{8}{figure.10}}
-\newlabel{fig:posteriors}{{10}{8}{\emph {Posteriors}. Some example posteriors. Distributions of slow, smed, shigh, and Pval. Volcano plot}{figure.10}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {}discussion}{9}{section*.26}}
-\@writefile{toc}{\contentsline {section}{\numberline {}Methods}{9}{section*.27}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {}Null model definition}{9}{section*.28}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {}Normalization}{9}{section*.29}}
-\newlabel{eq:bigZ}{{22}{10}{}{equation.1.22}{}}
-\newlabel{eq:largedev}{{23}{10}{}{equation.1.23}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {}Obtaining diversity estimates from the clone frequency density}{10}{section*.30}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {}Null Model Sampling}{10}{section*.31}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {}Null Model Inference}{10}{section*.32}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {}Differential expression model definition}{11}{section*.33}}
-\newlabel{eq:genPs}{{28}{11}{}{equation.1.27}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {}Identifying responding clones}{11}{section*.34}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {}Alternative model sampling procedure}{11}{section*.35}}
-\@writefile{lof}{\contentsline {figure}{\numberline {11}{\ignorespaces  \emph  {Reinferring null model parameters}. Shown are the actual and estimated values of the null model parameters used to validate the null model inference procedure over the range exhibited by the data. A 3x3x3x3 grid of points were sampled and results collapsed over each parameter axis. $f_{min}$ was fixed to satisfy the normalization constraint. }}{11}{figure.11}}
-\newlabel{fig:reinfer_null}{{11}{11}{\emph {Reinferring null model parameters}. Shown are the actual and estimated values of the null model parameters used to validate the null model inference procedure over the range exhibited by the data. A 3x3x3x3 grid of points were sampled and results collapsed over each parameter axis. $f_{min}$ was fixed to satisfy the normalization constraint}{figure.11}{}}
-\@writefile{toc}{\contentsline {subsubsection}{\numberline {}Direct Sampling}{11}{section*.36}}
-\@writefile{toc}{\contentsline {subsubsection}{\numberline {}Effective Sampling}{11}{section*.37}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {}equal frequency constraint}{12}{section*.38}}
-\@writefile{toc}{\contentsline {section}{\numberline {}Acknowledgements}{12}{section*.39}}
-\@writefile{toc}{\contentsline {section}{\numberline {}Author Contributions}{12}{section*.40}}
-\@writefile{toc}{\contentsline {section}{\numberline {}Additional Information}{12}{section*.41}}
+\citation{Mora2018,Mora2019,Qi2014}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {}Learning procedure}{4}{section*.8}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {B}The replicate pair case: a null model capturing baseline clone size variation}{4}{section*.9}}
+\newlabel{sec:rep_pair}{{\tmspace  +\thinmuskip {.1667em}B}{4}{}{section*.9}{}}
+\newlabel{sec:rep_pair@cref}{{[subsection][2][0]\tmspace  +\thinmuskip {.1667em}B}{4}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {}Replicate variability}{4}{section*.10}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {}Model validation}{4}{section*.11}}
+\citation{Mora2018}
+\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces  \emph  {Measurement model comparison}. (a) The null model learning procedure. With a measurement model specified, the count pair distribution is calculated and the likelihood of the data is maximized over the parameters, $\theta _{\textrm  {null}}$. (b) Data sampled from the learned models under different measurement models (left: one-step Poisson distribution, center: two-step Negative binomial distribution to Poisson distribution). Data is shown at right. (c) Parametrization of the two-step measurement model. Left: the mean-variance relationship specifying power, $\gamma $ and coefficient, $a$, of the over-dispersion. Center: the cell count distribution with mean scaling with the number of cells in the sample, $M$. Right: the molecule count distribution with mean scaling with the number of cells and the sampling efficiency, $M/N_{\textrm  {r}}$, with $N_{\textrm  {r}}$ the measured number of molecules in the sample. }}{5}{figure.2}}
+\newlabel{fig:nullstats}{{2}{5}{\emph {Measurement model comparison}. (a) The null model learning procedure. With a measurement model specified, the count pair distribution is calculated and the likelihood of the data is maximized over the parameters, $\theta _{\textrm {null}}$. (b) Data sampled from the learned models under different measurement models (left: one-step Poisson distribution, center: two-step Negative binomial distribution to Poisson distribution). Data is shown at right. (c) Parametrization of the two-step measurement model. Left: the mean-variance relationship specifying power, $\gamma $ and coefficient, $a$, of the over-dispersion. Center: the cell count distribution with mean scaling with the number of cells in the sample, $M$. Right: the molecule count distribution with mean scaling with the number of cells and the sampling efficiency, $M/N_{\textrm {r}}$, with $N_{\textrm {r}}$ the measured number of molecules in the sample}{figure.2}{}}
+\newlabel{fig:nullstats@cref}{{[figure][2][]2}{5}}
+\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces  \emph  {Learned null model parameters}. Data is plotted separately for a pair of replicates across donors and time points. Error bars are obtained by projecting onto the respective parameter axis \leavevmode {\color  {red}(not from projecting the Fisher Information in the manifold satisfying the constraint)}. }}{5}{figure.3}}
+\newlabel{fig:nullparas_timeseries}{{3}{5}{\emph {Learned null model parameters}. Data is plotted separately for a pair of replicates across donors and time points. Error bars are obtained by projecting onto the respective parameter axis \re {(not from projecting the Fisher Information in the manifold satisfying the constraint)}}{figure.3}{}}
+\newlabel{fig:nullparas_timeseries@cref}{{[figure][3][]3}{5}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {}Inference of diversity and fraction observed}{5}{section*.12}}
+\@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces  \emph  {Null model marginals and conditionals}. The marginal, $P(n|\theta _{\textrm  {null}})=\DOTSB \sum@ \slimits@ _{n^{\prime }}P(n,n^{\prime }|\theta _{\textrm  {null}})$ (a), and conditional $P(n|n^{\prime },\theta _{\textrm  {null}})=P(n,n^{\prime }|\theta _{\textrm  {null}})/P(n|\theta _{\textrm  {null}})$ (b) distributions. Lines are analytic predictions of the learned model. Dots are estimated frequencies. (Donor S2, day 0/day 0 comparison). }}{6}{figure.4}}
+\newlabel{fig:modelfit}{{4}{6}{\emph {Null model marginals and conditionals}. The marginal, $P(n|\theta _{\textrm {null}})=\sum _{n^{\prime }}P(n,n^{\prime }|\theta _{\textrm {null}})$ (a), and conditional $P(n|n^{\prime },\theta _{\textrm {null}})=P(n,n^{\prime }|\theta _{\textrm {null}})/P(n|\theta _{\textrm {null}})$ (b) distributions. Lines are analytic predictions of the learned model. Dots are estimated frequencies. (Donor S2, day 0/day 0 comparison)}{figure.4}{}}
+\newlabel{fig:modelfit@cref}{{[figure][4][]4}{6}}
+\@writefile{lof}{\contentsline {figure}{\numberline {5}{\ignorespaces  \emph  {Diversity estimates.} Shown are diversity estimates obtained from the Renyi entropies, $H_\beta $, of the inferred clone frequency distributions for $\beta =0$ (estimated total number of clones, $N$), $\beta =1$ (Shannon entropy) and $\beta =2$ (Simpson index), across donors and days. }}{6}{figure.5}}
+\newlabel{fig:div_estimates}{{5}{6}{\emph {Diversity estimates.} Shown are diversity estimates obtained from the Renyi entropies, $H_\beta $, of the inferred clone frequency distributions for $\beta =0$ (estimated total number of clones, $N$), $\beta =1$ (Shannon entropy) and $\beta =2$ (Simpson index), across donors and days}{figure.5}{}}
+\newlabel{fig:div_estimates@cref}{{[figure][5][]5}{6}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {C}The differentially-expressed pair case: quantifying variation from baseline}{6}{section*.13}}
+\newlabel{sec:diffexpr}{{\tmspace  +\thinmuskip {.1667em}C}{6}{}{section*.13}{}}
+\newlabel{sec:diffexpr@cref}{{[subsection][3][0]\tmspace  +\thinmuskip {.1667em}C}{6}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {}An ensemble-level log-frequency fold-change model}{6}{section*.14}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {}Model validation}{6}{section*.15}}
+\@writefile{toc}{\contentsline {paragraph}{\numberline {}Synthetic repertoire example}{7}{section*.16}}
+\newlabel{eq:Ps_ex1}{{9}{7}{}{equation.0.9}{}}
+\newlabel{eq:Ps_ex1@cref}{{[equation][9][]9}{7}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {}Posterior analysis}{7}{section*.17}}
+\@writefile{lof}{\contentsline {figure}{\numberline {6}{\ignorespaces  \leavevmode {\color  {red}add $-s_0$ to x axis label}\emph  {Inference on synthetic data.}(a) $\rho (s)$, \cref  {eq:Ps_ex1}, is parametrized by an effect size, $\mathaccentV {bar}016{s}$, describing the expansion of the responding fraction, $\alpha $ of the repertoire. Expansion is relative to the functions center, $s_0$, which is fixed by the homeostatic constraint $\delimiter "426830A f \delimiter "526930B =\delimiter "426830A f' \delimiter "526930B $. (b) Inferring $\theta ^*=(\mathaccentV {bar}016{s}^*,\alpha ^* )=(1.0,10^{-2})$ (black dot). Maximums of the log-likelihood, $\ell _\textrm  {max}=\ell (\mathaccentV {hat}05E{\theta }_r)$, for many realizations, $r=1,\dots  ,50$, are given by gray crosses, with their average, $\mathaccentV {bar}016{\mathaccentV {hat}05E{\theta }}$, shown as the black cross. The log-likelihood, $\ell (\theta )$, for one realization is shown over logarithmically-spaced gray contours decreasing from the maximum, $\ell _{\textrm  {max}}$. The inverse Fisher information, $\mathcal  {I}^{-1}$, for a realization is shown as the black-lined ellipse centered around its maximum, $\mathaccentV {bar}016{\mathaccentV {hat}05E{\theta }}$, provides a lower bound to the variance of our ML estimate. The gray scale contours increasing to the upper-right denote the excess in the used normalization, $Z=e^{s_0}$, above $1$. (c) Posteriors of the learned model, $P(s|n,n^{\prime })$ over pairs $(n,n^{\prime })$ for $n^{\prime }=n$, with $n$ varying over a logarithmically-spaced set of counts (left), and for $n^{\prime }$ given by the reverse order of this set (right). The black dot in both plots denotes the $1-\alpha $ non-responding component, $\delta (s-s_0)$. (Parameters: $N=10^6$,$\epsilon =10^{-2}$.) }}{7}{figure.6}}
+\newlabel{fig:diffexpr_ex1}{{6}{7}{\re {add $-s_0$ to x axis label}\emph {Inference on synthetic data.}(a) $\rho (s)$, \cref {eq:Ps_ex1}, is parametrized by an effect size, $\bar {s}$, describing the expansion of the responding fraction, $\alpha $ of the repertoire. Expansion is relative to the functions center, $s_0$, which is fixed by the homeostatic constraint $\langle f \rangle =\langle f' \rangle $. (b) Inferring $\theta ^*=(\bar {s}^*,\alpha ^* )=(1.0,10^{-2})$ (black dot). Maximums of the log-likelihood, $\ell _\textrm {max}=\ell (\hat {\theta }_r)$, for many realizations, $r=1,\dots ,50$, are given by gray crosses, with their average, $\bar {\hat {\theta }}$, shown as the black cross. The log-likelihood, $\ell (\theta )$, for one realization is shown over logarithmically-spaced gray contours decreasing from the maximum, $\ell _{\textrm {max}}$. The inverse Fisher information, $\mathcal {I}^{-1}$, for a realization is shown as the black-lined ellipse centered around its maximum, $\bar {\hat {\theta }}$, provides a lower bound to the variance of our ML estimate. The gray scale contours increasing to the upper-right denote the excess in the used normalization, $Z=e^{s_0}$, above $1$. (c) Posteriors of the learned model, $P(s|n,n^{\prime })$ over pairs $(n,n^{\prime })$ for $n^{\prime }=n$, with $n$ varying over a logarithmically-spaced set of counts (left), and for $n^{\prime }$ given by the reverse order of this set (right). The black dot in both plots denotes the $1-\alpha $ non-responding component, $\delta (s-s_0)$. (Parameters: $N=10^6$,$\epsilon =10^{-2}$.)}{figure.6}{}}
+\newlabel{fig:diffexpr_ex1@cref}{{[figure][6][]6}{7}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {}Measured repertoire example}{8}{section*.18}}
+\newlabel{eq:Ps_ex2}{{11}{8}{}{equation.0.11}{}}
+\newlabel{eq:Ps_ex2@cref}{{[equation][11][]11}{8}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {}Imprecise estimation of ensemble-level differential expression}{8}{section*.19}}
+\@writefile{lof}{\contentsline {figure}{\numberline {7}{\ignorespaces  \emph  {Inference on actual data.} The optimal values of $alpha$ and $\mathaccentV {bar}016{s}$ across donors and days \leavevmode {\color  {red}still missing values!}. The background heat map is a spatial correlation of the resulting list of significantly expanded clones. }}{9}{figure.7}}
+\newlabel{fig:diffexpr_ex2}{{7}{9}{\emph {Inference on actual data.} The optimal values of $alpha$ and $\bar {s}$ across donors and days \re {still missing values!}. The background heat map is a spatial correlation of the resulting list of significantly expanded clones}{figure.7}{}}
+\newlabel{fig:diffexpr_ex2@cref}{{[figure][7][]7}{9}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {D}Identifying responding clones}{9}{section*.20}}
+\newlabel{sec:resp_clones}{{\tmspace  +\thinmuskip {.1667em}D}{9}{}{section*.20}{}}
+\newlabel{sec:resp_clones@cref}{{[subsection][4][0]\tmspace  +\thinmuskip {.1667em}D}{9}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {}Measured posterior distributions of log-frequency fold-change}{9}{section*.21}}
+\@writefile{lof}{\contentsline {figure}{\numberline {8}{\ignorespaces  \emph  {Competition between $\alpha _f$ and $\mathaccentV {bar}016{s}$ in shaping the posteriors, $\rho (s|n,n^\prime )$}.\leavevmode {\color  {red}insert figure here} }}{9}{figure.8}}
+\newlabel{fig:posteriors}{{8}{9}{\emph {Competition between $\alpha _f$ and $\bar {s}$ in shaping the posteriors, $\rho (s|n,n^\prime )$}.\re {insert figure here}}{figure.8}{}}
+\newlabel{fig:posteriors@cref}{{[figure][8][]8}{9}}
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {}Identifying responding clones}{9}{section*.22}}
+\@writefile{lof}{\contentsline {figure}{\numberline {9}{\ignorespaces  \emph  {Properties of significantly expanded clones}. The correlation between $f$ and $s_\textrm  {median}$. }}{10}{figure.9}}
+\newlabel{fig:exp_prop}{{9}{10}{\emph {Properties of significantly expanded clones}. The correlation between $f$ and $s_\textrm {median}$}{figure.9}{}}
+\newlabel{fig:exp_prop@cref}{{[figure][9][]9}{10}}
+\@writefile{toc}{\contentsline {section}{\numberline {}Discussion}{10}{section*.23}}
+\@writefile{lof}{\contentsline {figure}{\numberline {10}{\ignorespaces  \emph  {Hummingbird plot of confidence of response versus average effect size}. A significance threshold is placed according to $P_{\textrm  {null}}=0.025$, where $P_{\textrm  {null}}=P(s\leq 0)$ for expansion and $P_{\textrm  {null}}=P(s\geq 0)$ for contraction. Inset shows the same threshold hold in $(n,n^\prime )$-space. }}{10}{figure.10}}
+\newlabel{fig:volcano}{{10}{10}{\emph {Hummingbird plot of confidence of response versus average effect size}. A significance threshold is placed according to $P_{\textrm {null}}=0.025$, where $P_{\textrm {null}}=P(s\leq 0)$ for expansion and $P_{\textrm {null}}=P(s\geq 0)$ for contraction. Inset shows the same threshold hold in $(n,n^\prime )$-space}{figure.10}{}}
+\newlabel{fig:volcano@cref}{{[figure][10][]10}{10}}
+\@writefile{lof}{\contentsline {figure}{\numberline {11}{\ignorespaces  \emph  {Overlap in list of significantly expanded clones.} The optimal values of $\alpha $ and $\mathaccentV {bar}016{s}$ for donor S2 and day-0 day-15 comparison for 3 replicates (square markers). The background heat map is the list overlap $\left |\ell _{(\mathaccentV {bar}016{s},\alpha )}\cap \ell ^{\textrm  {ref}}_{(\mathaccentV {bar}016{s},\alpha )}\right |/\left |\ell _{(\mathaccentV {bar}016{s},\alpha )}\cup \ell ^{\textrm  {ref}}_{(\mathaccentV {bar}016{s},\alpha )}\right |$ with the reference given by the list obtained using values of $\mathaccentV {bar}016{s}$ and $\alpha $ at the black dot. }}{10}{figure.11}}
+\newlabel{fig:table_list}{{11}{10}{\emph {Overlap in list of significantly expanded clones.} The optimal values of $\alpha $ and $\bar {s}$ for donor S2 and day-0 day-15 comparison for 3 replicates (square markers). The background heat map is the list overlap $\left |\ell _{(\bar {s},\alpha )}\cap \ell ^{\textrm {ref}}_{(\bar {s},\alpha )}\right |/\left |\ell _{(\bar {s},\alpha )}\cup \ell ^{\textrm {ref}}_{(\bar {s},\alpha )}\right |$ with the reference given by the list obtained using values of $\bar {s}$ and $\alpha $ at the black dot}{figure.11}{}}
+\newlabel{fig:table_list@cref}{{[figure][11][]11}{10}}
+\citation{Pogorelyy12704}
+\@writefile{toc}{\contentsline {section}{\numberline {}Acknowledgements}{11}{section*.24}}
+\@writefile{toc}{\contentsline {section}{\numberline {}Author Contributions}{11}{section*.25}}
+\@writefile{toc}{\contentsline {section}{\numberline {}Additional Information}{11}{section*.26}}
+\@writefile{toc}{\contentsline {section}{\numberline {}Appendices}{11}{section*.27}}
 \@writefile{toc}{\appendix }
-\@writefile{toc}{\contentsline {section}{\numberline {A}Appendixes}{12}{section*.42}}
+\@writefile{toc}{\contentsline {section}{\numberline {A}Normalization}{11}{section*.28}}
+\newlabel{sec:normal}{{A}{11}{}{section*.28}{}}
+\newlabel{sec:normal@cref}{{[appendix][1][2147483647]A}{11}}
+\newlabel{eq:joint}{{A1}{11}{}{equation.A.1}{}}
+\newlabel{eq:joint@cref}{{[equation][1][2147483647,1]A1}{11}}
+\newlabel{eq:bigZ}{{A4}{11}{}{equation.A.4}{}}
+\newlabel{eq:bigZ@cref}{{[equation][4][2147483647,1]A4}{11}}
+\newlabel{eq:largedev}{{A5}{11}{}{equation.A.5}{}}
+\newlabel{eq:largedev@cref}{{[equation][5][2147483647,1]A5}{11}}
+\@writefile{toc}{\contentsline {section}{\numberline {B}Null model sampling}{11}{section*.29}}
+\newlabel{sec:null_sampling}{{B}{11}{}{section*.29}{}}
+\newlabel{sec:null_sampling@cref}{{[appendix][2][2147483647]B}{11}}
+\@writefile{toc}{\contentsline {section}{\numberline {C}Differential model sampling}{12}{section*.30}}
+\newlabel{sec:diffexpr_sampling}{{C}{12}{}{section*.30}{}}
+\newlabel{sec:diffexpr_sampling@cref}{{[appendix][3][2147483647]C}{12}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {}Direct sampling}{12}{section*.31}}
+\@writefile{toc}{\contentsline {section}{\numberline {D}Obtaining diversity estimates from the clone frequency density}{12}{section*.32}}
+\newlabel{sec:infer_div}{{D}{12}{}{section*.32}{}}
+\newlabel{sec:infer_div@cref}{{[appendix][4][2147483647]D}{12}}
 \bibdata{diffexpr_MAIN_TEXTNotes,diffexpr}
-\bibcite{Robinson2008}{{1}{2008}{{Robinson\ and\ Smyth}}{{}}}
-\bibcite{Best2015a}{{2}{2015}{{Best\ \emph  {et~al.}}}{{Best, Oakes, Heather, Shawe-Taylor,\ and\ Chain}}}
-\bibcite{Mora2016}{{3}{2016}{{Mora\ and\ Walczak}}{{}}}
+\bibcite{Benichou2011}{{1}{2011}{{Benichou\ and\ Louzoun}}{{}}}
+\bibcite{Glanville2017}{{2}{2017}{{Glanville\ \emph  {et~al.}}}{{Glanville, Huang, Nau, Hatton, Wagar, Rubelt, Ji, Han, Krams, Pettus, Haas, Arlehamn, Sette, Boyd, Scriba, Martinez,\ and\ Davis}}}
+\@writefile{toc}{\contentsline {section}{\numberline {E}Deriving update for shift, $s_0$}{13}{section*.33}}
+\newlabel{sec:shift_proc}{{E}{13}{}{section*.33}{}}
+\newlabel{sec:shift_proc@cref}{{[appendix][5][2147483647]E}{13}}
+\@writefile{toc}{\contentsline {section}{\numberline {F}Prior solvable via expectation maximization}{13}{section*.34}}
+\newlabel{sec:EM}{{F}{13}{}{section*.34}{}}
+\newlabel{sec:EM@cref}{{[appendix][6][2147483647]F}{13}}
+\@writefile{toc}{\contentsline {section}{\numberline {G}Identifying responding clones}{13}{section*.35}}
+\@writefile{lof}{\contentsline {figure}{\numberline {12}{\ignorespaces  \emph  {Supp. Fig: \leavevmode {\color  {red}Not Done!}Approximate equivalence of $N\delimiter "426830A f \delimiter "526930B =1$ and $\mathcal  {Z}^{\mathcal  {D}}_f$.}}}{13}{figure.12}}
+\newlabel{fig:SM_match_null_constr}{{12}{13}{\emph {Supp. Fig: \re {Not Done!}Approximate equivalence of $N\langle f \rangle =1$ and $\mathcal {Z}^{\mathcal {D}}_f$.\label {fig:SM_match_null_constr}}}{figure.12}{}}
+\newlabel{fig:SM_match_null_constr@cref}{{[figure][12][2147483647]12}{13}}
+\@writefile{lof}{\contentsline {figure}{\numberline {13}{\ignorespaces  \emph  {Supp. Fig: Two-step model captures tail better than one-step model.}}}{13}{figure.13}}
+\newlabel{fig:SM_twostep_better}{{13}{13}{\emph {Supp. Fig: Two-step model captures tail better than one-step model.\label {fig:SM_twostep_better}}}{figure.13}{}}
+\newlabel{fig:SM_twostep_better@cref}{{[figure][13][2147483647]13}{13}}
+\@writefile{toc}{\contentsline {section}{\numberline {}References}{13}{section*.36}}
+\bibcite{Chu2019}{{3}{2019}{{Chu\ \emph  {et~al.}}}{{Chu, Bi, Emerson, Sherwood, Birnbaum, Robins,\ and\ Alm}}}
+\@writefile{lof}{\contentsline {figure}{\numberline {14}{\ignorespaces  \emph  {Reinferring null model parameters}. Shown are the actual and estimated values of the null model parameters used to validate the null model inference procedure over the range exhibited by the data. A 3x3x3x3 grid of points were sampled and results collapsed over each parameter axis. $f_{min}$ was fixed to satisfy the normalization constraint. }}{14}{figure.14}}
+\newlabel{fig:SM_reinfer_null}{{14}{14}{\emph {Reinferring null model parameters}. Shown are the actual and estimated values of the null model parameters used to validate the null model inference procedure over the range exhibited by the data. A 3x3x3x3 grid of points were sampled and results collapsed over each parameter axis. $f_{min}$ was fixed to satisfy the normalization constraint}{figure.14}{}}
+\newlabel{fig:SM_reinfer_null@cref}{{[figure][14][2147483647]14}{14}}
+\@writefile{lof}{\contentsline {figure}{\numberline {15}{\ignorespaces  \emph  {Supp. Fig: Precise, self-consistent reinference of differential expression model for human-sized repertoire}. }}{14}{figure.15}}
+\newlabel{fig:SM_reinf_diffexpr}{{15}{14}{\emph {Supp. Fig: Precise, self-consistent reinference of differential expression model for human-sized repertoire}}{figure.15}{}}
+\newlabel{fig:SM_reinf_diffexpr@cref}{{[figure][15][2147483647]15}{14}}
+\@writefile{lof}{\contentsline {figure}{\numberline {16}{\ignorespaces  \emph  {Supp. Fig: Empirical histograms of naive log-frequency fold-change for day-0/day-0 and day-0/day-15 pair comparisons}. }}{14}{figure.16}}
+\newlabel{fig:SM_snaive_hists}{{16}{14}{\emph {Supp. Fig: Empirical histograms of naive log-frequency fold-change for day-0/day-0 and day-0/day-15 pair comparisons}}{figure.16}{}}
+\newlabel{fig:SM_snaive_hists@cref}{{[figure][16][2147483647]16}{14}}
+\@writefile{lof}{\contentsline {figure}{\numberline {17}{\ignorespaces  \emph  {Supp. Fig: Summary statistics of log-frequency fold-change posterior distributions}. (a) summary statistics. (b) comparing the posterior median log-frequency fold-change and the naive estimate, $\qopname  \relax o{log}n^{\prime }/n$ (across clones with $n,n^{\prime }>0$). }}{14}{figure.17}}
+\newlabel{fig:SM_smed_snaive}{{17}{14}{\emph {Supp. Fig: Summary statistics of log-frequency fold-change posterior distributions}. (a) summary statistics. (b) comparing the posterior median log-frequency fold-change and the naive estimate, $\log n^{\prime }/n$ (across clones with $n,n^{\prime }>0$)}{figure.17}{}}
+\newlabel{fig:SM_smed_snaive@cref}{{[figure][17][2147483647]17}{14}}
+\bibcite{Love2014}{{4}{2014}{{Love\ \emph  {et~al.}}}{{Love, Huber,\ and\ Anders}}}
+\bibcite{Robinson2008}{{5}{2008}{{Robinson\ and\ Smyth}}{{}}}
+\bibcite{Pogorelyy12704}{{6}{2018}{{Pogorelyy\ \emph  {et~al.}}}{{Pogorelyy, Minervina, Touzel, Sycheva, Komech, Kovalenko, Karganova, Egorov, Komkov, Chudakov, Mamedov, Mora, Walczak,\ and\ Lebedev}}}
+\bibcite{Best2015a}{{7}{2015}{{Best\ \emph  {et~al.}}}{{Best, Oakes, Heather, Shawe-Taylor,\ and\ Chain}}}
+\bibcite{Mora2018}{{8}{2018}{{Mora\ and\ Walczak}}{{}}}
+\bibcite{Mora2019}{{9}{2019}{{Mora\ and\ Walczak}}{{}}}
+\bibcite{Qi2014}{{10}{2014}{{Qi\ \emph  {et~al.}}}{{Qi, Liu, Cheng, Glanville, Zhang, Lee,\ and\ Olshen}}}
 \bibstyle{apsrev4-1}
 \citation{REVTEX41Control}
 \citation{apsrev41Control}
-\@writefile{toc}{\contentsline {section}{\numberline {}References}{13}{section*.43}}
-\newlabel{LastBibItem}{{3}{13}{}{section*.43}{}}
-\newlabel{LastPage}{{}{13}{}{}{}}
+\newlabel{LastBibItem}{{10}{15}{}{section*.36}{}}
+\newlabel{LastBibItem@cref}{{[appendix][7][2147483647]G}{15}}
+\newlabel{LastPage}{{}{15}{}{}{}}

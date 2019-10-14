@@ -23,7 +23,7 @@ if root_path not in sys.path:
 # import lib.utils.plotting
 # from lib.utils.plotting import plot_n1_vs_n2,add_ticks
 # from lib.utils.prob_utils import get_distsample
-# from lib.proc import get_sparserep,import_data
+from lib.proc import get_sparserep,import_data
 from lib.model import get_logPs_pm,get_rhof,get_distsample
 from functools import partial
 
@@ -39,10 +39,15 @@ from lib.learning import callback,learn_null_model,get_fisherinfo_diffexpr_model
 # -
 
 import matplotlib.pyplot as pl
-pl.rc("figure", facecolor="gray",figsize = (8,8))
-pl.rc('lines',markeredgewidth = 2)
-pl.rc('font',size = 24)
-pl.rc('text', usetex=True)
+paper=False
+if not paper:
+    pl.rc("figure", facecolor="gray",figsize = (8,8))
+    pl.rc('lines',markeredgewidth = 2)
+    pl.rc('font',size = 24)
+else:
+    pl.rc("figure", facecolor="none",figsize = (3.5,3.5))
+    pl.rc('lines',markeredgewidth = 1)
+    pl.rc('font',size = 10)
 import seaborn as sns
 # sns.set_style("whitegrid", {'axes.grid' : True})
 params= {'text.latex.preamble' : [r'\usepackage{amsmath}']}
@@ -50,17 +55,64 @@ pl.rcParams.update(params)
 
 # Test on one sample:
 
-outpath=''
+# +
+# null_paras=np.load(outpath+'paras.npy')
+#initialize
+smax =25.0
+s_step = 0.1
 
-null_paras=np.load(outpath+'paras.npy')
+NreadsI=1e6
+NreadsII=NreadsI
+Nclones=int(1e9)
+
+alpha_rho=-2.05
+
 
 # +
-logrhofvec,logfvec = get_rhof(null_paras[0],np.power(10,null_paras[-1]))
-dlogfby2=np.diff(logfvec)/2. #1/2 comes from trapezoid integration below
+def fmin_func(logfmin,alpha_rho,Nclones,get_rhof):
+    fmin=np.power(10,logfmin)
+    logrhofvec,logfvec = get_rhof(alpha_rho,fmin,freq_dtype='float32')
+    dlogf=np.diff(logfvec)/2.
+    tmp=logrhofvec+2*logfvec
+    integ=np.exp(np.array(tmp))#,dtype='float32'))
+    return np.log(Nclones)+np.log(np.sum(dlogf*(integ[1:] + integ[:-1])))
 
-svec,logfvecwide,f2s_step,smax,s_step=get_svec(null_paras,s_step,smax)
+fmin_func_part=partial(fmin_func,alpha_rho=alpha_rho,Nclones=Nclones,get_rhof=get_rhof)
+
+from scipy.optimize import fsolve
+
+logfmin_guess = -9.
+logfmin_sol= fsolve(fmin_func_part, logfmin_guess)
+
+fmin=np.power(10,logfmin_sol[0])
+print('fmin='+str(fmin))
+
+fig,ax=pl.subplots(1,1)
+fminvec=np.logspace(-16,-5,100)
+ax.plot(fminvec,[fmin_func_part(np.log10(fmintmp)) for fmintmp in fminvec])
+ax.scatter(np.power(10,logfmin_sol[0]),fmin_func(logfmin_sol[0],alpha_rho,Nclones,get_rhof),s=100)
+ax.set_xscale('log')
+# ax.set_yscale('log')
+
+# +
+# logrhofvec,logfvec = get_rhof(null_paras[0],np.power(10,null_paras[-1]))
+# dlogfby2=np.diff(logfvec)/2. #1/2 comes from trapezoid integration below
+
+# svec,logfvecwide,f2s_step,smax,s_step=get_svec(null_paras,s_step,smax)
+# np.save(outpath+'svec.npy',svec)
+# indn1,indn2,sparse_rep_counts,unicountvals_1,unicountvals_2,NreadsI,NreadsII=sparse_rep
+# -
+
+outpath='../../../output/S2_0_F1_S2_0_F2/null_pair_v4_ct_1_mt_2_min0_maxinf/'
+null_paras=np.load(outpath+'optparas.npy')
+
+logrhofvec,logfvec = get_rhof(null_paras[0],np.power(10,null_paras[-1]))
+svec,logfvec,logfvecwide,f2s_step,smax,s_step=get_fvec_and_svec(null_paras,s_step,smax)
 np.save(outpath+'svec.npy',svec)
 indn1,indn2,sparse_rep_counts,unicountvals_1,unicountvals_2,NreadsI,NreadsII=sparse_rep
+Nsamp=np.sum(sparse_rep_counts)
+
+# Example with Poisson:
 
 # +
 alp=0.1
@@ -98,27 +150,40 @@ n2_samples=n2_samples[seen]
 print("samples n1: "+str(np.mean(n1_samples))+" | "+str(max(n1_samples))+", n2 "+str(np.mean(n2_samples))+" | "+str(max(n2_samples)))
 # -
 
-output_path='../../../output/syn_data/'
+# In general:
+
+logPn1_f=get_logPn_f(unicountvals_1,NreadsI,logfvec,acq_model_type,null_paras)
+...
+
+# Plot written data
+
+output_path='../../../output/syn_data/v1_N1e9_test3/'
 fig,ax=pl.subplots(1,1)
 for trial in range(10):
     outstruct=np.load(output_path+'v1_N1e9_test3outstruct_v1_N1e9_test3_'+str(trial)+'.npy').item()
     optparas=outstruct.x
-    ax.scatter(np.power(10,optparas[1]),np.power(10,optparas[0]))
-ax.set_xlim(0,5)
-ax.set_ylim(1e-4,1e0)
-ax.set_yscale('log')
+    ax.scatter(np.power(10,optparas[1]),0.01-(np.power(10,optparas[0])-0.01))
+ax.set_yticks([0.00999,0.01,0.01001])
+ax.scatter(1.0,0.01,color='k',marker='x',s=300)
+ax.set_xlim(0.99,1.01)
+ax.set_ylim((0.00999,0.01001))
+# ax.set_yscale('log')
+# ax.set_xscale('log')
+ax.set_xlabel(r'$\bar{s}$')
+ax.set_ylabel(r'$\alpha$')
+fig.savefig('synthetic_reinference.pdf',format='pdf',dpi=500,bbox_inches='tight')
 
 output_path='../../../output/syn_data/'
 fig,ax=pl.subplots(1,1)
 for trial in range(10):
-    outstruct=np.load(output_path+'v1_N1e9_test3outstruct_v1_N1e9_test3_'+str(trial)+'.npy').item()
+    outstruct=np.load(output_path+'v1_N1e9_test3/v1_N1e9_test3outstruct_v1_N1e9_test3_'+str(trial)+'.npy').item()
     optparas=outstruct.x
     ax.scatter(optparas[0],optparas[1])
-    uni1=np.load('/home/max/Dropbox/scripts/Projects/immuno/diffexpr/output/syn_data/v1_N1e9_test3unicountvals_1_d'+str(trial)+'.npy')
-    uni2=np.load('/home/max/Dropbox/scripts/Projects/immuno/diffexpr/output/syn_data/v1_N1e9_test3unicountvals_2_d'+str(trial)+'.npy')
-    indn1=np.load('/home/max/Dropbox/scripts/Projects/immuno/diffexpr/output/syn_data/v1_N1e9_test3indn1_d'+str(trial)+'.npy')
-    indn2=np.load('/home/max/Dropbox/scripts/Projects/immuno/diffexpr/output/syn_data/v1_N1e9_test3indn2_d'+str(trial)+'.npy')
-    shift=np.load('/home/max/Dropbox/scripts/Projects/immuno/diffexpr/output/syn_data/v1_N1e9_test3shift_v1_N1e9_test3_'+str(trial)+'.npy')
+    uni1=np.load('/home/max/Dropbox/scripts/Projects/immuno/diffexpr/output/syn_data/v1_N1e9_test3/v1_N1e9_test3unicountvals_1_d'+str(trial)+'.npy')
+    uni2=np.load('/home/max/Dropbox/scripts/Projects/immuno/diffexpr/output/syn_data/v1_N1e9_test3/v1_N1e9_test3unicountvals_2_d'+str(trial)+'.npy')
+    indn1=np.load('/home/max/Dropbox/scripts/Projects/immuno/diffexpr/output/syn_data/v1_N1e9_test3/v1_N1e9_test3indn1_d'+str(trial)+'.npy')
+    indn2=np.load('/home/max/Dropbox/scripts/Projects/immuno/diffexpr/output/syn_data/v1_N1e9_test3/v1_N1e9_test3indn2_d'+str(trial)+'.npy')
+    shift=np.load('/home/max/Dropbox/scripts/Projects/immuno/diffexpr/output/syn_data/v1_N1e9_test3/v1_N1e9_test3shift_v1_N1e9_test3_'+str(trial)+'.npy')
     print(shift)
     ax.plot(uni1[indn1],uni2[indn2],'o')
     ax.set_yscale('log')
@@ -517,7 +582,7 @@ trial=1
 # output_path='../../../output/syn_data/'
 
 #load in 5x5 likelihood surface
-Nc=np.sum(np.load(outpath+'v1_N1e9_test3countpaircounts_d'+str(trial)+'.npy')))
+Nc=np.sum(np.load(outpath+'v1_N1e9_test3/v1_N1e9_test3countpaircounts_d'+str(trial)+'.npy')))
 LSurfacetmp=np.load('../infer_sim/LSurface_'+str(trial)+'.npy')*Nc #LSurface[trial,:,:]*Nc
 parasopt=np.load('../infer_sim/outstruct_v1_test3_'+str(trial)+'.npy').flatten()[0].x #(alp,realsbar)#
 npoints=len(LSurfacetmp)                
@@ -669,6 +734,9 @@ def eigsorted(cov):
 
 # Posterior analysis
 
+sbarstar=[realsbar]
+alpstar=[alp]
+
 # +
 st=time.time()
 data_store=list()
@@ -696,20 +764,27 @@ svec=s_step*svec
 # Ps=get_Ps_pm(alpvec[aitopt],1.,0.,sbarvec_p[spitopt],smax,s_step)
 # Ps=get_Ps_pm(1.0,betvec[bitopt],sbarvec_m[smitopt],sbarvec_p[spitopt],smax,s_step)
 
-Ps=get_Ps_pm(np.power(10,alpstar[0]),1,np.power(10,sbarstar[0]),np.power(10,sbarstar[0]),smax,s_step)
-logPsvec=np.log(Ps)
+logPsvec=get_logPs_pm([np.power(10,alpstar[0]),1,np.power(10,sbarstar[0]),np.power(10,sbarstar[0])],smax,s_step,'rhs_only')
+# logPsvec=np.log(Ps)
 
 #compute Pn1_f
 n1_samples=np.logspace(0,4,9,dtype=int)
 n2_samples=n1_samples#[::-1]
 counts_d = pd.DataFrame({'Clone_count_1': n1_samples, 'Clone_count_2': n2_samples})
 indn1_d, indn2_d, countpaircounts_d, unicountvals_1_d, unicountvals_2_d, NreadsI_d, NreadsII_d=get_sparserep(counts_d)
+Nreadsvec=[NreadsI_d,NreadsII_d]
+
+# logrhofvec,logfvec = get_rhof(null_paras[0],np.power(10,null_paras[-1]))
+# svec,logfvec,logfvecwide,f2s_step,smax,s_step=get_fvec_and_svec(null_paras,s_step,smax)
+# np.save(outpath+'svec.npy',svec)
+# indn1,indn2,sparse_rep_counts,unicountvals_1,unicountvals_2,NreadsI,NreadsII=sparse_rep
+# Nsamp=np.sum(sparse_rep_counts)
+# logPn1_f=get_logPn_f(unicountvals_1_d,NreadsI_d,logfvec,2,null_paras)
 
 it=0
 unicounts=deepcopy(unicountvals_1_d)
-mean_n=Nreadsvec[it]*fvec
+mean_n=Nreadsvec[it]*np.exp(logfvec)
 Pn_f=PoisPar(mean_n,unicounts)
-logPn1_f=np.log(Pn_f)#[:,uinds1]) #throws warning
 
     
 indn1=indn1_d
@@ -830,7 +905,7 @@ def dummy(column):
     pvalvec=[pval,0.5,1-pval] #bound in criteria for slow, smed, and shigh, respectively
 
     smean=np.sum(svec_shift*column)
-    smax=svec_shift[np.argmax(column)]	
+    smax=svec_shift[np.argmax(columnn)]	
     forwardcmf=np.cumsum(column)
     backwardcmf=np.cumsum(column[::-1])[::-1]
 
@@ -852,6 +927,8 @@ print(likelihood)
 # -
 
 # Plot
+
+# recall that original code in mouse figures notebook
 
 tmp_posts_zero=data_store[0].posterior[::100]
 ait=0
@@ -877,4 +954,6 @@ ax.set_ylabel(r'$P(s)$')
 # ax.legend(frameon=False)
 ax.locator_params(axis='y',numticks=6)
 # fig.tight_layout()
-fig.savefig("posterior_plot_a.pdf",format='pdf',dpi=500)#,bbox_inches='tight',pad_inches=0.1)
+# fig.savefig("posterior_plot_a.pdf",format='pdf',dpi=500)#,bbox_inches='tight',pad_inches=0.1)
+
+

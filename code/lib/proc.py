@@ -63,7 +63,7 @@ def get_sparserep(counts):
 def get_distsample(pmf,Nsamp,dtype='uint32'):
     '''
     generates Nsamp index samples of dtype (e.g. uint16 handles up to 65535 indices) from discrete probability mass function pmf.
-    Handles multi-dimensional domain. Output is sorted.
+    Handles multi-dimensional domain. N.B. Output is sorted.
     '''
     #assert np.sum(pmf)==1, "cmf not normalized!"
     
@@ -107,20 +107,10 @@ def suffstats_table(pthresh, svec,logPsvec,subset, sparse_rep,logPn1n2_s):
     Pn1n2_ps=np.sum(Psn1n2_ps,0)
 
     Ps_n1n2ps=np.exp(logPn1n2_s+logPsvec[:,np.newaxis])/Pn1n2_ps[np.newaxis,:]
+    
     #compute cdf to get p-value to threshold on to reduce output size
     cdfPs_n1n2ps=np.cumsum(Ps_n1n2ps,0)
 
-    n1_n2_to_n1n2=np.zeros((len(unicountvals_1),len(unicountvals_2)),dtype=int)
-    for n1it,n1 in enumerate(unicountvals_1):
-        for n2it,n2 in enumerate(unicountvals_2):
-            ind=np.where(np.logical_and(n1==unicountvals_1[indn1],n2==unicountvals_2[indn2]))[0]
-            if not ind:
-                continue
-            else:
-                n1_n2_to_n1n2[n1it,n2it]=int(ind)                
-    get_sparseind_part=partial(get_sparse_ind,unicountvals_1=unicountvals_1,unicountvals_2=unicountvals_2,n1_n2_to_n1n2=n1_n2_to_n1n2)        
-    subset['sparse_ind']=subset.apply(get_sparseind_part, axis=1)
-    subset.sparse_ind=subset.sparse_ind.astype('int32')
     get_pvalue_part=partial(get_pvalue,svec=svec,cdfPs_n1n2ps=cdfPs_n1n2ps)
     cdflabel=r'$1-P(s>0)$'
     subset[cdflabel]=subset.apply(get_pvalue_part, axis=1)

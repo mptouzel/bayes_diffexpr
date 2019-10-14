@@ -5,6 +5,8 @@ from functools import partial
 from copy import deepcopy
 import os
 from scipy.stats import nbinom
+from scipy.stats import poisson
+from scipy.stats import rv_discrete
 from lib.proc import get_distsample
 #import ctypes
 #mkl_rt = ctypes.CDLL('libmkl_rt.so')
@@ -167,19 +169,16 @@ def get_logPs_pm(paras,smax,stp,func_type):
     return np.log(Ps)
 #@profile
 def get_logPn_f(unicounts,Nreads,logfvec,acq_model_type,paras):
-    alpha = paras[0] #power law exponent
+    
     if acq_model_type<2:
         m_total=float(np.power(10, paras[3])) 
         r_c=Nreads/m_total
-        fmin=np.power(10,paras[4])
-    else:
-        fmin=np.power(10,paras[3])
-        
-    beta_mv= paras[1]
-    alpha_mv=paras[2]
+    if acq_model_type<3:
+        beta_mv= paras[1]
+        alpha_mv=paras[2]
         
     if acq_model_type<2: #for models that include cell counts
-        #compute range of m values (number of cells) over which to sum for a given n value (reads) in the data 
+        #compute parametrized range (mean-sigma,mean+5*sigma) of m values (number of cells) conditioned on n values (reads) appearing in the data only 
         nsigma=5.
         nmin=300.
         #for each n, get actual range of m to compute around n-dependent mean m
@@ -223,9 +222,11 @@ def get_logPn_f(unicounts,Nreads,logfvec,acq_model_type,paras):
         mean_n=Nreads*np.exp(logfvec)
         var_n=mean_n+beta_mv*np.power(mean_n,alpha_mv)
         Pn_f=NegBinParMtr(mean_n,var_n,unicounts)
-    else:# acq_model_type==3:
+    elif acq_model_type==3:
         mean_n=Nreads*np.exp(logfvec)
         Pn_f=PoisPar(mean_n,unicounts)
+    else:
+        print('acq_model is 0,1,2, or 3 only')
 
     return np.log(Pn_f)
 
@@ -236,27 +237,30 @@ def get_Pn1n2_s(paras, svec, sparse_rep,acq_model_type,  s_step=0):    #changed 
     #2) svec=-1       => null model likelihood,        output: data-averaged loglikelihood
     #3) else          => compute null model, P(n1,n2), output: Pn1n2,unicountvals_1,unicountvals_2,Pn1_f,Pn2_f,fvec
     
-    #acq_model_type input is which P(n|f) model to use. 0:NB->Pois,1:Pois->NB,2:NBonly,3:Poisonly
+    #acq_model_type input is which P(n|f) model to use (see get_logPn_f function): 
     #paras is the list of null model parameters, length depends on the acq_model_type
-    #e.g. for acq_model_type=0, paras=(alpha,beta_mv,alpha_mv,log_m_total,log_fmin)
+    #   0:NB->Pois, (alpha_rho, beta_mv, alpha_mv, log_{10}M, log_{10}fmin)
+    #   1:Pois->NB, (alpha_rho, beta_mv, alpha_mv, log_{10}M, log_{10}fmin)
+    #   2:NBonly,   (alpha_rho, beta_mv, alpha_mv, log_{10}fmin)
+    #   3:Poisonly  (alpha_rho, log_{10}fmin)
     #mean variance relation: v = m + beta_mv*m^alpha_mv
+    
     indn1,indn2,sparse_rep_counts,unicountvals_1,unicountvals_2,NreadsI,NreadsII=sparse_rep
    
-    
     alpha = paras[0] #power law exponent
-    fmin = np.power(10,paras[4]) if acq_model_type<2 else np.power(10,paras[3]) 
-    logrhofvec,logfvec = get_rhof(paras[0],fmin)
+    fmin = np.power(10,paras[-1])
+    logrhofvec,logfvec = get_rhof(alpha,fmin)
     
     if isinstance(svec,np.ndarray):
         smaxind=(len(svec)-1)/2
-        logf_step=logfvec[1] - logfvec[0] #use natural log here since f2 increments in increments in exp().  
+        logf_step=logfvec[1] - logfvec[0] 
         f2s_step=int(round(s_step/logf_step)) #rounded number of f-steps in one s-step
         logfmin=logfvec[0 ]-f2s_step*smaxind*logf_step
         logfmax=logfvec[-1]+f2s_step*smaxind*logf_step
         logfvecwide=np.linspace(logfmin,logfmax,len(logfvec)+2*smaxind*f2s_step) #a wider domain for the second frequency f2=f1*exp(s)
     
     logPn1_f=get_logPn_f(unicountvals_1,NreadsI,logfvec,acq_model_type,paras)
-    logPn2_f=get_logPn_f(unicountvals_2,NreadsII,logfvecwide if isinstance(svec,np.ndarray) else logfvec,acq_model_type,paras) #for diff expr with shift use shifted range for wide f2, #contains s-shift for sampled data method
+    logPn2_f=get_logPn_f(unicountvals_2,NreadsII,logfvecwide if isinstance(svec,np.ndarray) else logfvec,acq_model_type,paras) #for diff expr with shift use shifted range for wide f2
   
     dlogfby2=np.diff(logfvec)/2. #for later integration via trapezoid method
     if isinstance(svec,np.ndarray):  #P(n1,n2|s)
@@ -273,12 +277,12 @@ def get_Pn1n2_s(paras, svec, sparse_rep,acq_model_type,  s_step=0):    #changed 
         Pn2_s=0
         return Pn1n2_s,unicountvals_1,unicountvals_2,np.exp(logPn1_f),np.exp(logfvec),Pn2_s,Pn0n0_s,svec
       
-    elif svec==-1: #scalar marginal likelihood
+    elif svec==-1: #scalar null model marginal likelihood
         
         integ=np.exp(logrhofvec + logPn2_f[:,0] + logPn1_f[:,0] + logfvec)
         Pn0n0 = np.dot(dlogfby2,integ[1:] + integ[:-1])
 
-        if False:
+        if False: #block to compute and print constraint to check normalization satisfaction
             logPnng0=np.log(1-Pn0n0)
             logPnn0=np.log(Pn0n0)
             logNclones = np.log(np.sum(sparse_rep_counts))-logPnng0
@@ -318,131 +322,408 @@ def get_Pn1n2_s(paras, svec, sparse_rep,acq_model_type,  s_step=0):    #changed 
                 Pn1n2_s[n1_it,n2_it] = np.dot(dlogfby2,integ[1:] + integ[-1])
         Pn1n2_s/=1.-Pn1n2_s[0,0] #remove (n1,n2)=(0,0) and renormalize
         Pn1n2_s[0,0]=0.
-        return Pn1n2_s,unicountvals_1,unicountvals_2,Pn1_f,Pn2_f,logfvec
+        return Pn1n2_s,unicountvals_1,unicountvals_2,logPn1_f,logPn2_f,logfvec
 
 #--------------------------Model Sampling-------------------------------
 
-def get_model_sample_obs(paras,Nsamp,Nreads):
+def get_nullmodel_sample_observedonly(paras,acq_model_type,NreadsI,NreadsII,Nsamp):
     '''
     outputs an array of observed clone frequencies and corresponding dataframe of pair counts
-    Sampling is conditioned on being observed in each of the three (n,0), (0,n'), and n,n'>0 conditions
-    Currently, only for nbinom null model. 
-    TODO add other null models, and generalize to diff expr model. 
-    Note that no explicit normalization is applied. It is assumed that the values in paras is consistent with N<f>=1.
+    for a null model learned from a dataset pair with NreadsI and NreadsII number of reads, respectively.
+    Crucial for RAM efficiency, sampling is conditioned on being observed in each of the three (n,0), (0,n'), and n,n'>0 conditions
+    so that only Nsamp clones need to be sampled, rather than the N clones in the repretoire.
+    Note that no explicit normalization is applied. It is assumed that the values in paras are consistent with N<f>=1 
+    (e.g. were obtained through the learning done in this package).
     '''
+
     
-    alpha_rho = paras[0]
-    fmin=np.power(10,paras[3])
-    logrhofvec,logfvec = get_rhof(alpha_rho,fmin) 
-    dlogfby2=np.diff(logfvec)/2. #two for custom trapezoid integration
+    alpha = paras[0] #power law exponent
+    fmin=np.power(10,paras[-1])
+    if acq_model_type<2:
+        m_total=float(np.power(10, paras[3])) 
+        r_c1=NreadsI/m_total
+        r_c2=NreadsII/m_total
+        r_cvec=[r_c1,r_c2]
+    if acq_model_type<3:
+        beta_mv= paras[1]
+        alpha_mv=paras[2]
+    
+    logrhofvec,logfvec = get_rhof(alpha,fmin)
+    fvec=np.exp(logfvec)
+    dlogf=np.diff(logfvec)/2.
+    
+    #generate measurement model distribution, Pn_f
+    Pn_f=np.empty((len(logfvec),),dtype=object) #len(logfvec) samplers
+    
+    #get value at n=0 to use for conditioning on n>0 (and get full Pn_f here if acq_model_type=2,3)
+    m_max=1e3 #conditioned on n=0, so no edge effects
+    
+    Nreadsvec=(NreadsI,NreadsII)
+    for it in range(2):
+        Pn_f=np.empty((len(fvec),),dtype=object)
+        if acq_model_type==3:
+            m1vec=Nreadsvec[it]*fvec
+            for find,m1 in enumerate(m1vec):
+                Pn_f[find]=poisson(m1)
+            logPn0_f=-m1vec
+        elif acq_model_type==2:
+            m1=Nreadsvec[it]*fvec
+            v1=m1+beta_mv*np.power(m1,alpha_mv)
+            p=1-m1/v1
+            n=m1*m1/v1/p
+            for find,(n,p) in enumerate(zip(n,p)):
+                Pn_f[find]=nbinom(n,1-p)
+            Pn0_f=np.asarray([Pn_find.pmf(0) for Pn_find in Pn_f])
+            logPn0_f=np.log(Pn0_f)
+        elif acq_model_type==1:
+            m1=r_cvec[it]*np.arange(m_max+1)
+            v1=m1+beta_mv*np.power(m1,alpha_mv)
+            p=1-m1/v1
+            p[0]=1.
+            n=m1*m1/v1/p
+            n[0]=0.
+            Pn0_f=np.zeros((len(fvec),))
+            for find in range(len(Pn0_f)):
+                Pn0_f[find]=np.dot(poisson(m_total*fvec[find]).pmf(np.arange(m_max+1)),np.insert(nbinom(n[1:],1-p[1:]).pmf(0),0,1.))
+            logPn0_f=np.log(Pn0_f)
+        elif acq_model_type==0:
+            m1=m_total*fvec
+            v1=m1+beta_mv*np.power(m1,alpha_mv)
+            p=1-m1/v1
+            n=m1*m1/v1/p
+            Pn0_f=np.zeros((len(fvec),))
+            for find in range(len(Pn0_f)):
+                nbtmp=nbinom(n[find],1-p[find]).pmf(np.arange(m_max+1))
+                ptmp=poisson(r_cvec[it]*np.arange(m_max+1)).pmf(0)
+                Pn0_f[find]=np.sum(np.exp(np.log(nbtmp)+np.log(ptmp)))
+            logPn0_f=np.log(Pn0_f)
+        else:
+            print('acq_model is 0,1,2, or 3 only')
+            
+        if it==0:
+            Pn1_f=Pn_f
+            logPn10_f=logPn0_f
+        else:
+            Pn2_f=Pn_f
+            logPn20_f=logPn0_f
 
-    beta_mv= paras[1]
-    alpha_mv=paras[2]
- 
-    m=float(Nreads)*np.exp(logfvec)
-    v=m+beta_mv*np.power(m,alpha_mv)
-    pvec=1-m/v
-    nvec=m*m/v/pvec
-    logPn0_f=np.zeros((len(logfvec),))
-    Pn_f=np.empty((len(logfvec),),dtype=object) #define a new Pn2_f on shifted domain at each iteration
-    for find,(n,p) in enumerate(zip(nvec,pvec)):
-        Pn_f[find]=nbinom(n,1-p)
-        logPn0_f[find]=np.log(Pn_f[find].pmf(0))
-    #logPn0_f=np.log(NegBinParMtr(m,v,np.asarray([0])).squeeze()) I don't trust nbinom, but need to sample without bound. Maybe ok in python 3
-    #TODO make own scipy dist object
-
-    print('sample f and n')
-
-    integ=np.exp(2*logPn0_f+logrhofvec+logfvec)
-    logPnng0_d=np.log(1-np.dot(dlogfby2,integ[1:]+integ[:-1]))
-
-    logPqx0_f=np.log(1-np.exp(logPn0_f))+logPn0_f
-    logPq0x_f=logPn0_f+np.log(1-np.exp(logPn0_f))
-    logPqxx_f=np.log(1-np.exp(logPn0_f))+np.log(1-np.exp(logPn0_f)) #since conditionals also normalize
+    #3-quadrant q|f conditional distribution (qx0:n1>0,n2=0;q0x:n1=0,n2>0;qxx:n1,n2>0)
+    logPqx0_f=np.log(1-np.exp(logPn10_f))+logPn20_f
+    logPq0x_f=logPn10_f+np.log(1-np.exp(logPn20_f))
+    logPqxx_f=np.log(1-np.exp(logPn10_f))+np.log(1-np.exp(logPn20_f))
+    #3-quadrant q,f joint distribution
     logPfqx0=logPqx0_f+logrhofvec
     logPfq0x=logPq0x_f+logrhofvec
     logPfqxx=logPqxx_f+logrhofvec
-
+    #3-quadrant q marginal distribution 
     Pqx0=np.trapz(np.exp(logPfqx0+logfvec),x=logfvec)
     Pq0x=np.trapz(np.exp(logPfq0x+logfvec),x=logfvec)
     Pqxx=np.trapz(np.exp(logPfqxx+logfvec),x=logfvec)
-
-    newPqZ=Pqx0+Pq0x+Pqxx
-    print(str(Pqx0)+' '+str(Pq0x)+' '+str(Pqxx))
-    logPf_qx0=logPfqx0-np.log(Pqx0) #don't add renormalization yet since it would cancel here anyway
-    logPf_q0x=logPfq0x-np.log(Pq0x)
-    logPf_qxx=logPfqxx-np.log(Pqxx)
-
+    
+    #3 quadrant conditional f|q distribution
+    Pf_qx0=np.where(Pqx0>0,np.exp(logPfqx0-np.log(Pqx0)),0)
+    Pf_q0x=np.where(Pq0x>0,np.exp(logPfq0x-np.log(Pq0x)),0)
+    Pf_qxx=np.where(Pqxx>0,np.exp(logPfqxx-np.log(Pqxx)),0)
+    
+    #3-quadrant q marginal distribution
+    newPqZ=Pqx0 + Pq0x + Pqxx
     Pqx0/=newPqZ
     Pq0x/=newPqZ
     Pqxx/=newPqZ
-    #don't renormalize Pfsq... since no longer needed
 
-    #Sample-----------------------------------------------------------------------------
+    Pfqx0=np.exp(logPfqx0)
+    Pfq0x=np.exp(logPfq0x)
+    Pfqxx=np.exp(logPfqxx)
+    
+    print('Model probs: '+str(Pqx0)+' '+str(Pq0x)+' '+str(Pqxx))
 
-    #quadrant, q={qx0,q0x,qxx}
-    q_samples=np.random.choice(range(3), Nsamp, p=(Pqx0,Pq0x,Pqxx))
+    #get samples 
+    num_samples=Nsamp
+    q_samples=np.random.choice(range(3), num_samples, p=(Pqx0,Pq0x,Pqxx))
     vals,counts=np.unique(q_samples,return_counts=True)
     num_qx0=counts[0]
     num_q0x=counts[1]
     num_qxx=counts[2]
     print('q samples: '+str(sum(counts))+' '+str(num_qx0)+' '+str(num_q0x)+' '+str(num_qxx))
     print('q sampled probs: '+str(num_qx0/float(sum(counts)))+' '+str(num_q0x/float(sum(counts)))+' '+str(num_qxx/float(sum(counts))))
-    print('q act probs: '+str(Pqx0)+' '+str(Pq0x)+' '+str(Pqxx))
-
-    #f,n1 in x0    
-    integ=np.exp(logPf_qx0+logfvec)
-    f_samples_inds=get_distsample((dlogfby2*(integ[1:] + integ[:-1])),num_qx0).flatten()
-    f_samples_inds=np.asarray(f_samples_inds,dtype=int)
+    
+    #x0
+    integ=np.exp(np.log(Pf_qx0)+logfvec)
+    f_samples_inds=get_distsample(dlogf*(integ[1:] + integ[:-1]),num_qx0).flatten()
     f_sorted_inds=np.argsort(f_samples_inds)
     f_samples_inds=f_samples_inds[f_sorted_inds] 
-    qx0_logf_samples=logfvec[f_samples_inds]
+    qx0_f_samples=fvec[f_samples_inds]
     find_vals,f_start_ind,f_counts=np.unique(f_samples_inds,return_counts=True,return_index=True)
     qx0_samples=np.zeros((num_qx0,))
+    if acq_model_type<2:
+        qx0_m_samples=np.zeros((num_qx0,))
+        #conditioning on n>0 applies an m-dependent factor to Pm_f, which can't be incorporated into the ppf method used for acq_model_type 2 and 3. 
+        #We handle that here by using a custom finite range sampler, which has the drawback of having to define an upper limit. 
+        #This works so long as n_max/r_c<<m_max, so depends on highest counts in data (n_max). My data had max counts of 1e3-1e4.
+        #Alternatively, could define a custom scipy RV class by defining it's PMF, but has to be array-compatible which requires care. 
+        m_samp_max=int(1e5) 
+        mvec=np.arange(m_samp_max)   
+    
     for it,find in enumerate(find_vals):
-        samples=np.random.random(size=f_counts[it]) * (1-Pn_f[find].cdf(0)) + Pn_f[find].cdf(0)
-        qx0_samples[f_start_ind[it]:f_start_ind[it]+f_counts[it]]=Pn_f[find].ppf(samples)
+        if acq_model_type==0:      
+            m1=m_total*fvec[find]
+            v1=m1+beta_mv*np.power(m1,alpha_mv)
+            p=1-m1/v1
+            n=m1*m1/v1/p
+            Pm1_f=nbinom(n,1-p)
+            
+            Pm1_f_adj=np.exp(np.log(1-np.exp(-r_c1*mvec))+np.log(Pm1_f.pmf(mvec))-np.log((1-np.power(np.exp(r_c1+np.log(1-p))/(np.exp(r_c1)-p),n)))) #adds m-dependent factor due to conditioning on n>0...
+            Pm1_f_adj_obj=rv_discrete(name='nbinom_adj',values=(mvec,Pm1_f_adj/np.sum(Pm1_f_adj)))
+            qx0_m_samples[f_start_ind[it]:f_start_ind[it]+f_counts[it]]=Pm1_f_adj_obj.rvs(size=f_counts[it])
+            
+            mvals,minds,m_counts=np.unique(qx0_m_samples[f_start_ind[it]:f_start_ind[it]+f_counts[it]],return_inverse=True,return_counts=True)
+            for mit,m in enumerate(mvals):
+                Pn1_m1=poisson(r_c1*m)
+                samples=np.random.random(size=m_counts[mit]) * (1-Pn1_m1.cdf(0)) + Pn1_m1.cdf(0)
+                qx0_samples[f_start_ind[it]:f_start_ind[it]+f_counts[it]][minds==mit]=Pn1_m1.ppf(samples)
+ 
+        elif acq_model_type==1:
+            Pm1_f=poisson(m_total*fvec[find])
+            
+            m1=r_c1*mvec
+            v1=m1+beta_mv*np.power(m1,alpha_mv)
+            p=1.-m1/v1
+            n=m1*m1/v1/p
+            p[0]=1.
+            n[0]=0.
+            Pn10_m1=nbinom(n,1-p).pmf(0)
+            Pn10_m1[0]=1.
+            Pm1_f_adj=(1-Pn10_m1)/(1-np.sum(Pm1_f.pmf(mvec)*Pn10_m1))*Pm1_f.pmf(mvec) #adds m-dependent factor due to conditioning on n>0...
+            Pm1_f_adj_obj=rv_discrete(name='nbinom_adj',values=(mvec,Pm1_f_adj/np.sum(Pm1_f_adj)))
+            qx0_m_samples[f_start_ind[it]:f_start_ind[it]+f_counts[it]]=Pm1_f_adj_obj.rvs(size=f_counts[it])
+            
+            mvals,minds,m_counts=np.unique(qx0_m_samples[f_start_ind[it]:f_start_ind[it]+f_counts[it]],return_inverse=True,return_counts=True)
+            for mit,m in enumerate(mvals):
+                m1=r_c1*m
+                v1=m1+beta_mv*np.power(m1,alpha_mv)
+                if m==0:
+                  p=1.
+                  n=0.
+                else:
+                  p=1-m1/v1
+                  n=m1*m1/v1/p
+                  Pn1_m1=nbinom(n,1-p)
+                samples=np.random.random(size=m_counts[mit]) * (1-Pn1_m1.cdf(0)) + Pn1_m1.cdf(0)                        
+                qx0_samples[f_start_ind[it]:f_start_ind[it]+f_counts[it]][minds==mit]=Pn1_m1.ppf(samples)
+        
+        elif acq_model_type>1:
+            samples=np.random.random(size=f_counts[it]) * (1-Pn1_f[find].cdf(0)) + Pn1_f[find].cdf(0)
+            qx0_samples[f_start_ind[it]:f_start_ind[it]+f_counts[it]]=Pn1_f[find].ppf(samples)
+        else:
+            print('acq_model is 0,1,2, or 3 only')
     qx0_pair_samples=np.hstack((qx0_samples[:,np.newaxis],np.zeros((num_qx0,1)))) 
-
-    #f,s,n2 in 0x
-    integ=np.exp(logPf_q0x+logfvec)
-    f_samples_inds=get_distsample((dlogfby2*(integ[1:] + integ[:-1])),num_q0x).flatten()      
+    
+    #0x
+    integ=np.exp(np.log(Pf_q0x)+logfvec)
+    f_samples_inds=get_distsample(dlogf*(integ[1:] + integ[:-1]),num_q0x).flatten()
+    f_sorted_inds=np.argsort(f_samples_inds)
+    f_samples_inds=f_samples_inds[f_sorted_inds] 
+    q0x_f_samples=fvec[f_samples_inds]
     find_vals,f_start_ind,f_counts=np.unique(f_samples_inds,return_counts=True,return_index=True)
     q0x_samples=np.zeros((num_q0x,))
-    q0x_logf_samples=logfvec[f_samples_inds]
+    if acq_model_type<2:
+        q0x_m_samples=np.zeros((num_q0x,))
     for it,find in enumerate(find_vals):
-        samples=np.random.random(size=f_counts[it]) * (1-Pn_f[find].cdf(0)) + Pn_f[find].cdf(0)
-        q0x_samples[f_start_ind[it]:f_start_ind[it]+f_counts[it]]=Pn_f[find].ppf(samples)
-    q0x_pair_samples=np.hstack((np.zeros((num_q0x,1)),q0x_samples[:,np.newaxis]))
+        if acq_model_type==0:
+            m2=m_total*fvec[find]
+            v2=m2+beta_mv*np.power(m2,alpha_mv)
+            p=1-m2/v2
+            n=m2*m2/v2/p
+            Pm2_f=nbinom(n,1-p)
+            
+            Pm2_f_adj=np.exp(np.log(1-np.exp(-r_c2*mvec))+np.log(Pm2_f.pmf(mvec))-np.log((1-np.power(np.exp(r_c2+np.log(1-p))/(np.exp(r_c2)-p),n)))) #adds m-dependent factor due to conditioning on n>0...
+            Pm2_f_adj_obj=rv_discrete(name='nbinom_adj',values=(mvec,Pm2_f_adj/np.sum(Pm2_f_adj)))
+            q0x_m_samples[f_start_ind[it]:f_start_ind[it]+f_counts[it]]=Pm2_f_adj_obj.rvs(size=f_counts[it])
 
-    #f,s,n1,n2 in xx
-    integ=np.exp(logPf_qxx+logfvec)
-    f_samples_inds=get_distsample((dlogfby2*(integ[1:] + integ[:-1])),num_qxx).flatten() 
+            mvals,minds,m_counts=np.unique(q0x_m_samples[f_start_ind[it]:f_start_ind[it]+f_counts[it]],return_inverse=True,return_counts=True)
+            for mit,m in enumerate(mvals):
+                Pn2_m2=poisson(r_c2*m)
+                samples=np.random.random(size=m_counts[mit]) * (1-Pn2_m2.cdf(0)) + Pn2_m2.cdf(0)
+                q0x_samples[f_start_ind[it]:f_start_ind[it]+f_counts[it]][minds==mit]=Pn2_m2.ppf(samples)
+        
+        elif acq_model_type==1:
+            Pm2_f=poisson(m_total*fvec[find])
+            
+            m2=r_c2*mvec
+            v2=m2+beta_mv*np.power(m2,alpha_mv)
+            p=1-m2/v2
+            n=m2*m2/v2/p
+            p[0]=1
+            n[0]=0
+            Pn20_m2=nbinom(n,1-p).pmf(0)
+            Pn20_m2[0]=1.
+            Pm2_f_adj=np.exp(np.log(1-Pn20_m2)-np.log(1-np.dot(Pm2_f.pmf(mvec),Pn20_m2))+np.log(Pm2_f.pmf(mvec))) #adds m-dependent factor due to conditioning on n>0...
+            Pm2_f_adj_obj=rv_discrete(name='nbinom_adj',values=(mvec,Pm2_f_adj/np.sum(Pm2_f_adj)))
+            q0x_m_samples[f_start_ind[it]:f_start_ind[it]+f_counts[it]]=Pm2_f_adj_obj.rvs(size=f_counts[it])
+
+            mvals,minds,m_counts=np.unique(q0x_m_samples[f_start_ind[it]:f_start_ind[it]+f_counts[it]],return_inverse=True,return_counts=True)
+            for mit,m in enumerate(mvals):
+                m2=r_c2*m
+                v2=m2+beta_mv*np.power(m2,alpha_mv)
+                if m==0:
+                  p=1.
+                  n=0.
+                else:
+                  p=1-m2/v2
+                  n=m2*m2/v2/p
+                Pn2_m2=nbinom(n,1-p)
+                samples=np.random.random(size=m_counts[mit]) * (1-Pn2_m2.cdf(0)) + Pn2_m2.cdf(0)                        
+                q0x_samples[f_start_ind[it]:f_start_ind[it]+f_counts[it]][minds==mit]=Pn2_m2.ppf(samples)            
+        
+        elif acq_model_type > 1:
+            samples=np.random.random(size=f_counts[it]) * (1-Pn2_f[find].cdf(0)) + Pn2_f[find].cdf(0)
+            q0x_samples[f_start_ind[it]:f_start_ind[it]+f_counts[it]]=Pn2_f[find].ppf(samples)
+        else:
+            print('acq_model is 0,1,2, or 3 only')
+    q0x_pair_samples=np.hstack((np.zeros((num_q0x,1)),q0x_samples[:,np.newaxis]))
+    
+    #qxx
+    integ=np.exp(np.log(Pf_qxx)+logfvec)
+    f_samples_inds=get_distsample(dlogf*(integ[1:] + integ[:-1]),num_qxx).flatten()        
+    f_sorted_inds=np.argsort(f_samples_inds)
+    f_samples_inds=f_samples_inds[f_sorted_inds] 
+    qxx_f_samples=fvec[f_samples_inds]
     find_vals,f_start_ind,f_counts=np.unique(f_samples_inds,return_counts=True,return_index=True)
-    qxx_logf_samples=logfvec[f_samples_inds]
     qxx_n1_samples=np.zeros((num_qxx,))
     qxx_n2_samples=np.zeros((num_qxx,))
+    if acq_model_type<2:
+        qxx_m1_samples=np.zeros((num_qxx,))
+        qxx_m2_samples=np.zeros((num_qxx,))
     for it,find in enumerate(find_vals):
-        samples=np.random.random(size=f_counts[it]) * (1-Pn_f[find].cdf(0)) + Pn_f[find].cdf(0)
-        qxx_n1_samples[f_start_ind[it]:f_start_ind[it]+f_counts[it]]=Pn_f[find].ppf(samples)
-        samples=np.random.random(size=f_counts[it]) * (1-Pn_f[find].cdf(0)) + Pn_f[find].cdf(0)
-        qxx_n2_samples[f_start_ind[it]:f_start_ind[it]+f_counts[it]]=Pn_f[find].ppf(samples)
+        if acq_model_type==0:
+            m1=m_total*fvec[find]
+            v1=m1+beta_mv*np.power(m1,alpha_mv)
+            p=1-m1/v1
+            n=m1*m1/v1/p
+            Pm1_f=nbinom(n,1-p)
+            
+            Pm1_f_adj=np.exp(np.log(1-np.exp(-r_c1*mvec))+np.log(Pm1_f.pmf(mvec))-np.log((1-np.power(np.exp(r_c1+np.log(1-p))/(np.exp(r_c1)-p),n)))) #adds m-dependent factor due to conditioning on n>0...
+            if np.sum(Pm1_f_adj)==0:
+                qxx_m1_samples[f_start_ind[it]:f_start_ind[it]+f_counts[it]]=1
+            else:
+                Pm1_f_adj_obj=rv_discrete(name='nbinom_adj',values=(mvec,Pm1_f_adj/np.sum(Pm1_f_adj)))
+                qxx_m1_samples[f_start_ind[it]:f_start_ind[it]+f_counts[it]]=Pm1_f_adj_obj.rvs(size=f_counts[it])
+
+            mvals,minds,m_counts=np.unique(qxx_m1_samples[f_start_ind[it]:f_start_ind[it]+f_counts[it]],return_inverse=True,return_counts=True)
+            for mit,m in enumerate(mvals):
+                Pn1_m1=poisson(r_c1*m)
+                samples=np.random.random(size=m_counts[mit]) * (1-Pn1_m1.cdf(0)) + Pn1_m1.cdf(0)
+                qxx_n1_samples[f_start_ind[it]:f_start_ind[it]+f_counts[it]][minds==mit]=Pn1_m1.ppf(samples)
+                
+            m2=m_total*fvec[find]
+            v2=m2+beta_mv*np.power(m2,alpha_mv)
+            p=1-m2/v2
+            n=m2*m2/v2/p
+            Pm2_f=nbinom(n,1-p)
+            
+            Pm2_f_adj=np.exp(np.log(1-np.exp(-r_c2*mvec))+np.log(Pm2_f.pmf(mvec))-np.log((1-np.power(np.exp(r_c2+np.log(1-p))/(np.exp(r_c2)-p),n)))) #adds m-dependent factor due to conditioning on n>0...
+            if np.sum(Pm1_f_adj)==0:
+                qxx_m2_samples[f_start_ind[it]:f_start_ind[it]+f_counts[it]]=1
+            else:
+                Pm2_f_adj_obj=rv_discrete(name='nbinom_adj',values=(mvec,Pm2_f_adj/np.sum(Pm2_f_adj)))
+                qxx_m2_samples[f_start_ind[it]:f_start_ind[it]+f_counts[it]]=Pm2_f_adj_obj.rvs(size=f_counts[it])
+
+            mvals,minds,m_counts=np.unique(qxx_m2_samples[f_start_ind[it]:f_start_ind[it]+f_counts[it]],return_inverse=True,return_counts=True)
+            for mit,m in enumerate(mvals):
+                Pn2_m2=poisson(r_c2*m)
+                samples=np.random.random(size=m_counts[mit]) * (1-Pn2_m2.cdf(0)) + Pn2_m2.cdf(0)
+                qxx_n2_samples[f_start_ind[it]:f_start_ind[it]+f_counts[it]][minds==mit]=Pn2_m2.ppf(samples)    
+
+        elif acq_model_type==1:
+            Pm1_f=poisson(m_total*fvec[find])
+            
+            m1=r_c1*mvec
+            v1=m1+beta_mv*np.power(m1,alpha_mv)
+            p=1-m1/v1
+            n=m1*m1/v1/p
+            p[0]=1
+            n[0]=0
+            Pn10_m1=nbinom(n,1-p).pmf(0)
+            Pn10_m1[0]=1.
+            Pm1_f_adj=np.exp(np.log(1-Pn10_m1)-np.log(1-np.dot(Pm1_f.pmf(mvec),Pn10_m1))+np.log(Pm1_f.pmf(mvec))) #adds m-dependent factor due to conditioning on n>0...
+            if np.sum(Pm1_f_adj)==0:
+                qxx_m1_samples[f_start_ind[it]:f_start_ind[it]+f_counts[it]]=1 #minimum cell size conditional on n>0
+            else:
+                Pm1_f_adj_obj=rv_discrete(name='nbinom_adj',values=(mvec,Pm1_f_adj/np.sum(Pm1_f_adj)))
+                qxx_m1_samples[f_start_ind[it]:f_start_ind[it]+f_counts[it]]=Pm1_f_adj_obj.rvs(size=f_counts[it])
+
+            mvals,minds,m_counts=np.unique(qxx_m1_samples[f_start_ind[it]:f_start_ind[it]+f_counts[it]],return_inverse=True,return_counts=True)
+            for mit,m in enumerate(mvals):
+                m1=r_c1*m
+                v1=m1+beta_mv*np.power(m1,alpha_mv)
+                if m==0:
+                  p=1.
+                  n=0.
+                else:
+                  p=1-m1/v1
+                  n=m1*m1/v1/p
+                Pn1_m1=nbinom(n,1-p)
+                samples=np.random.random(size=m_counts[mit]) * (1-Pn1_m1.cdf(0)) + Pn1_m1.cdf(0)                        
+                qxx_n1_samples[f_start_ind[it]:f_start_ind[it]+f_counts[it]][minds==mit]=Pn1_m1.ppf(samples)            
+                
+            Pm2_f=poisson(m_total*fvec[find])
+            
+            m2=r_c2*mvec
+            v2=m2+beta_mv*np.power(m2,alpha_mv)
+            p=1-m2/v2
+            n=m2*m2/v2/p
+            p[0]=1
+            n[0]=0
+            Pn20_m2=nbinom(n,1-p).pmf(0)
+            Pn20_m2[0]=1.
+            Pm2_f_adj=np.exp(np.log(1-Pn20_m2)-np.log(1-np.dot(Pm2_f.pmf(mvec),Pn20_m2))+np.log(Pm2_f.pmf(mvec))) #adds m-dependent factor due to conditioning on n>0...
+            if np.sum(Pm1_f_adj)==0:
+                qxx_m2_samples[f_start_ind[it]:f_start_ind[it]+f_counts[it]]=1 #minimum cell size conditional on n>0
+            else:
+                Pm2_f_adj_obj=rv_discrete(name='nbinom_adj',values=(mvec,Pm2_f_adj/np.sum(Pm2_f_adj)))
+                qxx_m2_samples[f_start_ind[it]:f_start_ind[it]+f_counts[it]]=Pm2_f_adj_obj.rvs(size=f_counts[it])
+
+            mvals,minds,m_counts=np.unique(qxx_m2_samples[f_start_ind[it]:f_start_ind[it]+f_counts[it]],return_inverse=True,return_counts=True)
+            for mit,m in enumerate(mvals):
+                m2=r_c2*m
+                v2=m2+beta_mv*np.power(m2,alpha_mv)
+                if m==0:
+                  p=1.
+                  n=0.
+                else:
+                  p=1-m2/v2
+                  n=m2*m2/v2/p
+                Pn2_m2=nbinom(n,1-p)
+                samples=np.random.random(size=m_counts[mit]) * (1-Pn2_m2.cdf(0)) + Pn2_m2.cdf(0)                        
+                qxx_n2_samples[f_start_ind[it]:f_start_ind[it]+f_counts[it]][minds==mit]=Pn2_m2.ppf(samples)                
+        elif acq_model_type>1:
+            samples=np.random.random(size=f_counts[it]) * (1-Pn1_f[find].cdf(0)) + Pn1_f[find].cdf(0)
+            qxx_n1_samples[f_start_ind[it]:f_start_ind[it]+f_counts[it]]=Pn1_f[find].ppf(samples)
+            samples=np.random.random(size=f_counts[it]) * (1-Pn2_f[find].cdf(0)) + Pn2_f[find].cdf(0)
+            qxx_n2_samples[f_start_ind[it]:f_start_ind[it]+f_counts[it]]=Pn2_f[find].ppf(samples)
+        else:
+            print('acq_model is 0,1,2, or 3 only')
+            
     qxx_pair_samples=np.hstack((qxx_n1_samples[:,np.newaxis],qxx_n2_samples[:,np.newaxis]))
-
-    logf_samples=np.concatenate((qx0_logf_samples,q0x_logf_samples,qxx_logf_samples))
-    pair_samples=np.vstack((qx0_pair_samples,q0x_pair_samples,qxx_pair_samples))
-    pair_samples=pd.DataFrame({'Clone_count_1':pair_samples[:,0],'Clone_count_2':pair_samples[:,1]})
     
-    return logf_samples,pair_samples
+    pair_samples=np.vstack((q0x_pair_samples,qx0_pair_samples,qxx_pair_samples))
+    f_samples=np.concatenate((q0x_f_samples,qx0_f_samples,qxx_f_samples))
+    output_m_samples=False
+    if acq_model_type<2 and output_m_samples:                
+        m1_samples=np.concatenate((q0x_m1_samples,qx0_m1_samples,qxx_m1_samples))
+        m2_samples=np.concatenate((q0x_m2_samples,qx0_m2_samples,qxx_m2_samples))
+    
+    pair_samples_df=pd.DataFrame({'Clone_count_1':pair_samples[:,0],'Clone_count_2':pair_samples[:,1]})
+    
+    return f_samples,pair_samples_df
 
-#def get_model_sample_all(Ps_type,diffexpr_paras,smax,s_step,null_paras,Nreads,Nclones,seed,nofmin):
-def get_model_sample_all(acq_model_type,logPsvec,svec,logfvecwide,f2s_step,null_paras,Nreads,Nclones,seed,nofmin):
+def get_diffexpr_model_sample_all(acq_model_type,logPsvec,svec,logfvecwide,f2s_step,null_paras,Nreads,Nclones,seed,nofmin):
     '''
     outputs an array of observed clone frequencies and corresponding dataframe of pair counts.
-    OPtionally Sets fmin such that normalization condition satisfied.
-    Sampling is of the full repertoire, afterwhich unseen clones are removed.
+    Optionally Sets fmin such that normalization condition satisfied, so can choose any values of other null model parameters
+    Sampling is of the full repertoire, after which unseen clones are removed.
     Sampling is done efficiently by creating a single index over f and s, and batch sampling clones with the same index 
-    TODO add other null models,
+    TODO add 2-step null models, currently only type 2 (NegBinonly)
     '''
     
     logrhofvec,logfvec = get_rhof(null_paras[0],np.power(10,null_paras[-1]),freq_dtype='float32')
@@ -471,23 +752,22 @@ def get_model_sample_all(acq_model_type,logPsvec,svec,logfvecwide,f2s_step,null_
     np.random.seed(seed+1)
     n1_samples=np.zeros(Nclones)
     n2_samples=np.zeros(Nclones)  
-
-    #sample in f,s space (doesn't work?) Relies on dlogf*integ, which hasn't worked in teh past though still dno't know why....
-    #integ=np.exp(logPsvec[:,np.newaxis]+logrhofvec[np.newaxis,:]+logfvec[np.newaxis,:])
-    #fs_samples_inds=get_distsample((dlogfby2[np.newaxis,:]*(integ[:,1:]+integ[:,:-1])).flatten(),Nclones,dtype='uint32') #n.b. input flattened; output sorted
     
     #sample in f space and s space
     integ=np.exp(logrhofvec[np.newaxis,:]+logfvec[np.newaxis,:])
     f_samples_inds=get_distsample(np.asarray((dlogfby2[np.newaxis,:]*(integ[:,1:]+integ[:,:-1])).flatten(),dtype='float64'),Nclones,dtype='uint32').flatten() #n.b. input flattened; output sorted
     s_samples_inds=np.random.permutation(get_distsample(np.exp(logPsvec),Nclones,dtype='uint32').flatten()) #n.b. input flattened; output sorted
     
-    
     #implement normalization directly:
     shift=np.log(np.sum(np.exp(logfvec[f_samples_inds]+svec[s_samples_inds]))) - np.log(np.sum(np.exp(logfvec[f_samples_inds])))
     logfvecwide_shift=logfvecwide- shift
     
+    Pn_f=np.empty((len(logfvecwide),),dtype=object) #define a new Pn2_f on shifted domain at each iteration        
     if acq_model_type==3:
-        n1_samples=np.array(np.random.poisson(lam=NreadsI*np.exp(logfvec[f_samples_inds])),dtype='uint32')
+        #n1_samples=np.array(np.random.poisson(lam=NreadsI*np.exp(logfvec[f_samples_inds])),dtype='uint32')
+        meannvec=np.exp(logfvecwide_shift)*Nreads
+        for find,mean_n in enumerate(meannvec):
+            Pn_f[find]=poisson(mean_n)
     elif acq_model_type==2:
         beta_mv=paras[1]
         alpha_mv=paras[2]
@@ -495,10 +775,15 @@ def get_model_sample_all(acq_model_type,logPsvec,svec,logfvecwide,f2s_step,null_
         v=m+beta_mv*np.power(m,alpha_mv)
         pvec=1-m/v
         nvec=m*m/v/pvec
-        Pn_f=np.empty((len(logfvecwide),),dtype=object) #define a new Pn2_f on shifted domain at each iteration
         for find,(n,p) in enumerate(zip(nvec,pvec)):
             Pn_f[find]=nbinom(n,1-p)
-    
+    elif acq_model_type==1:
+        print('not implemented yet!')
+    elif acq_model_type==0:
+        print('not implemented yet!')
+        #not sure if the memory requirements of Nclones=1e9 are feasible here since acq_model_type==2 almost maxed out my 32GB machine, 
+        #and here we would need the intermediate m variable. I guess we could always clear the preceding variable in the chain...
+         
     fs_samples_inds=s_samples_inds*len(logfvec)+f_samples_inds
     fsind_vals,fs_start_ind,fs_counts=np.unique(fs_samples_inds,return_counts=True,return_index=True)
     smaxind=(len(svec)-1)/2
@@ -506,14 +791,19 @@ def get_model_sample_all(acq_model_type,logPsvec,svec,logfvecwide,f2s_step,null_
         sind,find=np.unravel_index(fsind,(len(svec),len(logfvec)))
         n1_samples[fs_start_ind[it]:fs_start_ind[it]+fs_counts[it]]=np.array(Pn_f[int(smaxind*f2s_step+find)].rvs(fs_counts[it]),dtype='uint32')
         n2_samples[fs_start_ind[it]:fs_start_ind[it]+fs_counts[it]]=np.array(Pn_f[int(   sind*f2s_step+find)].rvs(fs_counts[it]),dtype='uint32')
-  
-    seen=np.logical_or(n1_samples>0,n2_samples>0)
-    n1_samples=n1_samples[seen]
-    n2_samples=n2_samples[seen]
     
-    pair_samples=pd.DataFrame({'Clone_count_1':n1_samples,'Clone_count_2':n2_samples})
+    #reduce to observed samples only
+    obs=np.logical_or(n1_samples>0,n2_samples>0)
+    n1_samples=n1_samples[obs]
+    n2_samples=n2_samples[obs]
+    f1_samples=np.exp(logfvec[f_samples_inds[obs]])
 
-    return pair_samples
+    fs_sample_arr=np.exp(logfvec[np.newaxis,:]+svec[:,np.newaxis]).flatten() #untested
+    f2_samples=fs_sample_arr[fs_samples_inds[obs]]
+    
+    pair_samples_df=pd.DataFrame({'Clone_count_1':n1_samples,'Clone_count_2':n2_samples})
+
+    return f1_samples,f2_samples,pair_samples_df
 
 
 

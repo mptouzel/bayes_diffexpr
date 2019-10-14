@@ -163,6 +163,13 @@ runstr = 'min' + str(mincount) + '_max' + str(maxcount) + '_' + parvernull
 donorstrvec = [ 'P1', 'P2',  'Q1',   'Q2',  'S1', 'S2']
 daystrvec=['pre0','0','7','15','45']
 
+n_min=0
+n_max=np.Inf
+fig2,ax2=pl.subplots(1,1,figsize=(4,4))
+
+col=['k','r']
+data_0=np.empty((1,))
+data_1=np.empty((1,))
 for dit,donor in enumerate(donorstrvec):
     savepath = rootpath + 'output/'
     fig,ax=pl.subplots(1,2,figsize=(8,4))
@@ -174,28 +181,52 @@ for dit,donor in enumerate(donorstrvec):
         indn1,indn2,sparse_rep_counts,unicountvals_1,unicountvals_2,NreadsI,NreadsII=sparse_rep
         n1=unicountvals_1[indn1]
         n2=unicountvals_2[indn2]
-        both_nonzero=np.logical_and(n1>10,n2>10)
+        both_nonzero=np.logical_and(np.logical_and(n1>n_min,n2>n_min),np.logical_and(n1<n_max,n2<n_max))
         logn2n1=np.where(both_nonzero,np.log(n2/n1),0)
-        nbinvec=np.linspace(-5,5,50)
-        counts,bins=np.histogram(logn2n1[both_nonzero],nbinvec)
+        nbinvec=np.linspace(-10,10,160)
+        if it==0 and not donor=='Q1':
+            data_0=np.append(data_0,logn2n1[both_nonzero]*sparse_rep_counts[both_nonzero])
+        elif not donor=='Q1':
+            data_1=np.append(data_1,logn2n1[both_nonzero]*sparse_rep_counts[both_nonzero])
+        counts,bins=np.histogram(logn2n1[both_nonzero],nbinvec,weights=sparse_rep_counts[both_nonzero])
         ax[it].plot(bins[:-1],counts,'.')
-        ax[it].plot(bins[:-1],200*np.exp(-(bins[:-1]/0.5)**2),'-')
-        ax[it].plot(bins[:-1],200*np.exp(-np.fabs(bins[:-1]/0.5)),'-')
+        
+#         ax2.plot(bins[:-1],counts,'.',ms=10,color=col[it])
+
+#         ax[it].plot(bins[:-1],np.cumsum(counts[::-1])[::-1],'.')
+        ax[it].plot(bins[:-1],2200*np.exp(-(bins[:-1]/0.75)**2),'-')
+        ax[it].plot(bins[:-1],2200*np.exp(-np.fabs(bins[:-1]/0.5)),'-')
         #         ax[it].set_xlim(0.5,1e5)
-        ax[it].set_ylim(0.5,1e3)
+        ax[it].set_ylim(0.5,1e5)
         ax[it].set_ylabel('count')
         ax[it].set_xlabel(r'$\log \frac{n_2}{n_1}$')
         ax[it].set_yscale('log')
         ax[it].set_title('day 0 - day '+day)
     fig.suptitle(donor)
     fig.tight_layout()
-    fig.savefig(donor+'log_n2_n1_hist_greaterthan_10.pdf',format= 'pdf',dpi=300, bbox_inches='tight')
+ax2.set_yscale('log')
+counts,bins=np.histogram(data_0,nbinvec)
+ax2.plot(bins[:-1],counts,'k-',label='0-0')
+counts,bins=np.histogram(data_1,nbinvec)
+ax2.plot(bins[:-1],counts,'r-',label='0-15')
+ax2.set_ylabel('counts')
+ax2.set_xlabel(r'$s_{naive}$')
+ax2.legend(frameon=False,loc=1,prop={'size': 15})
+fig2.savefig('s_naive_hist.pdf',format= 'pdf',dpi=300, bbox_inches='tight')
+# fig2.savefig(donor+'log_n2_n1_hist_greaterthan_10.pdf',format= 'pdf',dpi=300, bbox_inches='tight')
 # -
 
 # Look at Nsamp and Nreads
 
+# +
+rootpath = '../../'
+mincount=0
+maxcount=np.Inf
+parvernull = 'raw_stats'
+runstr = 'min' + str(mincount) + '_max' + str(maxcount) + '_' + parvernull 
+
 donorstrvec = [ 'P1', 'P2',  'Q1',   'Q2',  'S1', 'S2']
-daystrvec=['pre0','0','7','15','45']
+daystrvec=['15']#['pre0','0','7','15','45']
 for dit,donor in enumerate(donorstrvec):
     for ddit,day in enumerate(daystrvec):
         savepath = rootpath + 'output/'
@@ -203,7 +234,10 @@ for dit,donor in enumerate(donorstrvec):
         outpath = savepath + dataset_pair[0] + '_' + dataset_pair[1] + '/' + runstr + '/'
         sparse_rep=np.load(outpath+'sparse_rep.npy')
         indn1,indn2,sparse_rep_counts,unicountvals_1,unicountvals_2,NreadsI,NreadsII=sparse_rep
-        print(str(np.sum(sparse_rep_counts))+' '+str(int(NreadsI))+' '+str(int(NreadsII)))
+        print(donor+' '+str(np.sum(sparse_rep_counts))+' '+str(int(NreadsI))+' '+str(int(NreadsII)))
+# -
+
+# Compare with synthetic data
 
 output_path='../../output/syn_data/'
 fig,ax=pl.subplots(1,1)
@@ -211,24 +245,24 @@ for trial in range(10):
 #     outstruct=np.load(output_path+'v1_N1e9_test3outstruct_v1_N1e9_test3_'+str(trial)+'.npy').item()
 #     optparas=outstruct.x
 #     ax.scatter(optparas[0],optparas[1])
-    uni1=np.load('/home/max/Dropbox/scripts/Projects/immuno/diffexpr/output/syn_data/v1_N1e9_test3unicountvals_1_d'+str(trial)+'.npy')
-    uni2=np.load('/home/max/Dropbox/scripts/Projects/immuno/diffexpr/output/syn_data/v1_N1e9_test3unicountvals_2_d'+str(trial)+'.npy')
-    indn1=np.load('/home/max/Dropbox/scripts/Projects/immuno/diffexpr/output/syn_data/v1_N1e9_test3indn1_d'+str(trial)+'.npy')
-    indn2=np.load('/home/max/Dropbox/scripts/Projects/immuno/diffexpr/output/syn_data/v1_N1e9_test3indn2_d'+str(trial)+'.npy')
-    shift=np.load('/home/max/Dropbox/scripts/Projects/immuno/diffexpr/output/syn_data/v1_N1e9_test3shift_v1_N1e9_test3_'+str(trial)+'.npy')
+    uni1=np.load(output_path+'v1_N1e9_test3/v1_N1e9_test3unicountvals_1_d'+str(trial)+'.npy')
+    uni2=np.load(output_path+'v1_N1e9_test3/v1_N1e9_test3unicountvals_2_d'+str(trial)+'.npy')
+    indn1=np.load(output_path+'v1_N1e9_test3/v1_N1e9_test3indn1_d'+str(trial)+'.npy')
+    indn2=np.load(output_path+'v1_N1e9_test3/v1_N1e9_test3indn2_d'+str(trial)+'.npy')
+    count_pairs=np.load(output_path+'v1_N1e9_test3/v1_N1e9_test3countpaircounts_d'+str(trial)+'.npy')
 #     print(shift)
     n1=uni1[indn1]
     n2=uni2[indn2]
-
-    both_nonzero=np.logical_and(n1>0,n2>0)
+    n_min=5
+    both_nonzero=np.logical_and(n1>n_min,n2>n_min)
     logn2n1=np.where(both_nonzero,np.log(n2/n1),0)
     nbinvec=np.linspace(-5,5,50)
-    counts,bins=np.histogram(logn2n1[both_nonzero],nbinvec)
+    counts,bins=np.histogram(logn2n1[both_nonzero],nbinvec,weights=count_pairs[both_nonzero])
     ax.plot(bins[:-1],counts,'.-')
 #     ax.plot(bins[:-1],200*np.exp(-(bins[:-1]/0.5)**2),'-')
 #     ax.plot(bins[:-1],200*np.exp(-np.fabs(bins[:-1]/0.5)),'-')
     #         ax[it].set_xlim(0.5,1e5)
-    ax.set_ylim(0.5,1e3)
+    ax.set_ylim(0.5,1e5)
     ax.set_ylabel('count')
     ax.set_xlabel(r'$\log \frac{n_2}{n_1}$')
     ax.set_yscale('log')

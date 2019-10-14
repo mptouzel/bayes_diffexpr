@@ -19,18 +19,15 @@ def nullmodel_constr_fn(paras,svec,sparse_rep,acq_model_type,constr_type):
     indn1,indn2,sparse_rep_counts,unicountvals_1,unicountvals_2,NreadsI,NreadsII=sparse_rep
 
     alpha = paras[0] #power law exponent
-    fmin = np.power(10,paras[4]) if acq_model_type<2 else np.power(10,paras[3]) 
-    logrhofvec,logfvec = get_rhof(paras[0],fmin)
+    fmin = np.power(10,paras[-1])
+    logrhofvec,logfvec = get_rhof(alpha,fmin)
     dlogfby2=np.diff(logfvec)/2. #1/2 comes from trapezoid integration below
-    
-    if isinstance(svec,np.ndarray):
-        logfvecwide=deepcopy(logfvec) #TODO add fvecwide calc here
  
     integ=np.exp(logrhofvec+2*logfvec)
     avgf_ps=np.dot(dlogfby2,integ[:-1]+integ[1:])
 
-    logPn1_f=get_logPn_f(unicountvals_1,NreadsI,logfvec,acq_model_type,paras)
-    logPn2_f=get_logPn_f(unicountvals_2,NreadsII,logfvecwide if isinstance(svec,np.ndarray) else logfvec,acq_model_type,paras) #for diff expr with shift use shifted range for wide f2, #contains s-shift for sampled data method
+    logPn1_f=get_logPn_f(unicountvals_1,NreadsI, logfvec,acq_model_type,paras)
+    logPn2_f=get_logPn_f(unicountvals_2,NreadsII,logfvec,acq_model_type,paras)
   
     integ=np.exp(logPn1_f[:,0]+logPn2_f[:,0]+logrhofvec+logfvec)
     Pn0n0=np.dot(dlogfby2,integ[1:]+integ[:-1])
@@ -116,9 +113,7 @@ def get_diffexpr_likelihood(diffexpr_paras,null_paras,sparse_rep,acq_model_type,
     if output_unseen:
         return np.dot(sparse_rep_counts/float(np.sum(sparse_rep_counts)),log_Pn1n2-np.log(1-Pn0n0)), Pn0n0
     else:
-        return np.log10(-np.dot(sparse_rep_counts/float(np.sum(sparse_rep_counts)),log_Pn1n2-np.log(1-Pn0n0))) #regularizes algorthim for donor  0.95*maxL
-        #return np.log10(-1.597-np.dot(sparse_rep_counts/float(np.sum(sparse_rep_counts)),log_Pn1n2-np.log(1-Pn0n0))) #regularizes algorthim for donor S2
-        #return np.dot(sparse_rep_counts/float(np.sum(sparse_rep_counts)),log_Pn1n2-np.log(1-Pn0n0))
+        return np.log10(-np.dot(sparse_rep_counts/float(np.sum(sparse_rep_counts)),log_Pn1n2-np.log(1-Pn0n0)))
     
 def diffexpr_constr_fn(diffexpr_paras,null_paras,sparse_rep,acq_model_type,logfvec,logfvecwide,svec,smax,s_step,Ps_type,f2s_step,logPn1_f,logrhofvec):
     
@@ -150,8 +145,8 @@ def diffexpr_constr_fn(diffexpr_paras,null_paras,sparse_rep,acq_model_type,logfv
     
     #log_avgfexps
     log_expsavg_Pn2_f=np.zeros((len(logfvec),len(unicountvals_2)))
-    for s_it in range(len(svec)):
-        log_expsavg_Pn2_f+=np.exp(svec_shift[s_it,np.newaxis,np.newaxis]+logPn2_f[f2s_step*s_it:f2s_step*s_it+len(logfvec),:]+logPsvec[s_it,np.newaxis,np.newaxis]) #cuts down on memory constraints
+    for s_it in range(len(svec)): #loop over s instead of adding it as a dimension: cuts down significantly on memory constraints
+        log_expsavg_Pn2_f+=np.exp(svec_shift[s_it,np.newaxis,np.newaxis]+logPn2_f[f2s_step*s_it:f2s_step*s_it+len(logfvec),:]+logPsvec[s_it,np.newaxis,np.newaxis]) 
     log_expsavg_Pn2_f=np.log(log_expsavg_Pn2_f)
     integ=np.exp(log_expsavg_Pn2_f[:,indn2]+logPn1_f[:,indn1]+logrhofvec[:,np.newaxis]+2*logfvec[:,np.newaxis])
     avgfexps_n1n2=np.exp(np.log(np.sum(dlogfby2[:,np.newaxis]*(integ[1:,:] + integ[:-1,:]),axis=0))-tmp)
@@ -191,7 +186,7 @@ def learn_diffexpr_model(init_paras,parameter_labels,null_paras,sparse_rep,acq_m
     
     condict={'type':'eq','fun':diffexpr_constr_fn,'args': (null_paras,sparse_rep,acq_model_type,logfvec,logfvecwide,svec,smax,s_step,Ps_type,f2s_step,logPn1_f,logrhofvec)}
     
-    nullfunctol=1e-6
+    nullfunctol=1e-10
     nullmaxiter=300
     header=['Iter']+parameter_labels
     prtfn(''.join(['{'+str(it)+':9s} ' for it in range(len(init_paras)+1)]).format(*header))
@@ -218,12 +213,12 @@ def eigsorted(cov):
     order = vals.argsort()[::-1]
     return vals[order], vecs[:,order]
 
-def get_fisherinfo_diffexpr_model(outstruct,null_paras,sparse_rep,acq_model_type,logfvec,logfvecwide,\
+def get_fisherinfo_diffexpr_model(opt_paras,null_paras,sparse_rep,acq_model_type,logfvec,logfvecwide,\
                          svec,smax,s_step,Ps_type,f2s_step,logPn1_f,logrhofvec,prtfn=print): #constraint type 1 gives only low error modes, see paper for details.
     '''
     get linearized constraint equation:
         -at p_opt, estimate derivatives dC/dp=(C(eps/2)-C(-eps/2)/eps in each of p=p1,p2,p3 directions, -eps/2, +eps/2, iterative procedure to find eps: half eps until (change in dC)/dC falls below threshold
-        -parametrize grid: get grid data from uvec=eps_u*(-2,-1,0,1,2)*du,vvec=eps_v*(-2,-1,0,1,2)*dv
+        -parametrize 2D grid: get grid data from uvec=eps_u*(-2,-1,0,1,2)*du,vvec=eps_v*(-2,-1,0,1,2)*dv, check that gives roughly quadratic form of likelihood by roughly same likelihood at low and high para values 
         -map grid to p-space using normal eqn: dC(p_opt).(p-p_opt)=0: (p1,p2,p3)=p_opt + (u/(1-dC/dp1),v/(1-dC/dp2),(0-dC/dp1*u/(1-dC/dp1)-dC/dp1*v/(1-dC/dp2))*dp3/dC)
         -eval likelihood at grid
         -obtain quadrative fit of likelihoods in (u,v) as 2-form
@@ -231,53 +226,70 @@ def get_fisherinfo_diffexpr_model(outstruct,null_paras,sparse_rep,acq_model_type
         -map eigenvalue*eigenvector in (u,v) space to p-space using above mapping
         -ignore 3rd (shift) component
     '''
+    opt_paras=np.asarray(opt_paras)
     
     _,_,sparse_rep_counts,_,_,_,_=sparse_rep
     Nclones=np.sum(sparse_rep_counts)
     
-    opt_paras=outstruct.x
     partialdiffexpr_constr_fn=partial(diffexpr_constr_fn, null_paras=null_paras,sparse_rep=sparse_rep,acq_model_type=acq_model_type,logfvec=logfvec,logfvecwide=logfvecwide,svec=svec,smax=smax,s_step=s_step,Ps_type=Ps_type,f2s_step=f2s_step,logPn1_f=logPn1_f,logrhofvec=logrhofvec)
     Cval=partialdiffexpr_constr_fn(opt_paras)
     
     partialobjfunc=partial(get_diffexpr_likelihood,null_paras=null_paras,sparse_rep=sparse_rep,acq_model_type=acq_model_type,logfvec=logfvec,logfvecwide=logfvecwide,\
                                                     svec=svec,smax=smax,s_step=s_step,Ps_type=Ps_type,f2s_step=f2s_step,logPn1_f=logPn1_f,logrhofvec=logrhofvec)
-    Lval=partialobjfunc(opt_paras)
+    Lval=-np.power(10,partialobjfunc(opt_paras))
     print('L:'+str(Lval)+' C:'+str(Cval))
     
+    #get constraint gradient
     eps_tol=1e-7
     gradC=[]
     for it,para in enumerate(opt_paras):
+    #for it,para in enumerate(np.log10(opt_paras)):
         eps=para/10
         dCdpold=0
+        #paras_tmp_plus=deepcopy(np.log10(opt_paras))
+        #paras_tmp_minus=deepcopy(np.log10(opt_paras))
         paras_tmp_plus=deepcopy(opt_paras)
         paras_tmp_minus=deepcopy(opt_paras)
         paras_tmp_plus[it]+=eps/2
         paras_tmp_minus[it]-=eps/2
+        #dCdp=(partialdiffexpr_constr_fn(np.power(10,paras_tmp_plus))-partialdiffexpr_constr_fn(np.power(10,paras_tmp_minus)))/eps
         dCdp=(partialdiffexpr_constr_fn(paras_tmp_plus)-partialdiffexpr_constr_fn(paras_tmp_minus))/eps
+
         while np.fabs((dCdp-dCdpold)/dCdp)>eps_tol:
             dCdpold=deepcopy(dCdp)
             eps/=2
+            #paras_tmp_plus=deepcopy(np.log10(opt_paras))
+            #paras_tmp_minus=deepcopy(np.log10(opt_paras))
             paras_tmp_plus=deepcopy(opt_paras)
             paras_tmp_minus=deepcopy(opt_paras)
             paras_tmp_plus[it]+=eps/2
             paras_tmp_minus[it]-=eps/2
             dCdp=(partialdiffexpr_constr_fn(paras_tmp_plus)-partialdiffexpr_constr_fn(paras_tmp_minus))/eps
+            #dCdp=(partialdiffexpr_constr_fn(np.power(10,paras_tmp_plus))-partialdiffexpr_constr_fn(np.power(10,paras_tmp_minus)))/eps
             print('(dCdp-dCdpold)/dCdp='+str((dCdp-dCdpold)/dCdp))
         gradC.append(dCdp)
+    gradC=np.asarray(gradC)
     nvec=gradC/np.linalg.norm(gradC) #normal vector
-    
-    e_u=np.asarray([nvec[1],-nvec[0],0])
+    eps=0.1
+    print(gradC@gradC.T/eps**2)
+    e_u=np.asarray([nvec[1],-nvec[0],0]) #orthgonal to normal and shift
     e_u=e_u/np.linalg.norm(e_u)    
     e_v=np.cross(nvec,e_u)
+    #import ipdb
+    #ipdb.set_trace()
     
-    eps_u=1e-6
-    eps_v=1e-6
+    eps_u=1e-2
+    eps_v=1e-2
+    #eps_u=1e-4
+    #eps_v=1e-4
     eps_vec=(eps_u,eps_v)
-    uvec=eps_u*np.arange(-2,3)
-    vvec=eps_v*np.arange(-2,3)
+    num_steps=5
+    uvec=eps_u*np.arange(-num_steps,num_steps+1)/num_steps
+    vvec=eps_v*np.arange(-num_steps,num_steps+1)/num_steps
     grid_data_u,grid_data_v=np.meshgrid(uvec,vvec)
-    dpara_data=[pair[0]*e_u+pair[1]*e_v for pair in zip(grid_data_u.flatten(),grid_data_v.flatten())]
-    L_data=np.reshape(np.asarray([partialobjfunc(np.asarray(opt_paras)+dpara) for dpara in dpara_data] ),(len(uvec),len(vvec)))*Nclones
+    dpara_data=np.asarray([pair[0]*e_u+pair[1]*e_v for pair in zip(grid_data_u.flatten(),grid_data_v.flatten())])
+    L_data=np.reshape(np.asarray([-np.power(10,partialobjfunc(opt_paras+dpara)) for dpara in dpara_data] ),(len(uvec),len(vvec)))*Nclones
+    #L_data=np.reshape(np.asarray([-np.power(10,partialobjfunc(np.power(10,np.log10(opt_paras)+dpara))) for dpara in dpara_data] ),(len(uvec),len(vvec)))*Nclones
     #import ipdb
     #ipdb.set_trace()
     print(L_data-np.max(L_data))
@@ -288,7 +300,7 @@ def get_fisherinfo_diffexpr_model(outstruct,null_paras,sparse_rep,acq_model_type
         coeffs[pit,:]=poly.polyfit(paravec-paravec[cind], -(L_data[pit,:]-L_data[pit,cind]), 2)
         fvals=(coeffs[pit,2]*(paravec-paravec[cind])**2 + coeffs[pit,1]*(paravec-paravec[cind]) + coeffs[pit,0])
         print(fvals)
-    diag_entries=2*coeffs[:,2] #correction from taylor
+    diag_entries=2*coeffs[:,2] #2 factor is correction from taylor (c.f. off-diag fit)
     
     #learn off diags
     para1vec=uvec
@@ -318,7 +330,7 @@ def get_fisherinfo_diffexpr_model(outstruct,null_paras,sparse_rep,acq_model_type
     ell_1_p=ell_1[0]*e_u+ell_1[1]*e_v
     ell_2_p=ell_2[0]*e_u+ell_2[1]*e_v
     
-    return ell_1_p,ell_2_p
+    return ell_1_p,ell_2_p,cov,L_data
 
 #for imposing constraint when running grid search
 def get_shift(logPsvec,null_paras,sparse_rep,acq_model_type,shift,logfvec,logfvecwide,svec,f2s_step,logPn1_f,logrhofvec,tol=1e-3):
@@ -328,15 +340,14 @@ def get_shift(logPsvec,null_paras,sparse_rep,acq_model_type,shift,logfvec,logfve
     dlogfby2=np.diff(logfvec)/2. #1/2 comes from trapezoid integration below
 
     alpha = null_paras[0] #power law exponent
+    fmin=np.power(10,null_paras[-1])
     if acq_model_type<2:
         m_total=float(np.power(10, null_paras[3])) 
         r_c=Nreads/m_total
-        fmin=np.power(10,null_paras[4])
-    else:
-        fmin=np.power(10,null_paras[3])
-        
-    beta_mv= null_paras[1]
-    alpha_mv=null_paras[2]
+    if acq_model_type<3:
+        beta_mv= null_paras[1]
+        alpha_mv=null_paras[2]
+
     diffval=np.Inf
     addshift=0
     it=0

@@ -17,29 +17,37 @@
 
 # %matplotlib inline
 import sys,os
-root_path = os.path.abspath(os.path.join('..'))
-if root_path not in sys.path:
-    sys.path.append(root_path)
+module_path = os.path.abspath(os.path.join('..'))
+if module_path not in sys.path:
+    sys.path.append(module_path)
 # %run -i '../lib/utils/ipynb_setup.py'
-import lib.utils.plotting
 from lib.utils.plotting import plot_n1_vs_n2,add_ticks
-from lib.utils.prob_utils import get_distsample
 from lib.proc import get_sparserep,import_data
 from lib.model import get_Pn1n2_s, get_rhof, NegBinParMtr,get_logPn_f,get_model_sample_obs
-from lib.learning import constr_fn,callback,learn_null_model
-# import lib.learning
+from lib.learning import nullmodel_constr_fn,callback,learn_null_model
+import lib.learning
 # %load_ext autoreload
 # %autoreload 2
 
+# +
 import matplotlib.pyplot as pl
-pl.rc("figure", facecolor="gray",figsize = (8,8))
-pl.rc('lines',markeredgewidth = 2)
-pl.rc('font',size = 24)
+paper=False
+if not paper:
+    pl.rc("figure", facecolor="gray",figsize = (8,8))
+    pl.rc('lines',markeredgewidth = 2)
+    pl.rc('font',size = 24)
+else:
+    pl.rc("figure", facecolor="none",figsize = (3.5,3.5))
+    pl.rc('lines',markeredgewidth = 0)
+    pl.rc('font',size = 10)
+    
 pl.rc('text', usetex=True)
+
 import seaborn as sns
 sns.set_style("whitegrid", {'axes.grid' : True})
-
-# The replicate model consists of clone frequency distribution
+params= {'text.latex.preamble' : [r'\usepackage{amsmath}']}
+pl.rcParams.update(params)
+# -
 
 # We begin by defining the parameters of the model:
 
@@ -113,6 +121,8 @@ data['out']=output
 np.save('syn_null_models',data)
 # -
 
+data=np.load('syn_null_models.npy',encoding='latin1').item()
+
 sumf=np.zeros((20,))
 for tit,trial in enumerate(data['f'][it]):    
 #     maxf[tit]=np.max(trial)
@@ -131,29 +141,8 @@ sns.scatterplot(ax=ax,
               alpha=0.7) # and slightly transparent
 print(np.where(maxf>-3))
 
-data['n1n2'][it][0]
-
-maxn=np.zeros((20,))
-for tit,trial in enumerate(data['n1n2'][it]):    
-    maxn[tit]=trial.max().max()
-fig,ax=pl.subplots(1,1)
-# df=pd.DataFrame(maxf.T,columns=['C1','C2','C1+C2']).melt(value_vars=['C1','C2','C1+C2'],value_name='$f_{max}$',var_name='constraint')
-sns.scatterplot(ax=ax,
-               data=pd.DataFrame(maxn), 
-              color='k', # Make points black
-              alpha=0.7) # and slightly transparent
-print(np.where(maxn>e4))
-
-nummax=1
-maxf=np.zeros((20,nummax))
-for tit,trial in enumerate(data['f'][it]):    
-    maxf[tit,:]=trial[np.argpartition(trial,-nummax)[-nummax:]]
-
-np.argsort(np.sum(maxf,axis=1))
-
-np.where(maxf>logfthresh)[0]
-
 # +
+it=0
 maxf=np.zeros((20,))
 for tit,trial in enumerate(data['f'][it]):    
     maxf[tit]=np.max(trial)
@@ -250,9 +239,9 @@ for mtit,logm_total in enumerate(logm_totalvec):
         for lit, logbeta in enumerate(logbetavec):
             for mit,alpha_m  in enumerate(alpha_mvec):
                 paras=[alpha_rho,logbeta,alpha_m,logm_total]
-                runstr='learnnulltestv5_case_'+str(case)+'_'+str(rit)+'_'+str(lit)+'_'+str(mit)+'_'+str(mtit)+'_'
+                runstr='../../../output/syn_data/nullmodel_reinfer_data/learnnulltestv5_case_'+str(case)+'_'+str(rit)+'_'+str(lit)+'_'+str(mit)+'_'+str(mtit)+'_'
                 try:
-                    outstructs[rit,lit,mit,mtit]=np.load(runstr+'outstruct.npy').flatten()[0]
+                    outstructs[rit,lit,mit,mtit]=np.load(runstr+'outstruct.npy',encoding='latin1').flatten()[0]
                     if outstructs[rit,lit,mit,mtit].success==False:
                         print('failed!')
                     
@@ -307,7 +296,7 @@ for rit, alpha_rho in enumerate(alpha_rhovec):
             paras=[alpha_rho,logbeta,alpha_m,logm_total]
             runstr='learnnullv4_case_'+str(case)+'_'+str(rit)+'_'+str(lit)+'_'+str(mit)+'_'+str(mtit)+'_'
             try:
-                outstructs[rit,lit,mit]=np.load(runstr+'outstruct.npy').flatten()[0]
+                outstructs[rit,lit,mit]=np.load(runstr+'outstruct.npy',encoding='latin1').flatten()[0]
                 pred_paras=outstructs[rit,lit,mit].x
                 
                 for pit,p in enumerate(pred_paras):
