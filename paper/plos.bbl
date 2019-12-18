@@ -1,0 +1,297 @@
+\begin{thebibliography}{10}
+
+\bibitem{Benichou2011}
+Benichou J, Louzoun Y.
+\newblock {Rep-Seq : uncovering the immunological repertoire through
+  next-generation sequencing}.
+\newblock Immunology. 2011; p. 183--191.
+\newblock doi:{10.1111/j.1365-2567.2011.03527.x}.
+
+\bibitem{Georgiou2014a}
+Georgiou G, Ippolito GC, Beausang J, Busse CE, Wardemann H, Quake SR.
+\newblock {The promise and challenge of high-throughput sequencing of the
+  antibody repertoire.}
+\newblock Nature biotechnology. 2014;32(2):158--68.
+\newblock doi:{10.1038/nbt.2782}.
+
+\bibitem{Robins2013a}
+Robins H.
+\newblock {Immunosequencing: applications of immune repertoire deep
+  sequencing}.
+\newblock Current Opinion in Immunology. 2013;25(5):646--652.
+\newblock doi:{10.1016/j.coi.2013.09.017}.
+
+\bibitem{Calis2014a}
+Calis JJa, Rosenberg BR.
+\newblock {Characterizing immune repertoires by high throughput sequencing:
+  strategies and applications}.
+\newblock Trends in Immunology. 2014;35(12):581--590.
+\newblock doi:{10.1016/j.it.2014.09.004}.
+
+\bibitem{Vollmers2013}
+Vollmers C, Sit RV, Weinstein Ja, Dekker CL, Quake SR.
+\newblock {Genetic measurement of memory B-cell recall using antibody
+  repertoire sequencing.}
+\newblock Proceedings of the National Academy of Sciences.
+  2013;110(33):13463--8.
+\newblock doi:{10.1073/pnas.1312146110}.
+
+\bibitem{Jiang2013a}
+Jiang N, He J, Weinstein Ja, Penland L, Sasaki S, He XS, et~al.
+\newblock {Lineage Structure of the Human Antibody Repertoire in Response to
+  Influenza Vaccination}.
+\newblock Science Translational Medicine. 2013;5(171):171ra19.
+\newblock doi:{10.1126/scitranslmed.3004794}.
+
+\bibitem{Parameswaran2013}
+Parameswaran P, Liu Y, Roskin KM, Jackson KKL, Dixit VP, Lee JY, et~al.
+\newblock {Convergent antibody signatures in human dengue}.
+\newblock Cell Host and Microbe. 2013;13(6):691--700.
+\newblock doi:{10.1016/j.chom.2013.05.008}.
+
+\bibitem{Thomas2014b}
+Thomas N, Best K, Cinelli M, Reich-Zeliger S, Gal H, Shifrut E, et~al.
+\newblock {Tracking global changes induced in the CD4 T-cell receptor
+  repertoire by immunization with a complex antigen using short stretches of
+  CDR3 protein sequence}.
+\newblock Bioinformatics. 2014;30(22):3181--3188.
+\newblock doi:{10.1093/bioinformatics/btu523}.
+
+\bibitem{Laserson2014}
+Laserson U, Vigneault F, Gadala-Maria D, Yaari G, Uduman M, {Vander Heiden} Ja,
+  et~al.
+\newblock {High-resolution antibody dynamics of vaccine-induced immune
+  responses}.
+\newblock Proceedings of the National Academy of Sciences.
+  2014;111(13):4928--4933.
+\newblock doi:{10.1073/pnas.1323862111}.
+
+\bibitem{Wang2015}
+Wang C, Liu Y, Cavanagh MM, {Le Saux} S, Qi Q, Roskin KM, et~al.
+\newblock {B-cell repertoire responses to varicella-zoster vaccination in human
+  identical twins}.
+\newblock Proceedings of the National Academy of Sciences.
+  2015;112(2):500--505.
+\newblock doi:{10.1073/pnas.1415875112}.
+
+\bibitem{Qi2016}
+Qi Q, Cavanagh MM, {Le Saux} S, NamKoong H, Kim C, Turgano E, et~al.
+\newblock {Diversification of the antigen-specific T cell receptor repertoire
+  after varicella zoster vaccination}.
+\newblock Science Translational Medicine. 2016;8(332):332ra46--332ra46.
+\newblock doi:{10.1126/scitranslmed.aaf1725}.
+
+\bibitem{Pogorelyy2018c}
+Pogorelyy MV, Minervina AA, Touzel MP, Sycheva AL, Komech EA, Kovalenko EI,
+  et~al.
+\newblock {Precise tracking of vaccine-responding T-cell clones reveals
+  convergent and personalized response in identical twins}.
+\newblock Proc Natl Acad Sci. 2018;115(50):12704--12709.
+\newblock doi:{10.1101/300343}.
+
+\bibitem{Horns2019}
+Horns F, Vollmers C, Dekker CL, Quake SR.
+\newblock {Signatures of selection in the human antibody repertoire: Selective
+  sweeps, competing subclones, and neutral drift}.
+\newblock Proceedings of the National Academy of Sciences of the United States
+  of America. 2019;116(4):1261--1266.
+\newblock doi:{10.1073/pnas.1814213116}.
+
+\bibitem{Logan2011}
+Logan AC, Gao H, Wang C, Sahaf B, Jones CD, Marshall EL, et~al.
+\newblock {High-throughput VDJ sequencing for quantification of minimal
+  residual disease in chronic lymphocytic leukemia and immune reconstitution
+  assessment}.
+\newblock Proceedings of the National Academy of Sciences of the United States
+  of America. 2011;108(52):21194--21199.
+\newblock doi:{10.1073/pnas.1118357109}.
+
+\bibitem{Dash2017}
+Dash P, Fiore-gartland AJ, Hertz T, Wang GC, Sharma S, Souquette A, et~al.
+\newblock {Quantifiable predictive features define epitope-specific T cell
+  receptor repertoires}.
+\newblock Nature. 2017;547:89--93.
+\newblock doi:{10.1038/nature22383}.
+
+\bibitem{Glanville2017}
+Glanville J, Huang H, Nau A, Hatton O, Wagar LE, Rubelt F, et~al.
+\newblock {Identifying specificity groups in the T cell receptor repertoire}.
+\newblock Nature. 2017;547:94--98.
+\newblock doi:{10.1038/nature22976}.
+
+\bibitem{Emerson2017}
+Emerson RO, DeWitt WS, Vignali M, Gravley J, Hu JK, Osborne EJ, et~al.
+\newblock {Immunosequencing identifies signatures of cytomegalovirus exposure
+  history and HLA-mediated effects on the T cell repertoire}.
+\newblock Nature Genetics. 2017;49(5):659--665.
+\newblock doi:{10.1038/ng.3822}.
+
+\bibitem{Britanova2016}
+Britanova OV, Shugay M, Merzlyak EM, Staroverov DB, Putintseva EV, Turchaninova
+  MA, et~al.
+\newblock {Dynamics of Individual T Cell Repertoires: From Cord Blood to
+  Centenarians}.
+\newblock The Journal of Immunology. 2016;doi:{10.4049/jimmunol.1600005}.
+
+\bibitem{Chu2019}
+Chu ND, Bi HS, Emerson RO, Sherwood AM, Birnbaum ME, Robins HS, et~al.
+\newblock {Longitudinal immunosequencing in healthy people reveals persistent T
+  cell receptors rich in highly public receptors}.
+\newblock BMC Immunology. 2019;20(19):1--12.
+\newblock doi:{https://doi.org/10.1186/s12865-019-0300-5}.
+
+\bibitem{Chao2004}
+Chao DL, Davenport MP, Forrest S, Perelson AS.
+\newblock {A stochastic model of cytotoxic T cell responses}.
+\newblock Journal of Theoretical Biology. 2004;228(2):227--240.
+\newblock doi:{10.1016/j.jtbi.2003.12.011}.
+
+\bibitem{Zilman2010}
+Zilman A, Ganusov VV, Perelson AS.
+\newblock {Stochastic models of lymphocyte proliferation and death}.
+\newblock PLoS ONE. 2010;5(9):1--14.
+\newblock doi:{10.1371/journal.pone.0012775}.
+
+\bibitem{DeBoer:2013p13069}
+Boer RJD, Perelson AS.
+\newblock {Quantifying T lymphocyte turnover}.
+\newblock Journal of Theoretical Biology. 2013;327:45--87.
+\newblock doi:{10.1016/j.jtbi.2012.12.025}.
+
+\bibitem{Desponds2016}
+Desponds J, Mora T, Walczak AM.
+\newblock {Fluctuating fitness shapes the clone-size distribution of immune
+  repertoires.}
+\newblock Proceedings of the National Academy of Sciences. 2016;113(2):274--9.
+\newblock doi:{10.1073/pnas.1512977112}.
+
+\bibitem{Robins2012a}
+Robins H, Desmarais C, Matthis J, Livingston R, Andriesen J, Reijonen H, et~al.
+\newblock {Ultra-sensitive detection of rare T cell clones}.
+\newblock Journal of Immunological Methods. 2012;375(1-2):14--19.
+\newblock doi:{10.1016/j.jim.2011.09.001}.
+
+\bibitem{Robinson2008}
+Robinson MD, Smyth GK.
+\newblock {Small-sample estimation of negative binomial dispersion , with
+  applications to SAGE data}. 2008; p. 321--332.
+\newblock doi:{10.1093/biostatistics/kxm030}.
+
+\bibitem{Robinson2010}
+Robinson MD, Mccarthy DJ, Smyth GK.
+\newblock {edgeR : a Bioconductor package for differential expression analysis
+  of digital gene expression data}.
+\newblock Bioinformatics. 2010;26(1):139--140.
+\newblock doi:{10.1093/bioinformatics/btp616}.
+
+\bibitem{Anders2010}
+Anders S, Huber W.
+\newblock {Differential expression analysis for sequence count data.}
+\newblock Genome biology. 2010;11(10):R106.
+\newblock doi:{10.1186/gb-2010-11-10-r106}.
+
+\bibitem{Love2014}
+Love MI, Huber W, Anders S.
+\newblock {Moderated estimation of fold change and dispersion for RNA-seq data
+  with DESeq2.}
+\newblock Genome biology. 2014;15(12):550.
+\newblock doi:{10.1186/s13059-014-0550-8}.
+
+\bibitem{Mora2016e}
+Mora T, Walczak A.
+\newblock {Quantifying lymphocyte receptor diversity}.
+\newblock In: Das JD, Jayaprakash C, editors. Systems Immunology. CRC Press;
+  2018. p. 185--199.
+\newblock Available from: \url{http://arxiv.org/abs/1604.00487}.
+
+\bibitem{Gerritsen_thesis}
+Gerritsen B.
+\newblock {Sequencing, analyzing, and modeling small samples from large T cell
+  repertoires}.
+\newblock Utrecht University; 2018.
+
+\bibitem{Greef2019}
+Greef PCD, Oakes T, Gerritsen B, Ismail M, James M, Hermsen R, et~al.
+\newblock {The naive T-cell receptor repertoire has an extremely broad
+  distribution of clone sizes}.
+\newblock bioRxiv:691501. 2019;.
+
+\bibitem{Zarnitsyna2013}
+Zarnitsyna VI, Evavold BD, Schoettle LN, Blattman JN, Antia R.
+\newblock {Estimating the diversity, completeness, and cross-reactivity of the
+  T cell repertoire}.
+\newblock Frontiers in Immunology. 2013;4(DEC):485.
+\newblock doi:{10.3389/fimmu.2013.00485}.
+
+\bibitem{Heather2017}
+Heather JM, Ismail M, Oakes T, Chain B.
+\newblock {High-throughput sequencing of the T-cell receptor repertoire:
+  pitfalls and opportunities}.
+\newblock Briefings in Bioinformatics. 2017;19(4):554--565.
+\newblock doi:{10.1093/bib/bbw138}.
+
+\bibitem{Qi2014}
+Qi Q, Liu Y, Cheng Y, Glanville J, Zhang D, Lee JY, et~al.
+\newblock {Diversity and clonal selection in the human T-cell repertoire.}
+\newblock Proceedings of the National Academy of Sciences of the United States
+  of America. 2014;111(36):13139--44.
+\newblock doi:{10.1073/pnas.1409155111}.
+
+\bibitem{Lythe2016}
+Lythe G, Callard RE, Hoare RL, Molina-Par{\'{i}}s C.
+\newblock {How many TCR clonotypes does a body maintain?}
+\newblock Journal of Theoretical Biology. 2016;389:214--224.
+\newblock doi:{10.1016/j.jtbi.2015.10.016}.
+
+\bibitem{Jenkins2010}
+Jenkins MK, Chu HH, McLachlan JB, Moon JJ.
+\newblock {On the composition of the preimmune repertoire of T cells specific
+  for Peptide-major histocompatibility complex ligands.}
+\newblock Annual review of immunology. 2009;28:275--294.
+\newblock doi:{10.1146/annurev-immunol-030409-101253}.
+
+\bibitem{Mora2019}
+Mora T, Walczak AM.
+\newblock {How many different clonotypes do immune repertoires contain? ´};
+  2019.
+
+\bibitem{Boer1993}
+de~Boer RJ, Perelson ASA.
+\newblock {How diverse should the immune system be}.
+\newblock Proceedings of the Royal Society B: Biological Sciences.
+  1993;252(1335):171.
+
+\bibitem{Mayer2019}
+Mayer A, Zhang Y, Perelson AS, Wingreen NS.
+\newblock {Regulation of T cell expansion by antigen presentation dynamics}.
+\newblock Proceedings of the National Academy of Sciences of the United States
+  of America. 2019;116(13):5914--5919.
+\newblock doi:{10.1073/pnas.1812800116}.
+
+\bibitem{Ralph2016a}
+Ralph DK, Matsen FA.
+\newblock {Likelihood-Based Inference of B Cell Clonal Families}.
+\newblock PLoS Computational Biology. 2016;12(10):1--28.
+\newblock doi:{10.1371/journal.pcbi.1005086}.
+
+\bibitem{Minervina2019}
+Minervina A, Pogorelyy M, Mamedov I.
+\newblock {TCR and BCR repertoire profiling in adaptive immunity}.
+\newblock Transplant International. 2019; p. 0--2.
+\newblock doi:{10.1111/tri.13475}.
+
+\bibitem{Kadoki2017}
+Kadoki M, Patil A, Thaiss CC, Brooks DJ, Pandey S, Deep D, et~al.
+\newblock {Organism-Level Analysis of Vaccination Reveals Networks of
+  Protection across Tissues}.
+\newblock Cell. 2017;171(2):398--413.e21.
+\newblock doi:{10.1016/j.cell.2017.08.024}.
+
+\bibitem{Nourmohammad2019}
+Nourmohammad A, Otwinowski J, {\L}uksza M, Mora T, Walczak AM.
+\newblock {Fierce Selection and Interference in B-Cell Repertoire Response to
+  Chronic HIV-1}.
+\newblock Molecular Biology and Evolution. 2019;36(10):2184--2194.
+\newblock doi:{10.1093/molbev/msz143}.
+
+\end{thebibliography}

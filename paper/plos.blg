@@ -1,0 +1,90 @@
+This is BibTeX, Version 0.99d (TeX Live 2019)
+Capacity: max_strings=100000, hash_size=100000, hash_prime=85009
+The top-level auxiliary file: plos.aux
+The style file: plos2015.bst
+Database file #1: thierry.bib
+Repeated entry---line 2399 of file thierry.bib
+ : @article{Laserson2014
+ :                      ,
+I'm skipping whatever remains of this entry
+Repeated entry---line 4570 of file thierry.bib
+ : @article{Desponds2016
+ :                      ,
+I'm skipping whatever remains of this entry
+Repeated entry---line 4765 of file thierry.bib
+ : @article{Jiang2013a
+ :                    ,
+I'm skipping whatever remains of this entry
+Database file #2: diffexpr.bib
+Repeated entry---line 47 of file diffexpr.bib
+ : @article{Anders2010
+ :                    ,
+I'm skipping whatever remains of this entry
+Repeated entry---line 217 of file diffexpr.bib
+ : @article{Glanville2017
+ :                       ,
+I'm skipping whatever remains of this entry
+Repeated entry---line 319 of file diffexpr.bib
+ : @article{Robinson2010
+ :                      ,
+I'm skipping whatever remains of this entry
+Repeated entry---line 343 of file diffexpr.bib
+ : @article{Qi2014
+ :                ,
+I'm skipping whatever remains of this entry
+Database file #3: max_response.bib
+Repeated entry---line 6 of file max_response.bib
+ : @article{Greef2019
+ :                   ,
+I'm skipping whatever remains of this entry
+Reallocated glb_str_ptr (elt_size=4) to 20 items from 10.
+Reallocated global_strs (elt_size=20001) to 20 items from 10.
+Reallocated glb_str_end (elt_size=4) to 20 items from 10.
+Reallocated wiz_functions (elt_size=4) to 6000 items from 3000.
+`journal' is a missing field, not a string, for entry Robinson2008
+while executing---line 1875 of file plos2015.bst
+Warning--empty journal in Robinson2008
+You can't pop an empty literal stack for entry Gerritsen_thesis
+while executing---line 1875 of file plos2015.bst
+You've used 43 entries,
+            3058 wiz_defined-function locations,
+            1001 strings with 19357 characters,
+and the built_in function-call counts, 115967 in all, are:
+= -- 14607
+> -- 804
+< -- 4
++ -- 544
+- -- 201
+* -- 10467
+:= -- 12569
+add.period$ -- 206
+call.type$ -- 43
+change.case$ -- 2
+chr.to.int$ -- 0
+cite$ -- 44
+duplicate$ -- 7990
+empty$ -- 11207
+format.name$ -- 243
+if$ -- 26796
+int.to.chr$ -- 0
+int.to.str$ -- 43
+missing$ -- 447
+newline$ -- 254
+num.names$ -- 45
+pop$ -- 625
+preamble$ -- 1
+purify$ -- 0
+quote$ -- 0
+skip$ -- 792
+stack$ -- 0
+substring$ -- 25815
+swap$ -- 1132
+text.length$ -- 4
+text.prefix$ -- 0
+top$ -- 0
+type$ -- 0
+warning$ -- 1
+while$ -- 490
+width$ -- 45
+write$ -- 546
+(There were 10 error messages)

@@ -1,0 +1,49 @@
+\subsection*{Modeling repertoire variation}
+
+To describe the stochastic dynamics of an individual clone, we define a probabilistic rule relating its frequency $f'$ at time $t'$ to its frequency $f$ at an earlier time $t$: $G(f',t'|f,t)$. In this paper, $t$ and $t'$ will be pre- and post-vaccination time points, but more general cases may be considered.
+It is also useful to define the probability distribution for the clone frequency at time $t$, $\rho(f)$ (Fig.~\ref{fig:fullmodel}A).
+
+The true frequencies of clones are not directly accessible experimentally. Instead, sequencing experiments give us number of reads for each clonotypes, $n$, which is a noisy function of the true frequency $f$, described by the conditional probability $P(n|f)$ (Fig.~\ref{fig:fullmodel}B). Correcting for this noise to uncover the dynamics of clones is essential and is a central focus of this paper.
+
+Our method proceeds in two inference steps, followed by a prediction step. First, using same-day replicates at time $t$, we jointly learn the characteristics of the frequency distribution $\rho(f)$  (Fig.~\ref{fig:fullmodel}A) and the noise model $P(n|f)$ (Fig.~\ref{fig:fullmodel}B). Second, by comparing repertoires between two time points $t$ and $t'$, we infer the parameters of the evolution operator $G(f',t'|f,t)$, using the noise model and frequency distribution learned in the first step (Fig.~\ref{fig:fullmodel}C). Once these two inferences have been performed, the dynamics of individual clones can be estimated by Bayesian posterior inference. These steps are described in the remaining Results sections. In the rest of this section, we define and motivate the classes of model that we chose to parametrize the three building blocks of the model, schematized in Fig.~\ref{fig:fullmodel}: the clone size distribution $\rho(f)$, the noise model $P(n|f)$, and the dynamical model $G(f',t'|f,t)$.
+
+\begin{figure*}
+\includegraphics[width=\textwidth]{Fig1_model}
+\centering{}
+\caption{
+\emph{Model components}. (A) Clone frequencies are sampled from a prior density of power law form with power $\nu$ and minimum frequency, $f_\textrm{min}$. (B) Each clone's frequency $f$ determines the count distribution, $P(n|f)$, that governs its mRNA count statistics in the observed sample. We consider 3 forms for $P(n|f)$: Poisson, negative binomial, and a two-step (negative binomial to Poisson) model. The negative binomial and two-step measurement models are parametrized through a mean-variance relationship specifying the power, $\gamma$, and coefficient, $a$, of the over-dispersion of cell count statistics. The mean cell count scales with the number of cells in the sample, $M$, while the mean read count scales with with the number of cells, $m$, and the sampling efficiency, $M/N_{\textrm{read}}$, with $N_{\textrm{read}}$ the measured number of molecules in the sample. The parameters of the measurement model are learned on pairs of sequenced repertoire replicates.  (C) Differential expression is implemented in the model via a random log fold change, $s$, distributed according to the prior $\rho(s|\theta_\textrm{exp})$. The prior's parameters, $\theta_\textrm{exp}$, are learned from the dataset using maximum likelihood. Once learned, the model is used to compute posteriors over $s$ given observed count pairs, which is used to make inferences about specific clones.
+\label{fig:fullmodel}}
+\end{figure*}
+
+\subsubsection*{Distribution of lymphocyte clone sizes}
+
+The distribution of clone sizes in memory or unfractioned TCR repertoires has been observed to follow a power law in human \cite{Mora2016e,Gerritsen_thesis,Greef2019} and mice \cite{Zarnitsyna2013,Heather2017}. These observations justify parametrizing the clone size distribution as
+\beq
+\rho(f)=Cf^{-\nu}, \qquad f_{\rm min}\leq f<1,
+\eeq
+and $C$ a normalizing constant. 
+We will verify in the next section that this form of clone size distribution describes the data well.
+For $\nu>1$, which is the case for actual data, the minimum $f_{\rm min}$ is required to avoid the divergence at $f=0$. This bound also reflects the smallest possible clonal frequencies given by the inverse of the total number of lymphocytes, $1/N_{\rm cell}$. The frequencies of different clones are not independent, as they must sum up to 1: $\sum_{i=1}^Nf_i=1$, where $N$ is the total number of clones in the organism. The joint distribution of frequencies thus reads:
+\beq
+\rho_N(f_1,\ldots,f_N)\propto\prod_{i=1}^N\rho(f_i)\delta\left(\sum_{i=1}^Nf_i-1\right).
+\eeq
+This condition, $\sum_{i=1}^Nf_i=1$, will be typically satisfied for large $N$ as long as $\<f\>=\int \textrm{d}f \,f\rho(f) = 1/N$ (see Methods), but we will need to enforce it explicitly during the inference procedure. 
+
+\subsubsection*{Noise model for sampling and sequencing}
+
+The noise model captures the variability in the number of sequenced reads as a function of the true frequency of its clonotypes in the considered repertoire or subrepertoire. The simplest and lowest-dispersion noise model assumes random sampling of reads from the distribution of clonotypes. This results in $P(n|f)$ being given by a Poisson distribution of mean $fN_{\rm read}$, where $N_{\rm read}$ is the total number of sequence reads. Note that for the data analyzed in this paper, reads are collapsed by unique barcodes corresponding to individual mRNA molecules. 
+
+Variability in mRNA expression as well as library preparation introduces uncertainty that is far larger than predicted by the Poisson distribution. This motivated us to model the variability in read counts by a negative binomial of mean $\bar n=fN_{\rm read}$ and variance $\bar n+a\bar n^\gamma$, where $a$ and $\gamma$ control the over-dispersion of the noise. Negative binomial distributions were chosen because they allow us to control the mean and variance independently, and reduce to Poisson when $a=0$. These distributions are also popular choices for modeling RNAseq variability in differential expression methods \cite{Robinson2010,Love2014}.
+
+A third noise model was considered to account explicitly for the number of cells representing the clone in the sample, $m$. In this two-step model, $P(m|f)$ is given by a negative binomial distribution of mean $\bar m=fM$ and variance $\bar m+a\bar m^\gamma$, where $M$ is the total number of cells represented in the sample. $P(n|m)$ is a Poisson distribution of mean $mN_{\rm read}/M$. The resulting noise model is then given by $P(n|f)=\sum_m P(n|m)P(m|f)$. The number of sampled cells, $M$, is unknown and is a parameter of the model. Note that this two-step process with the number of cells as an intermediate variable is specific to repertoire sequencing, and has no equivalent in RNAseq differential expression analysis.
+
+\subsubsection*{Dynamical model of the immune response}
+Finally, we must specify the dynamical model for the clonal frequencies. In the context of vaccination or infection, it is reasonable to assume that only a fraction $\alpha$ of clones respond by expanding. We also assume that expansion or contraction does not depend on the size of the clone itself. Defining $s=\ln(f'/f)$ as the log-fold factor of expansion or contraction, we define:
+\beq
+G(f'=fe^s,t'|f,t)\textrm{d}f'=\rho_s(s)\textrm{d}s.
+\eeq
+with
+\beq\label{eq:exp}
+\rho_s(s)= (1-\alpha)\delta(s-s_0)+\alpha \rho_{\rm exp}(s-s_0),
+\eeq
+where $\rho_{\rm exp}$ describes the expansion of responding clones, and $s_0<0$ corresponds to an overall contraction factor ensuring that the normalization of frequencies to 1 is satisfied after expansion. In the following, we shall specialize to particular forms of $\rho_{\rm exp}$ depending on the case at hand.

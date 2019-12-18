@@ -1,0 +1,41 @@
+Our probabilistic framework describes two sources of variability in clonotype abundance from repertoire sequencing experiments: biological repertoire variations and spurious variations due to noise. We found that in a typical experiment, noise is over-dispersed relative to Poisson sampling noise. This makes the use of classical difference tests such as Fisher's exact test or a chi-squared test inappropriate in this context, and justifies the development of specific methods.
+
+As a byproduct, our method learned the properties of the clone size distribution, which is consistent with a power law of exponent $\approx -2.1$ robust across individuals and timepoints, consistent with previous reports \cite{Mora2016e,Gerritsen_thesis,Greef2019}. Using these parameters, various diversity measures could be computed, such as the species richness ($10^8$--$10^9$), which agrees with previous bounds \cite{Qi2014,Lythe2016}, or the ``true diversity'' (the exponential of the Shannon entropy), found to range between $10^6$ and $10^8$.
+
+The proposed probabilistic model of clonal expansion is described by two parameters: the fraction of clones that respond to the immune challenge, and the typical effect size (log fold-change). While these two parameters were difficult to infer precisely individually, a combination of them could be robustly learned. Despite this ambiguity in the model inference, the list of candidate responding clonotypes is largely insensitive to the parameter details. For clonotypes that rose from very small read counts to large ones, the inferred fold-change expansion factor depended strongly on the priors, and resulted from a delicate balance between the tail of small clones in the clone size distribution and the tail of large expansion events in the distribution of fold-changes.
+
+While similar approaches have been proposed for differential expression analysis of RNA sequencing data \cite{Robinson2008,Robinson2010,Anders2010,Love2014}, the presented  framework was specifically built to address the specific challenges of repertoire sequencing data. Here, the aim is to count proliferating cells, as opposed to evaluating average expression of genes in a population of cells. We specifically describe two steps that translate cell numbers into the observed TCR read counts: random sampling of cells that themselves carry a random number of mRNA molecules, which are also amplified and sampled stochastically. Another difference with previous methods is the explicit Bayesian treatment, which allows us to calculate a posterior probability of expansion, rather than a less interpretable p-value.
+
+Here we applied the presented methodology to an acute infection. We have previously shown that it can successfully identify both expanding (from day 0 to 15 after vaccination) and contracting (from day 15 to day 45) clonotypes after administering a yellow fever vaccine. However the procedure is more general and can also be extended to be used in other contexts. For instance, this type of approach could be used to identify response in B-cells during acute infections, by tracking variations in the size of immunoglobulin sequence lineages (instead of clonotypes), using lineage reconstruction methods such as Partis~\cite{Ralph2016a}.
+The framework could also be adapted to describe not just expansion, but also switching between different cellular phenoypes during the immune response, {\em e.g.} between the naive, memory, effector memory, {\em etc.} phenotypes, which can obtained by flow-sorting cells before sequencing \cite{Minervina2019}. Another possible application would be to track the clones across different tissues and organs, and detect migrations and local expansions \cite{Kadoki2017}.
+
+The proposed framework is not limited to identifying a response during an acute infection, but can also be used as method for learning the dynamics from time dependent data even in the absence of an external stimulus~\cite{Chu2019}. Here we specifically assumed expansion dynamics with strong selection. However, the propagator function can be replaced by a non-biased random walk term, such as genetic drift. In this context the goal is not to identify responding clonotypes but it can be used to discriminate different dynamical models in a way that accounts for different sources of noise inherently present in the experiment. Alternatively, the framework can also be adapted to describe chronic infections such as HIV \cite{Nourmohammad2019}, where expansion events may be less dramatic and more continuous or sparse, as the immune system tries to control the infection over long periods of time.
+
+
+%\begin{itemize}
+%	\item  Summary:
+%		\begin{itemize}
+%			\item  used replicates to fix noise model: good fits for over-dispersed models; fairly universal across days/donors
+%			\item  inferred repertoire change distributions: variable on ridge over replicates; consistent across days
+%			\item  used to determine significantly expanded clones: threshold in prob expansion leads to threshold in (n,n')-space; list robust to replicate variability and details of priors and their interaction.
+%		\end{itemize}
+%	\item  Natural variation results and discussion:
+%		\begin{itemize}
+%			\item  Implications of universal parameters
+%			\item  frequency power law tightly constrained by data. Implications...
+%		\end{itemize}
+%	\item  diffexpr results and discussion:
+%		\begin{itemize}
+%			\item  data strongly constrains prior expansion, not contraction or responding fraction. Implications...
+%			\item  the relevance of homeostatis (normalization).
+%			\item  Power and weakness of Bayes approach: robustness of list to details; inability to precisely pin down parameters (e.g. alpha)
+%
+%		\end{itemize}
+%    \item  application results and discussion:
+%		\begin{itemize}
+%			\item  posterior sensitivity to balance between $\nu$ (prior for maximum expansion) and $\bar{s}$ (prior for characteristic expansion) in $(0,n)$ and $(n,0)$ pairs.
+%			\item  sensitivity of resulting tables. Note validation in Misha's paper.
+%		\end{itemize}
+%	\item  Clinical use (reference Misha paper)
+%	\item  drawbacks of approach: need replicate data, ...
+%\end{itemize}

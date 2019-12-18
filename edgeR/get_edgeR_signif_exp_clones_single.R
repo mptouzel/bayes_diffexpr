@@ -46,11 +46,28 @@ standart_experiment_DE_YF<-function(DTlist,thres=4,grp=diff_group_yf){
 
 #load data
 YF_all<-import_folder_dt_fread("../../data/Yellow_fever/prepostvaccine/test/")
-
+S2=YF_all[grepl("F",names(YF_all))&grepl("S2",names(YF_all))]
 #subset for F replicates and pass it through edger pipeline
-S2_exp<-standart_experiment_DE_YF(YF_all[grepl("F",names(YF_all))&grepl("S2",names(YF_all))])
-
+S2_exp<-standart_experiment_DE_YF(S2)
 #select significantly expanded clones and filter them by log2FC threshold 
 top15_3<-topTags(exactTest(S2_exp,pair = c("d0","d15"),dispersion = "trended"),n=5000,p.value = 0.01)
 top15_3$CDR3nt<-row.names(top15_3);top15_3
 top15_3_sign<-top15_3[top15_3$logFC>5,]
+
+###code to load and process synthetic data (import packages above)
+
+#get CDR3s from data
+mdt<-merge_dt_list(DTlist = S2,bycol = "CDR3.nucleotide.sequence",colname = "Read.count")
+mdt<-mdt[Mean>thres,,]
+CDRs<-mdt[,CDR3.nucleotide.sequence,]
+#load syn data
+df=fread("sample_triplet.csv")
+df_mat=as.matrix(df)
+CDRs_short<-CDRs[1:nrow(df)] #use CDRs from real data as labels
+row.names(df_mat)<-CDRs_short
+y<-DGEList(counts = df_mat,group=c("d0","d0","d15")) #for triplet data
+y<-calcNormFactors(y)
+y<-estimateDisp(y)
+top15_3<-topTags(exactTest(y,pair = c("d0","d15"),dispersion = "trended"),n=5000,p.value = 0.05)
+length(top15_3)
+

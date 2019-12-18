@@ -4,14 +4,34 @@
 
 
 # null model
-if false; then
-for donor in "S1" "S2" ; do #"P1" "P2" "Q1" "Q2"; do 
- for day in pre0 7 15 45; do
+if true; then
+# for donor in "S1" "S2" "P1" "P2" "Q1" "Q2"; do 
+# for daynull in pre0 0 7 15 45; do
+#  for model in "3"; do
+  #daynull="0"
+  
+  donor="S2"
+  day="15"
   daynull="0"
+  python infer_diffexpr_main.py "${donor}_${daynull}_F1_.txt" "${donor}_${daynull}_F2_.txt" "${donor}_${daynull}_F1_.txt" "${donor}_${day}_F2_.txt";
+#   python infer_diffexpr_main.py "${donor}_${daynull}_F1_.txt" "${donor}_${daynull}_F2_.txt" "x" "x" $model;
+#   python infer_diffexpr_main.py "${donor}_${daynull}_F2_.txt" "${donor}_${daynull}_F1_.txt" "x" "x" $model;
+#  done
+# done
+# done
+fi
+
+if false; then
+for donor in "S1" "S2" "P1" "P2" "Q1" "Q2"; do 
+for daynull in pre0 0 7 15 45; do
+ for model in "3"; do
+  #daynull="0"
   day="0"
   #python infer_diffexpr_main.py "${donor}_${daynull}_F1_.txt" "${donor}_${daynull}_F2_.txt" "${donor}_${daynull}_F1_.txt" "${donor}_${day}_F1_.txt";
-  nohup python infer_diffexpr_main.py "${donor}_${daynull}_F1_.txt" "${donor}_${daynull}_F2_.txt" "${donor}_${daynull}_F1_.txt" "${donor}_${day}_F1_.txt" &
+  python infer_diffexpr_main.py "${donor}_${daynull}_F1_.txt" "${donor}_${daynull}_F2_.txt" "x" "x" $model;
+#   python infer_diffexpr_main.py "${donor}_${daynull}_F2_.txt" "${donor}_${daynull}_F1_.txt" "x" "x" $model;
  done
+done
 done
 fi
 
@@ -46,7 +66,7 @@ if false; then
 fi
 
 # run polsih locally
-if true; then
+if false; then
   for donor in "S1" "S2" "P1" "P2" "Q1" "Q2"; do # "S1"
     #donor="Q1"
     for day in "pre0" "0" "7" "15" "45"; do

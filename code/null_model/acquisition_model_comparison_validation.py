@@ -21,7 +21,7 @@ if module_path not in sys.path:
 # %run -i '../lib/utils/ipynb_setup.py'
 from lib.utils.plotting import plot_n1_vs_n2,add_ticks
 from lib.proc import get_sparserep,import_data
-from lib.model import get_Pn1n2_s, get_rhof, NegBinParMtr,get_logPn_f,get_model_sample_obs
+from lib.model import get_Pn1n2_s, get_rhof, NegBinParMtr,get_logPn_f
 from lib.learning import nullmodel_constr_fn,callback,learn_null_model
 import lib.learning
 # %load_ext autoreload
@@ -47,7 +47,7 @@ params= {'text.latex.preamble' : [r'\usepackage{amsmath}']}
 pl.rcParams.update(params)
 # -
 
-# Data
+# Example Dataset
 
 # +
 parvernull = 'v4'
@@ -63,7 +63,7 @@ datarootpath=rootpath+'data/Yellow_fever/prepostvaccine/'
 mincount=0
 maxcount=np.Inf
 case=0
-runstr = 'null_pair_v1_ct_1_mt_'+str(case)+'_min' + str(mincount) + '_max' + str(maxcount)
+runstr = 'null_pair_v4_ct_1_mt_'+str(case)+'_min' + str(mincount) + '_max' + str(maxcount)
 outpath = path + dataset_pair[0] + '_' + dataset_pair[1] + '/' + runstr + '/'
 initparas=np.load(path + donor+'_0_F1_'+donor+'_0_F2/' + runstr + '/'+'optparas.npy')
 Nclones_samp,subset=import_data(datarootpath,dataset_pair[0]+'_.txt',dataset_pair[1]+'_.txt',mincount,maxcount,colnames,colnames)
@@ -122,12 +122,6 @@ runstr='../../../output/'+data_name+'/null_pair_'+parvernull+'_min0_maxinf/'
 setname=runstr+'outstruct.npy'
 opt_null_paras=np.load(setname).flatten()[0].x
 opt_null_paras
-#             outstructs[cit,dit,ddit]=np.load(setname).flatten()[0]
-#             tmpdict=np.load(setname).flatten()[0]
-#             tmpdict['day']=day
-#             tmpdict['donor']=donor
-#             tmpdict['mt']=case
-#             out_df=out_df.append(tmpdict,ignore_index=True)
 # -
 
 Pn1n2_t,unicountvals_1_t,unicountvals_2_t,logPn1_f_t,logPn2_f_t,logfvec=get_Pn1n2_s(opt_null_paras, 0, sparse_rep,acq_model_type)
@@ -178,3 +172,53 @@ ax1[1].set_yscale('log')
 ax1[1].set_xscale('log')
 fig1.tight_layout()
 fig1.savefig("null_model_validation.pdf",format='pdf',dpi=500,bbox_inches='tight')
+# -
+
+casestrvec=(r'$NB\rightarrow Pois$','$NB$','$Pois$')
+acq_model_type_vec=[0,2,3]
+donorvec=['S2']#['P1','P2','Q1','Q2','S1','S2']
+dayvec=range(5)
+nparasvec=(4,3,1)
+outstructs=np.empty((len(casevec),len(donorvec),len(dayvec)),dtype=dict)
+out_df=pd.DataFrame()
+fig1, ax1 = pl.subplots(1, 1,figsize=(3.5,3.5))
+labelvec=['NB-Pois','NB','Pois']
+styvec=['-','--',':']
+for cit, acq_model_type in enumerate(acq_model_type_vec):
+    constr_type=1
+    #for dit,donor in enumerate(donorvec):
+    donors='S2'         
+    #for ddit,day in enumerate(dayvec):
+    day=0
+
+    parvernull = 'v4_ct_'+str(constr_type)+'_mt_'+str(acq_model_type)
+    data_name=donor+'_'+str(day)+"_F1_"+donor+'_'+str(day)+'_F2'
+    #             runstr='../../../output/'+dataname+'/null_pair_v1_null_ct_1_acq_model_type'+str(case)+'_min0_maxinf/'
+    runstr='../../../output/'+data_name+'/null_pair_'+parvernull+'_min0_maxinf/'
+    setname=runstr+'outstruct.npy'
+    opt_null_paras=np.load(setname).flatten()[0].x
+    print(opt_null_paras)
+    
+    Pn1n2_t,unicountvals_1_t,unicountvals_2_t,logPn1_f_t,logPn2_f_t,logfvec=get_Pn1n2_s(opt_null_paras, 0,sparse_rep,acq_model_type)
+    
+    Pn2_n1_t=np.zeros((len(unicountvals_2_t),len(unicountvals_1_t)))
+    Pn1_t=np.zeros((len(unicountvals_1_t,)))
+    for n1it,n1 in enumerate(unicountvals_1_t):
+        Pn1_t[n1it]=np.nansum(Pn1n2_t[n1it,:])
+        if Pn1_t[n1it]!=0:
+            Pn2_n1_t[:,n1it]=Pn1n2_t[n1it,:]/Pn1_t[n1it]
+            
+    datmkr='.'
+    if cit==0:
+        ax1.plot(unicountvals_1_d, Pn2_n1_d[0,:], datmkr, label='data',color='k') 
+    ax1.plot(unicountvals_1_t[1:], Pn2_n1_t[0,1:], styvec[cit], label=labelvec[cit],color='k')
+    ax1.set_ylabel(r'$P(n^{\prime}=0|n)$')
+    ax1.set_xlabel(r'$n^{\prime}$')
+    ax1.set_ylim([1e-3,1e0])
+    ax1.set_yscale('log')
+    xlimmax=30
+    ax1.set_xlim([0,xlimmax])
+    fig1.tight_layout()
+ax1.legend(frameon=False)
+
+fig1.savefig("conditional_comparison.pdf",format='pdf',dpi=500,bbox_inches='tight')

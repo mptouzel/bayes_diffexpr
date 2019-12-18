@@ -30,11 +30,31 @@ if root_path not in sys.path:
 # %load_ext autoreload
 # %autoreload 2
 
+
 # from scipy.interpolate import interp1d
 # from scipy import stats
 # from scipy.stats import poisson
 # from scipy.stats import nbinom
 # from scipy.stats import rv_discrete
+
+# +
+import matplotlib.pyplot as pl
+import seaborn as sns
+
+for_paper=True
+if not for_paper:
+    pl.rc("figure", facecolor="gray",figsize = (8,8))
+    pl.rc('lines',markeredgewidth = 2)
+    pl.rc('font',size = 24)
+else:
+    pl.rc("figure", facecolor="none",figsize = (3.5,3.5))
+    pl.rc('lines',markeredgewidth = 1)
+    pl.rc('font',size = 10)
+    sns.set_style("whitegrid", {'axes.grid' : True})
+
+params= {'text.latex.preamble' : [r'\usepackage{amsmath}']}
+pl.rcParams.update(params)
+pl.rc('text', usetex=True)
 # -
 
 # Make dataframe
@@ -71,7 +91,7 @@ highrange=(-1.6,0.7,1.3,7.2)
 
 casestrvec=(r'$NB\rightarrow Pois$')#,'$NB$','$Pois$')
 casevec=[0]#,2,3]
-donorstrvec=('S2')#S1','P2',  'Q2', 'Q1', 'S2','P1')
+donorvec=('S2')#S1','P2',  'Q2', 'Q1', 'S2','P1')
 # dayvec=np.array([15])#range(5)
 # nparasvec=(4,3,1)
 # outstructs=np.empty((len(casevec),len(donorvec),len(dayvec)),dtype=dict)

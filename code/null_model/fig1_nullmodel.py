@@ -13,7 +13,7 @@
 #     name: python3
 # ---
 
-# ## Code that learns paras and produces (n,nprime) histograms for different measurement models, i.e. P(n|f)
+# ## Fig1: plots likelihood over all data and gives example sampled (n,n') distributions over 3 models (NB->Pois, NB, Pois)
 
 # %matplotlib inline
 import sys,os
@@ -82,47 +82,119 @@ print(str(num_x0_data/float(np.sum(countpaircounts_d)))+' '+str(num_0x_data/floa
 
 fig=plot_n1_vs_n2(sparse_rep_d,'','Pn1n2_data_S2',True,pl,colorbar=True)
 
-# run learning and sampling for all models
+# ## Model results
 
-#load paths to where learned paras are stored
-path = rootpath + 'output/'#outdata_all/'
-constr_type=1
-acq_model_type=2
-parvernull='null_pair_v4_ct_'+str(constr_type)+'_mt_'+str(acq_model_type)+'_'
-runstr = parvernull+'min' + str(mincount) + '_max' + str(maxcount) 
-outpath = path + dataset_pair[0] + '_' + dataset_pair[1] + '/' + runstr + '/'
+# load precomputed results (see below for examples of computations)
 
 # +
-init_paras_arr_S2 = [ np.asarray([ -2.09861242,   2.41461504,   1.07386958,   6.62476807,-10.29170942]), \
-                   np.asarray([ -2.13049915,   2.30240556,  -0.29026783,   6.56695534,-10.31522596]), \
-                   np.asarray([-2.15940069,  2.61809851,  0.9954879 , -9.89262766]), \
-                   np.asarray([-2.15199494,  -9.73615977]) \
-                 ]
-# init_paras_arr_S1 = [ np.asarray([ -2.07678873,   2.29472138,   1.09323841,   6.65204556,-10.27061188]), \
-#                    np.asarray([ -2.07585556,   2.33165493,  -0.34198692,   6.53797226,-10.58516877]), \
-#                    np.asarray([-2.15206189,  0.67881258,  1.04086898, -9.46699067]), \
-#                    np.asarray([-2.15199494,  -9.73615977]) \
-#                  ]
+# casestrvec=(r'$NB\rightarrow Pois$',r'$Pois \rightarrow NB$','$NB$','$Pois$')
+casestrvec=(r'$NB\rightarrow Pois$','$NB$','$Pois$')
+casevec=[0,2,3]
+donorvec=['P1','P2','Q1','Q2','S1','S2']
+# donorvec=("Azh","KB","Yzh","GS","Kar","Luci")
+dayvec=['pre0','0','7','15','45']
+nparasvec=(4,3,1)
+outstructs=np.empty((len(casevec),len(donorvec),len(dayvec)),dtype=dict)
+df = pd.DataFrame(columns={'donor','day','model','likelihood'})
+
+for cit, case in enumerate(casevec):
+    for dit,donor in enumerate(donorvec):
+        for ddit,day in enumerate(dayvec):
+            data_name=donor+'_'+str(day)+"_F1_"+donor+'_'+str(day)+'_F2'
+        #             runstr='../../../output/'+dataname+'/null_pair_v1_null_ct_1_acq_model_type'+str(case)+'_min0_maxinf/'
+            runstr='../../../output/'+data_name+'/null_pair_v4_ct_1_mt_'+str(case)+'_min0_maxinf/'
+            setname=runstr+'outstruct.npy'
+#             try:
+            df=df.append(pd.Series({'donor':donor,'day':day,'model':case,'likelihood':-np.load(setname).flatten()[0].fun}),ignore_index=True)
+            outstructs[cit,dit,ddit]=np.load(setname).flatten()[0]
+#                 print(data_name+ ' '+str(case))
+#             except IOError:
+#                 True
+#                 print(data_name+ ' '+str(case))
+# -
+
+dft=df.set_index(['donor','day'])
+
+# +
+fig,ax=pl.subplots()
+bins=np.logspace(-4,0,20)
+counts,bins=np.histogram(-(dft[dft['model']==0].likelihood.values[1:]-dft[dft['model']==2].likelihood.values[1:])/dft[dft['model']==0].likelihood.values[1:],bins)
+ax.bar(bins[:-1],counts,width=np.diff(bins),align='edge',label=r'$\ell=\ell_\mathrm{NB}$')
+
+bins3=np.logspace(-4,0,20)
+counts3,bins3=np.histogram(-(dft[dft['model']==0].likelihood.values-dft[dft['model']==3].likelihood.values)/dft[dft['model']==0].likelihood.values,bins3)
+ax.bar(bins3[:-1],counts3,width=np.diff(bins3),align='edge',label=r'$\ell=\ell_\mathrm{P}$')
+ax.legend(frameon=False)
+# ax.bar(np.power(10,bins3[:-1]),counts3)
+ax.set_xscale('log')
+ax.set_xlabel(r'$(\ell-\ell_{\mathrm{NBP}})/\ell_{\mathrm{NBP}}$')
+ax.set_ylabel('count')
+# -
+
+fig.savefig('noise_model_likeihoods_hist.pdf',format='pdf',dpi=1000, bbox_inches='tight')
+
+#other unused plots:
+fig,ax=pl.subplots()
+colorvec=['r','g','b','y','k','m']
+stylevec=['solid','solid','dashed']
+for it,model in enumerate(casevec):
+    for cit,donor in enumerate(donorvec):
+        df[np.logical_and(df['model']==model,df['donor']==donor)].plot.line(x='day',y='likelihood',ax=ax,color=colorvec[cit],linestyle=stylevec[it])
+ax.get_legend().remove()
+fig.savefig('noise_model_likeihoods_over_days.pdf',format='pdf',dpi=1000, bbox_inches='tight')
+fig,ax=pl.subplots()
+markervec=['o','s','d','v','^','+']
+for cit,donor in enumerate(donorvec):
+    for dit,day in enumerate(dayvec):
+        cond_base=(df['model']==0) & (df['donor']==donor) &(df['day']==day)
+        cond_2=(df['model']==2) & (df['donor']==donor) &(df['day']==day)
+        cond_3=(df['model']==3) & (df['donor']==donor) &(df['day']==day)
+        ax.plot(df.loc[cond_base,'likelihood'].values,df.loc[cond_base,'likelihood'].values-df.loc[cond_2,'likelihood'].values,color=colorvec[dit],marker=markervec[cit])
+        cond=(df['model']==2) & (df['donor']==donor) &(df['day']==day)
+        ax.plot(df.loc[cond,'likelihood'].values,df.loc[cond_base,'likelihood'].values-df.loc[cond_3,'likelihood'].values,color=colorvec[dit],marker=markervec[cit])
+# ax.plot(ax.get_xlim(),ax.get_xlim(),'k--')
+ax.set_yscale('log')
+ax.set_xlabel(r'$\mathcal{L}_{\mathrm{max}}$')
+ax.set_ylabel(r'$\mathcal{L}_{\mathrm{max}}-\mathcal{L}$')
+ax.set_ylim(1e-5,1e0)
+fig.savefig('noise_model_likeihoods_gap_w_best.pdf',format='pdf',dpi=1000, bbox_inches='tight')
+
+# example Learning  noise model parameters
+
+constr_type=1
+
+acq_model_type=2
+init_null_paras=np.array([-2.1674403 ,  1.09554235,  1.01933961, -9.54175371])
+prtfn=print
+outstruct_2,constr_value_2=learn_null_model(sparse_rep_d,acq_model_type,init_null_paras,constr_type=constr_type,prtfn=prtfn)
+prtfn('constr value:')
+prtfn(constr_value_2)
+
+acq_model_type=0
+init_null_paras=np.asarray([ -2.09861242,   2.41461504,   1.07386958,   6.62476807,-10.29170942])
+prtfn=print
+outstruct_0,constr_value_0=learn_null_model(sparse_rep_d,acq_model_type,init_null_paras,constr_type=constr_type,prtfn=prtfn)
+prtfn('constr value:')
+prtfn(constr_value_0)
+
+acq_model_type=3
+init_null_paras= np.asarray([-2.546525, -6.995147 ])
+prtfn=print
+outstruct,constr_value=learn_null_model(sparse_rep_d,acq_model_type,init_null_paras,constr_type=constr_type,prtfn=prtfn)
+prtfn('constr value:')
+prtfn(constr_value)
+
+# Sample from learned models
+
+# +
+init_paras_arr_S2 = [ outstruct_0.x, \
+                   outstruct_2.x, \
+                   oustruct_3.x]
 
 for acq_model_type in np.arange(3):
-    
-    #learn
-#     outstruct,constr_value=learn_null_model(sparse_rep,acq_model_type,init_paras_arr[acq_model_type])
-#     print('model '+str(acq_model_type)+' took '+str(time.time()-st))
-#     print(constr_value)
-#     print(outstruct.x)
-#     np.save('outstruct_mt_'+str(acq_model_type),outstruct)
-    
-    #sample
-#     outstruct=np.load('outstruct_'+donor+'_mt_'+str(acq_model_type)+'.npy').item()
-#     opt_paras=outstruct.x
     opt_paras=init_paras_arr_S2[acq_model_type]
     f_samples,pair_samples=get_nullmodel_sample_observedonly(opt_paras,acq_model_type,NreadsI_d,NreadsII_d,Nsamp)
     
     #plot
     sparse_rep_t=get_sparserep(pair_samples.loc[:,['Clone_count_1','Clone_count_2']])
     plot_n1_vs_n2(sparse_rep_t,'null_'+donor+'_n1_v_n2_mt_'+str(acq_model_type),'',True,pl)
-# -
-
-f_samples,pair_samples=get_nullmodel_sample_observedonly(np.asarray([-2.19629167,  2.40560287,  1.10944424,  6.61597503, -9.32561711]),0,NreadsI_d,NreadsII_d,Nsamp)
-initparas=np.load(path + donor+'_0_F1_'+donor+'_0_F2/' + runstr + '/'+'optparas.npy')

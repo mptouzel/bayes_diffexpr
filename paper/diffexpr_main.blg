@@ -1,0 +1,83 @@
+This is BibTeX, Version 0.99d (TeX Live 2019)
+Capacity: max_strings=100000, hash_size=100000, hash_prime=85009
+The top-level auxiliary file: diffexpr_main.aux
+The style file: pnas.bst
+Database file #1: thierry.bib
+Repeated entry---line 2399 of file thierry.bib
+ : @article{Laserson2014
+ :                      ,
+I'm skipping whatever remains of this entry
+Repeated entry---line 4570 of file thierry.bib
+ : @article{Desponds2016
+ :                      ,
+I'm skipping whatever remains of this entry
+Repeated entry---line 4765 of file thierry.bib
+ : @article{Jiang2013a
+ :                    ,
+I'm skipping whatever remains of this entry
+Database file #2: diffexpr.bib
+Repeated entry---line 47 of file diffexpr.bib
+ : @article{Anders2010
+ :                    ,
+I'm skipping whatever remains of this entry
+Repeated entry---line 217 of file diffexpr.bib
+ : @article{Glanville2017
+ :                       ,
+I'm skipping whatever remains of this entry
+Repeated entry---line 319 of file diffexpr.bib
+ : @article{Robinson2010
+ :                      ,
+I'm skipping whatever remains of this entry
+Repeated entry---line 343 of file diffexpr.bib
+ : @article{Qi2014
+ :                ,
+I'm skipping whatever remains of this entry
+Database file #3: max_response.bib
+Repeated entry---line 6 of file max_response.bib
+ : @article{Greef2019
+ :                   ,
+I'm skipping whatever remains of this entry
+Warning--empty journal in Robinson2008
+Warning--empty note in Mora2019
+You've used 43 entries,
+            1765 wiz_defined-function locations,
+            769 strings with 15722 characters,
+and the built_in function-call counts, 9591 in all, are:
+= -- 984
+> -- 316
+< -- 4
++ -- 119
+- -- 76
+* -- 759
+:= -- 1523
+add.period$ -- 84
+call.type$ -- 43
+change.case$ -- 41
+chr.to.int$ -- 0
+cite$ -- 45
+duplicate$ -- 414
+empty$ -- 845
+format.name$ -- 94
+if$ -- 2060
+int.to.chr$ -- 0
+int.to.str$ -- 43
+missing$ -- 41
+newline$ -- 216
+num.names$ -- 45
+pop$ -- 53
+preamble$ -- 1
+purify$ -- 0
+quote$ -- 0
+skip$ -- 91
+stack$ -- 0
+substring$ -- 955
+swap$ -- 117
+text.length$ -- 4
+text.prefix$ -- 0
+top$ -- 0
+type$ -- 0
+warning$ -- 2
+while$ -- 103
+width$ -- 45
+write$ -- 468
+(There were 8 error messages)

@@ -335,7 +335,7 @@ def get_fisherinfo_diffexpr_model(opt_paras,null_paras,sparse_rep,acq_model_type
 #for imposing constraint when running grid search
 def get_shift(logPsvec,null_paras,sparse_rep,acq_model_type,shift,logfvec,logfvecwide,svec,f2s_step,logPn1_f,logrhofvec,tol=1e-3):
     
-    indn1,indn2,sparse_rep_counts,_,unicounts,_,Nreads=sparse_rep
+    indn1,indn2,sparse_rep_counts,_,unicounts,_,Nreads=sparse_rep.values()
     Nsamp=np.sum(sparse_rep_counts)
     dlogfby2=np.diff(logfvec)/2. #1/2 comes from trapezoid integration below
 

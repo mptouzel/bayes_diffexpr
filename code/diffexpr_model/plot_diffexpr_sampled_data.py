@@ -24,7 +24,7 @@ if root_path not in sys.path:
 # from lib.utils.plotting import plot_n1_vs_n2,add_ticks
 # from lib.utils.prob_utils import get_distsample
 from lib.proc import get_sparserep,import_data
-from lib.model import get_logPs_pm,get_rhof,get_distsample
+from lib.model import get_logPs_pm,get_rhof,get_distsample,get_fvec_and_svec,get_logPn_f,get_Pn1n2_s
 from functools import partial
 
 from lib.learning import callback,learn_null_model,get_fisherinfo_diffexpr_model
@@ -39,7 +39,7 @@ from lib.learning import callback,learn_null_model,get_fisherinfo_diffexpr_model
 # -
 
 import matplotlib.pyplot as pl
-paper=False
+paper=True
 if not paper:
     pl.rc("figure", facecolor="gray",figsize = (8,8))
     pl.rc('lines',markeredgewidth = 2)
@@ -61,9 +61,15 @@ pl.rcParams.update(params)
 smax =25.0
 s_step = 0.1
 
-NreadsI=1e6
+#human
+# NreadsI=1e6
+# NreadsII=NreadsI
+# Nclones=int(1e9) 
+
+#mouse
+NreadsI=2e4
 NreadsII=NreadsI
-Nclones=int(1e9)
+Nclones=int(1e6) 
 
 alpha_rho=-2.05
 
@@ -93,24 +99,17 @@ ax.plot(fminvec,[fmin_func_part(np.log10(fmintmp)) for fmintmp in fminvec])
 ax.scatter(np.power(10,logfmin_sol[0]),fmin_func(logfmin_sol[0],alpha_rho,Nclones,get_rhof),s=100)
 ax.set_xscale('log')
 # ax.set_yscale('log')
-
-# +
-# logrhofvec,logfvec = get_rhof(null_paras[0],np.power(10,null_paras[-1]))
-# dlogfby2=np.diff(logfvec)/2. #1/2 comes from trapezoid integration below
-
-# svec,logfvecwide,f2s_step,smax,s_step=get_svec(null_paras,s_step,smax)
-# np.save(outpath+'svec.npy',svec)
-# indn1,indn2,sparse_rep_counts,unicountvals_1,unicountvals_2,NreadsI,NreadsII=sparse_rep
 # -
 
 outpath='../../../output/S2_0_F1_S2_0_F2/null_pair_v4_ct_1_mt_2_min0_maxinf/'
 null_paras=np.load(outpath+'optparas.npy')
 
+null_paras=np.asarray([alpha_rho,np.log10(fmin)])
+
 logrhofvec,logfvec = get_rhof(null_paras[0],np.power(10,null_paras[-1]))
+smax=25.
+s_step=0.1
 svec,logfvec,logfvecwide,f2s_step,smax,s_step=get_fvec_and_svec(null_paras,s_step,smax)
-np.save(outpath+'svec.npy',svec)
-indn1,indn2,sparse_rep_counts,unicountvals_1,unicountvals_2,NreadsI,NreadsII=sparse_rep
-Nsamp=np.sum(sparse_rep_counts)
 
 # Example with Poisson:
 
@@ -127,8 +126,9 @@ stp=0.1
 st=time.time()
 
 integ=np.exp(logrhofvec+logfvec)
+dlogf=np.diff(logfvec)/2.
 logfsamples=logfvec[get_distsample(dlogf*(integ[:-1]+integ[1:]),Nclones)]
-
+np.random.seed(10)
 alp=0.01
 realsbar=1.0
 bet=1.0
@@ -138,22 +138,25 @@ logf2samples=logfsamples+np.random.permutation(svec[get_distsample(np.exp(get_lo
 Zf=np.sum(np.exp(logfsamples))
 print('f1norm='+str(Zf))
 n1_samples=np.array(np.random.poisson(lam=NreadsI*np.exp(logfsamples)),dtype='uint32')
+n1_samples_r2=np.array(np.random.poisson(lam=NreadsI*np.exp(logfsamples)),dtype='uint32')
 Zfp=np.sum(np.exp(logf2samples))
 print('f2norm='+str(Zfp))
 logf2samples-=np.log(Zfp)-np.log(Zf)
 n2_samples=np.array(np.random.poisson(lam=NreadsI*np.exp(logf2samples)),dtype='uint32')
-seen=np.logical_or(n1_samples>0,n2_samples>0)
+seen=np.logical_or(np.logical_or(n1_samples>0,n2_samples>0),n1_samples_r2>0)
+print(np.sum(seen))
 n1_samples=n1_samples[seen]
+n1_samples_r2=n1_samples_r2[seen]
 n2_samples=n2_samples[seen]
-
+print(time.time()-st)
 #report--------------------------------------------------------------------------
 print("samples n1: "+str(np.mean(n1_samples))+" | "+str(max(n1_samples))+", n2 "+str(np.mean(n2_samples))+" | "+str(max(n2_samples)))
 # -
 
-# In general:
+data_df= pd.DataFrame({'Clone_count_1': n1_samples,'Clone_count_1_r2': n1_samples_r2, 'Clone_count_2': n2_samples})
+data_df.to_csv('sample_triplet.csv',sep='\t',index=False)
 
-logPn1_f=get_logPn_f(unicountvals_1,NreadsI,logfvec,acq_model_type,null_paras)
-...
+data_df=pd.read_csv('sample_triplet.csv',sep='\t')
 
 # Plot written data
 
@@ -172,23 +175,6 @@ ax.set_ylim((0.00999,0.01001))
 ax.set_xlabel(r'$\bar{s}$')
 ax.set_ylabel(r'$\alpha$')
 fig.savefig('synthetic_reinference.pdf',format='pdf',dpi=500,bbox_inches='tight')
-
-output_path='../../../output/syn_data/'
-fig,ax=pl.subplots(1,1)
-for trial in range(10):
-    outstruct=np.load(output_path+'v1_N1e9_test3/v1_N1e9_test3outstruct_v1_N1e9_test3_'+str(trial)+'.npy').item()
-    optparas=outstruct.x
-    ax.scatter(optparas[0],optparas[1])
-    uni1=np.load('/home/max/Dropbox/scripts/Projects/immuno/diffexpr/output/syn_data/v1_N1e9_test3/v1_N1e9_test3unicountvals_1_d'+str(trial)+'.npy')
-    uni2=np.load('/home/max/Dropbox/scripts/Projects/immuno/diffexpr/output/syn_data/v1_N1e9_test3/v1_N1e9_test3unicountvals_2_d'+str(trial)+'.npy')
-    indn1=np.load('/home/max/Dropbox/scripts/Projects/immuno/diffexpr/output/syn_data/v1_N1e9_test3/v1_N1e9_test3indn1_d'+str(trial)+'.npy')
-    indn2=np.load('/home/max/Dropbox/scripts/Projects/immuno/diffexpr/output/syn_data/v1_N1e9_test3/v1_N1e9_test3indn2_d'+str(trial)+'.npy')
-    shift=np.load('/home/max/Dropbox/scripts/Projects/immuno/diffexpr/output/syn_data/v1_N1e9_test3/v1_N1e9_test3shift_v1_N1e9_test3_'+str(trial)+'.npy')
-    print(shift)
-    ax.plot(uni1[indn1],uni2[indn2],'o')
-    ax.set_yscale('log')
-    ax.set_xscale('log')
-ax.plot(ax.get_xlim(),ax.get_xlim(),'k-')
 
 # Run sample code:
 
@@ -257,22 +243,6 @@ n2_samples=np.array(np.random.poisson(lam=NreadsI*np.exp(logf2samples)),dtype='u
 seen=np.logical_or(n1_samples>0,n2_samples>0)
 n1_samples=n1_samples[seen]
 n2_samples=n2_samples[seen]
-
-# +
-fig,ax=pl.subplots(1,2,figsize=(25,10))
-# counts,bins=np.histogram(s_samples,svec)
-# ax[0].plot(bins[:-1],counts)
-# ax[0].set_yscale('log')
-# ax[0].set_ylim(1e0,1e10)
-
-counts,bins=np.histogram(logf2samples,np.log(fvecwide))
-ax[1].plot(bins[:-1],counts,'v')
-ax[1].set_yscale('log')
-ax[1].set_ylim(1e0,1e10)
-counts,bins=np.histogram(logfsamples,logfvec)
-ax[1].plot(bins[:-1],counts)
-ax[1].set_yscale('log')
-ax[1].set_ylim(1e0,1e10)
 # -
 
 # Run 1 version of a grid in alp and sbar
@@ -288,15 +258,8 @@ from scipy.optimize import minimize
 
 
 # + {"code_folding": [36, 93]}
-
 case=3
 st=time.time()
-# #fvecwide
-# smaxind=(len(svec)-1)/2
-# logfmin=np.log(fvec[0 ])-f2s_step*smaxind*logf_step
-# logfmax=np.log(fvec[-1])+f2s_step*smaxind*logf_step
-# fvecwide=np.exp(np.linspace(logfmin,logfmax,len(fvec)+2*smaxind*f2s_step))
-
 
 #real sbar loop
 ntrials=2
@@ -647,7 +610,6 @@ Cov=np.linalg.inv(M)
 e_val,e_vec=np.linalg.eig(Cov.T)
 
 # +
-# fig2, ax2 = pl.subplots(1, 1,figsize=(6,6))
 sbarstar=realsbar
 alpstar=alp
 x = sbarstar
@@ -734,178 +696,51 @@ def eigsorted(cov):
 
 # Posterior analysis
 
-sbarstar=[realsbar]
-alpstar=[alp]
+sbarstar=1.0#[realsbar]
+alpstar=0.01#[alp]
+shift=shiftMtr[0,10,10]#opt_diffexpr_paras[-1]
+Ps_type='rhs_only'
+opt_diffexpr_paras=[alpstar,sbarstar,shift]
+
+logPsvec = get_logPs_pm(opt_diffexpr_paras[:-1],smax,s_step,Ps_type)
+svec_shift=svec-shift
 
 # +
 st=time.time()
-data_store=list()
-svec_store=list()
-con_shift=0
-# logPn1n2_Store=np.zeros((len(alpvec),len(countpaircounts_d)))
-# logPn1n2_s_Store=np.zeros((len(alpvec),len(svec),len(countpaircounts_d)))
-# log_Pnng0_Store=np.zeros((len(alpvec),))
-
-# logPn1n2_Store=np.zeros((len(betvec),len(countpaircounts_d)))
-# logPn1n2_s_Store=np.zeros((len(betvec),len(svec),len(countpaircounts_d)))
-# log_Pnng0_Store=np.zeros((len(betvec),))
-# bit=0
-
-# for bit, bet in enumerate(betvec):
-
-smaxt = round(smax/s_step)
-svec=np.arange(-smaxt,smaxt+1)
-svec=s_step*svec
-
-
-# Ps=get_Ps_pm(alpvec[aitopt],betvec[bitopt],sbarvec_m[smitopt],sbarvec_p[spitopt],smax,s_step)
-# Ps=get_Ps_pm(alpvec[aitopt],betvec[bitopt],sbarvec_m[smitopt],sbarvec_p[spitopt],smax,s_step)
-# Ps=get_Ps_pm(1.0,1e-4,0.4,1.3,smax,s_step)
-# Ps=get_Ps_pm(alpvec[aitopt],1.,0.,sbarvec_p[spitopt],smax,s_step)
-# Ps=get_Ps_pm(1.0,betvec[bitopt],sbarvec_m[smitopt],sbarvec_p[spitopt],smax,s_step)
-
-logPsvec=get_logPs_pm([np.power(10,alpstar[0]),1,np.power(10,sbarstar[0]),np.power(10,sbarstar[0])],smax,s_step,'rhs_only')
-# logPsvec=np.log(Ps)
 
 #compute Pn1_f
 n1_samples=np.logspace(0,4,9,dtype=int)
 n2_samples=n1_samples#[::-1]
-counts_d = pd.DataFrame({'Clone_count_1': n1_samples, 'Clone_count_2': n2_samples})
-indn1_d, indn2_d, countpaircounts_d, unicountvals_1_d, unicountvals_2_d, NreadsI_d, NreadsII_d=get_sparserep(counts_d)
-Nreadsvec=[NreadsI_d,NreadsII_d]
+counts_d_tmp = pd.DataFrame({'Clone_count_1': n1_samples, 'Clone_count_2': n2_samples})
+sparse_rep_tmp=get_sparserep(counts_d_tmp)
+indn1_d_tmp, indn2_d_tmp, countpaircounts_d_tmp, unicountvals_1_d_tmp, unicountvals_2_d_tmp, NreadsI_d_tmp, NreadsII_d_tmp=sparse_rep_tmp
+unicounts=deepcopy(unicountvals_1_d_tmp)
+sparse_rep_tmp=indn1_d_tmp, indn2_d_tmp, countpaircounts_d_tmp, unicountvals_1_d_tmp, unicountvals_2_d_tmp, NreadsI, NreadsII
 
-# logrhofvec,logfvec = get_rhof(null_paras[0],np.power(10,null_paras[-1]))
-# svec,logfvec,logfvecwide,f2s_step,smax,s_step=get_fvec_and_svec(null_paras,s_step,smax)
-# np.save(outpath+'svec.npy',svec)
-# indn1,indn2,sparse_rep_counts,unicountvals_1,unicountvals_2,NreadsI,NreadsII=sparse_rep
-# Nsamp=np.sum(sparse_rep_counts)
-# logPn1_f=get_logPn_f(unicountvals_1_d,NreadsI_d,logfvec,2,null_paras)
-
-it=0
-unicounts=deepcopy(unicountvals_1_d)
-mean_n=Nreadsvec[it]*np.exp(logfvec)
-Pn_f=PoisPar(mean_n,unicounts)
-
-    
-indn1=indn1_d
-indn2=indn2_d
 shift=shiftMtr[0,10,10]
-# shift=shiftMtr[aitopt,bitopt,smitopt,spitopt]
-# shift=shiftMtr[aitopt,spitopt]
-likelihood=np.zeros(5)
-fvecwide_shift=np.exp(np.log(fvecwide)-shift) #implements shift in Pn2_fs
 svec_shift=svec-shift
-
-unicounts=unicountvals_2_d
-Pn2_f=np.zeros((len(fvecwide_shift),len(unicounts)))
-if case==0:
-    mean_m=m_total*fvecwide_shift
-    var_m=mean_m+beta_mv*np.power(mean_m,alpha_mv)
-    Poisvec=PoisPar(mvec*r_cvec[1],unicounts)
-    for f_it in range(len(fvecwide_shift)):
-        NBvec=NegBinPar(mean_m[f_it],var_m[f_it],mvec)
-        for n_it,n in enumerate(unicounts):
-            Pn2_f[f_it,n_it]=np.dot(NBvec[m_low[n_it]:m_high[n_it]+1],Poisvec[m_low[n_it]:m_high[n_it]+1,n_it]) 
-elif case==1:
-    Poisvec=PoisPar(m_total*fvecwide_shift,mvec)
-    mean_n=r_cvec[1]*mvec
-    NBmtr=NegBinParMtr(mean_n,mean_n+beta_mv*np.power(mean_m,alpha_mv),unicounts)
-    for f_it in range(len(fvecwide_shift)):
-        Poisvectmp=Poisvec[f_it,:]
-        for n_it,n in enumerate(unicounts):
-            Pn2_f[f_it,n_it]=np.dot(Poisvectmp[m_low[n_it]:m_high[n_it]+1],NBmtr[m_low[n_it]:m_high[n_it]+1,n_it]) 
-elif case==2:
-    mean_n=Nreadsvec[1]*fvecwide_shift
-    var_n=mean_n+beta_mv*np.power(mean_n,alpha_mv)
-    Pn2_f=NegBinParMtr(mean_n,var_n,unicounts)
-else:# case==3:
-    mean_n=Nreadsvec[1]*fvecwide_shift
-    Pn2_f=PoisPar(mean_n,unicounts)
-logPn2_f=Pn2_f
-logPn2_f=np.log(logPn2_f)
-#logPn2_s=np.zeros((len(svec),nfbins,len(unicounts))) #svec is svec_shift
-#for s_it in range(len(svec)):
-    #logPn2_s[s_it,:,:]=logPn2_f[f2s_step*s_it:f2s_step*s_it+nfbins,:]   #note here this is fvec long
-
-log_Pn2_fs=np.zeros((len(fvec),len(unicountvals_2_d)))
-for s_it in range(len(svec)):
-    log_Pn2_fs+=np.exp(logPn2_f[f2s_step*s_it:f2s_step*s_it+nfbins,:]+logPsvec[s_it,np.newaxis,np.newaxis])
-log_Pn2_fs=np.log(log_Pn2_fs)
-#log_Pn2_f=np.log(np.sum(np.exp(logPn2_s+logPsvec[:,np.newaxis,np.newaxis]),axis=0))
-integ=np.exp(log_Pn2_fs[:,indn2]+logPn1_f[:,indn1]+logrhofvec[:,np.newaxis]+logfvec[:,np.newaxis])
-log_Pn1n2=np.log(np.sum(dlogf[:,np.newaxis]*(integ[1:,:] + integ[:-1,:]),axis=0))
-
-#log_Pn2_f=np.log(np.sum(np.exp(logPn2_s+logPsvec[:,np.newaxis,np.newaxis]),axis=0))
-integ=np.exp(np.log(integ)+logfvec[:,np.newaxis]) 
-  #np.exp(log_Pn2_f[:,indn2]+logPn1_f[:,indn1]+logrhofvec[:,np.newaxis]+logfvec[:,np.newaxis]+logfvec[:,np.newaxis])
-tmp=deepcopy(log_Pn1n2)
-tmp[tmp==-np.Inf]=np.Inf #since subtracted in next line
-avgf_n1n2=    np.exp(np.log(np.sum(dlogf[:,np.newaxis]*(integ[1:,:] + integ[:-1,:]),axis=0))-tmp)
-log_avgf=np.log(np.dot(countpaircounts_d,avgf_n1n2))
-
-log_expsavg_Pn2_f=np.zeros((len(fvec),len(unicountvals_2_d)))
-for s_it in range(len(svec)):
-    log_expsavg_Pn2_f+=np.exp(svec_shift[s_it,np.newaxis,np.newaxis]+logPn2_f[f2s_step*s_it:f2s_step*s_it+nfbins,:]+logPsvec[s_it,np.newaxis,np.newaxis]) #-------------svec_shift?
-log_expsavg_Pn2_f=np.log(log_expsavg_Pn2_f)
-#log_expsavg_Pn2_f=np.log(np.sum(np.exp(svec[:,np.newaxis,np.newaxis]+logPn2_s+logPsvec[:,np.newaxis,np.newaxis]),axis=0))
-integ=np.exp(log_expsavg_Pn2_f[:,indn2_d]+logPn1_f[:,indn1_d]+logrhofvec[:,np.newaxis]+2*logfvec[:,np.newaxis])
-avgfexps_n1n2=np.exp(np.log(np.sum(dlogf[:,np.newaxis]*(integ[1:,:] + integ[:-1,:]),axis=0))-tmp)
-log_avgfexps=np.log(np.dot(countpaircounts_d,avgfexps_n1n2))
-
-logPn20_s=np.zeros((len(svec),len(fvec))) #svec is svec_shift
-for s_it in range(len(svec)):
-    logPn20_s[s_it,:]=logPn2_f[f2s_step*s_it:f2s_step*s_it+len(fvec),0]   #note here this is fvec long on shifted s
-log_Pnn0_fs=logPn1_f[np.newaxis,:,0]+logPn20_s
-log_Pfsnn0=log_Pnn0_fs+logrhofvec[np.newaxis,:]+logPsvec[:,np.newaxis]
-log_Pfsnng0=np.log(1-np.exp(log_Pnn0_fs))+logrhofvec[np.newaxis,:]+logPsvec[:,np.newaxis]
-log_Pfnn0=np.log(np.sum(np.exp(log_Pfsnn0),axis=0))
-integ=np.exp(log_Pfnn0+logfvec)
-logPnn0=np.log(np.sum(dlogf*(integ[1:]+integ[:-1])))
-
-log_Pnng0=np.log(1-np.exp(logPnn0))
-log_Pfs_nng0=log_Pfsnng0-log_Pnng0
-
-#decomposed f averages
-integ = np.exp(logPn1_f[:,0]+logrhofvec+2*logfvec+np.log(np.sum(np.exp(logPn20_s+logPsvec[:,np.newaxis]),axis=0)))
-log_avgf_n0n0 = np.log(np.dot(dlogf,integ[1:]+integ[:-1]))
-
-#decomposed fexps averages
-integ = np.exp(logPn1_f[:,0]+logrhofvec+2*logfvec+np.log(np.sum(np.exp(svec_shift[:,np.newaxis]+logPn20_s+logPsvec[:,np.newaxis]),axis=0)))  #----------svec
-log_avgfexps_n0n0 = np.log(np.dot(dlogf,integ[1:]+integ[:-1]))
-
-logNclones=np.log(Nsampclones)-log_Pnng0
-Z     = np.exp(logNclones + logPnn0 + log_avgf_n0n0    ) + np.exp(log_avgf)    
-Zdash = np.exp(logNclones + logPnn0 + log_avgfexps_n0n0) + np.exp(log_avgfexps)
-
-logPn1n2_s=np.zeros((len(svec),len(countpaircounts_d)))
-for s_it in range(len(svec)):
-    integ=np.exp(logPn1_f[:,indn1] + logPn2_f[f2s_step*s_it:f2s_step*s_it+nfbins,indn2] + logrhofvec[:,np.newaxis] + logfvec[:,np.newaxis])
-    logPn1n2_s[s_it,:]=np.log(np.sum(dlogf[:,np.newaxis]*(integ[1:,:]+integ[:-1,:]),axis=0)) #can't use dot since multidimensional
-# log_Pn1n2[log_Pn1n2==-np.Inf]=np.Inf
-
-
+acq_model_type=3
+Pn1n2_s,unicountvals_1,unicountvals_2,_,_,Pn2_s,Pn0n0_s,_=get_Pn1n2_s(null_paras, svec_shift, sparse_rep_tmp,acq_model_type,  s_step=s_step)
+logPn1n2_s=np.zeros((len(svec),len(indn1_d_tmp)))
+for n in range(len(indn1_d_tmp)):
+    logPn1n2_s[:,n]=np.log(Pn1n2_s[:,indn1_d_tmp[n],indn2_d_tmp[n]])
+tmp=np.log(np.sum(np.exp(logPn1n2_s+logPsvec[:,np.newaxis]),axis=0))
 logPs_n1n2=logPn1n2_s+logPsvec[:,np.newaxis]-tmp#log_Pn1n2[np.newaxis,:]
 
 Ps_n1n2=np.exp(logPs_n1n2)
 
-# logPn1n2_Store[bit,:]=log_Pn1n2
-# logPn1n2_s_Store[bit,:,:]=logPn1n2_s
-# log_Pnng0_Store[bit]=log_Pnng0
-tmp=np.exp(log_Pn1n2-np.log(1-np.exp(logPnn0))) #renormalize
-likelihood=np.dot(countpaircounts_d/float(Nsampclones),np.where(tmp>0,np.log(tmp),0))
-# likelihood=np.dot(countpaircounts_d,np.where(log_Pn1n2>-np.inf,log_Pn1n2-log_Pnng0,0))/Nsamp
 posterior_df=pd.DataFrame(columns={'posterior':pd.Series([],dtype=object)})
-posterior_df['indn1']=indn1
-posterior_df['indn2']=indn2
-for ind_ind in range(len(indn1)):
+posterior_df['indn1']=indn1_d_tmp
+posterior_df['indn2']=indn2_d_tmp
+for ind_ind in range(len(indn1_d_tmp)):
     posterior_df.at[ind_ind,'posterior']=Ps_n1n2[:,ind_ind]
-posterior_df['multiplicity']=countpaircounts_d
+posterior_df['multiplicity']=countpaircounts_d_tmp
 def dummy(column):
     pval=0.025 #double sided comparison
     pvalvec=[pval,0.5,1-pval] #bound in criteria for slow, smed, and shigh, respectively
 
     smean=np.sum(svec_shift*column)
-    smax=svec_shift[np.argmax(columnn)]	
+    smax=svec_shift[np.argmax(column)]	
     forwardcmf=np.cumsum(column)
     backwardcmf=np.cumsum(column[::-1])[::-1]
 
@@ -918,22 +753,20 @@ def dummy(column):
     inds=np.where((forwardcmf[:-1]<pvalvec[2]) & (forwardcmf[1:]>=pvalvec[2]))[0]
     shigh=np.mean(svec_shift[inds+np.ones((len(inds),),dtype=int)])
     return (smean,smax,slow,smed,shigh)
-
+data_store=[]
+svec_store=[]
 posterior_df['post_stats']=posterior_df['posterior'].apply(dummy)
 data_store.append(posterior_df)
 svec_store.append(svec_shift)
 et=time.time()
-print(likelihood)
 # -
 
 # Plot
 
-# recall that original code in mouse figures notebook
-
 tmp_posts_zero=data_store[0].posterior[::100]
 ait=0
-colorsre = pl.cm.inferno(np.linspace(0.1, 1, len(tmp_posts.values)))
 tmp_posts=data_store[ait].posterior
+colorsre = pl.cm.inferno(np.linspace(0.1, 1, len(tmp_posts.values)))
 fig,ax=pl.subplots(1,1,figsize=(1.5,1.5))
 # fig,ax=pl.subplots(1,1,figsize=(6,6))
 for pit,postyrior in enumerate(tmp_posts.values):
@@ -941,19 +774,18 @@ for pit,postyrior in enumerate(tmp_posts.values):
 #             if np.fabs(postyrior-tmp).sum()>0:
 #                 ax.plot(svec_store[ait],np.fabs(postyrior-tmp))
 #             np.fabs(postyrior-tmp_posts_zero)
-    ax.plot(svec_store[0],postyrior,color=colorsre[pit])
-    ax.plot(1e-1,postyrior[(len(svec)-1)/2],'o',color=colorsre[pit])#,clip_on=False)
+    ax.plot(svec_store[0],postyrior,'-',color=colorsre[pit])
+    ax.plot(1e-1,postyrior[int((len(svec)-1)/2)],'o',color=colorsre[pit])#,clip_on=False)
 ax.set_yscale('log')
 ax.set_ylim(1e-5,1e0)
 # ax.plot(svec_store[ait][:,np.newaxis],np.average(np.matrix(data_store[ait].posterior.tolist()),axis=0,weights=countpaircounts_d).T,'k-',label='avg. posterior')
 # ax.plot(svec_shift,Ps,'k--',label='prior')
 ax.set_xlim(1e-1,30)
+# ax.set_xlim(-1,4)
 ax.set_xscale('log')
 ax.set_xlabel(r'$s$')
 ax.set_ylabel(r'$P(s)$')
 # ax.legend(frameon=False)
 ax.locator_params(axis='y',numticks=6)
 # fig.tight_layout()
-# fig.savefig("posterior_plot_a.pdf",format='pdf',dpi=500)#,bbox_inches='tight',pad_inches=0.1)
-
-
+fig.savefig("posterior_plot_a_shift.pdf",format='pdf',dpi=500)#,bbox_inches='tight',pad_inches=0.1)

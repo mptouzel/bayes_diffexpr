@@ -97,22 +97,6 @@ for donorstr in ['S1','S2','P1','P2','Q1','Q2']:
                     except:
                         print(donorstr+' '+day+' '+var)
 
-Ps_type='sym_exp'
-for donorstr in ['S1','S2','P1','P2','Q1','Q2']:
-    for day in ['pre0','0','7','15','45']:
-        runname='v4_ct_1_mt_2_st_'+Ps_type+'_min0_maxinf'
-        output_path='../../../output/'
-        null_pair=donorstr+'_0_F1_'+donorstr+'_0_F2'
-        diff_pair=donorstr+'_0_F1_'+donorstr+'_'+str(day)+'_F2'
-        run_name='diffexpr_pair_'+null_pair+'_'+runname
-        outpath=output_path+diff_pair+'/'+run_name+'/'
-        check_vars=['Lsurface0']#=['diffexpr_success']
-        for var in check_vars:
-            try:
-                np.load(outpath+var+'.npy')
-            except:
-                print(donorstr+' '+day+' '+var)
-
 # # import data
 
 np.log10(np.exp(25))
@@ -123,7 +107,6 @@ output_path='../../../output/'
 
     run_name='diffexpr_pair_'+null_pair+'_'+runname
     outpath=output_path+diff_pair+'/'+run_name+'/'
-
 
 
 # + {"code_folding": []}
@@ -241,22 +224,20 @@ def plot_pair(donorstr,runname,day,rep1,rep2,startind,pl):
 
 import copy
 
-outpath
-
 import matplotlib as mpl
 
 # +
 Ps_type='sym_exp'
-fig,ax=pl.subplots(1,1,figsize=(3,3))
+fig,ax=pl.subplots(1,1,figsize=(1,1))
 donorstrvec=['S1','S2','P1','P2','Q1','Q2']
 daystrvec=['pre0','0','7','15','45']
+daylabelstrvec=['-7','0','7','15','45']
 markervec=('o','s','v','^','d','P')
 sns.set_context("paper",rc={"font.size":10})
 pl.rc('font',size = 10)
 handles = []
 null_col =pl.rcParams['axes.prop_cycle'].by_key()['color']
 
-    
 for dit,donorstr in enumerate(donorstrvec):
     flag=True
     for yit,day in enumerate(daystrvec):
@@ -275,14 +256,7 @@ for dit,donorstr in enumerate(donorstrvec):
                     success=np.load(outpath+'diffexpr_success.npy').item()
                     if success:
                         diff_paras=np.load(outpath+'opt_diffexpr_paras.npy')#.item().x
-                        if rep1=='1' and rep2=='2' and day=='15':
-                            print(donorstr+' '+str(diff_paras[0]))
-                        if flag:
-                            flag=False
-                            sc=ax.scatter([np.log10(diff_paras[1])],[np.log10(diff_paras[0])],facecolors='none',linewidth=1,marker=markervec[dit],s=50,color=null_col[yit],label=donorstrvec[dit])
-                            handles.append(copy.copy(sc))
-                        else:
-                            ax.scatter([np.log10(diff_paras[1])],[np.log10(diff_paras[0])],facecolors='none',linewidth=1,marker=markervec[dit],s=50,color=null_col[yit])
+                        ax.scatter([diff_paras[1]],[diff_paras[0]],facecolors='none',linewidth=1,marker=markervec[dit],s=50,color=null_col[yit])
                     else:
                         print(outpath+'fail')
                 except:
@@ -318,24 +292,131 @@ for dit,donorstr in enumerate(donorstrvec):
         #         except:
         #             print(donorstr+' '+day)
 
-        #         ax.text(np.log10(diff_paras[1]),np.log10(diff_paras[0]),day)
+            #         ax.text(np.log10(diff_paras[1]),np.log10(diff_paras[0]),day)
         #         if ell1:
         #             ax.scatter([np.log10(diff_paras[1])],[np.log10(diff_paras[0])]) 
-for h in handles:
-    h.set_color("k")
-ax.legend(handles=handles,frameon=False,fontsize=8,handletextpad=0.1)
-ypos=np.linspace(-1.95,-1.05,6)[::-1]
-for dit,daystr in enumerate(daystrvec):
-    ax.text(-1, ypos[dit]-0.1,daystr,color= null_col[dit],weight='bold',fontsize=10)
-ax.text(-1, -1.0,r'\underline{day}',color= 'k',fontsize=10)
+# ypos=np.linspace(-1.95,-1.05,6)[::-1]
+# ypos=np.linspace(0.5,0.93,6)[::-1]
+# for dit,daystr in enumerate(daylabelstrvec):
+#     ax.text(1.2, ypos[dit],daystr,color= null_col[dit],weight='bold',fontsize=10)
+# ax.text(1.2, 1.0,r'\underline{day}',color= 'k',fontsize=10)
+ax.set_xlim(0.05,2e0)
+ax.set_ylim(1e-2,2e0)
+ax.set_xscale('log')
+ax.set_yscale('log')
+# ax.set_xticks((-1,0))
+# ax.set_yticks((-2,-1,0))
+# ax.set_xticklabels((r'$10^{-1}$',r'$10^0$'))
+# ax.set_yticklabels((r'$10^{-2}$',r'$10^{-1}$',r'$10^0$'))
+# ax.set_ylabel(r'$\alpha$')
+# ax.set_xlabel(r'$\bar{s}$')
 
-ax.set_xticks((-1,0))
-ax.set_yticks((-2,-1,0))
-ax.set_xticklabels((r'$10^{-1}$',r'$10^0$'))
-ax.set_yticklabels((r'$10^{-2}$',r'$10^{-1}$',r'$10^0$'))
+
+# for h in handles:
+#     h.set_color("k")
+# ax.legend(handles=handles,frameon=False,loc='upper left',bbox_to_anchor=(1.2,1.0),borderaxespad=0,fontsize=8,handletextpad=0.1)
+# -
+
+fig.savefig("sbar_alp_vals_loginset.pdf",format='pdf',dpi=500,bbox_inches='tight')
+
+# +
+Ps_type='sym_exp'
+fig,ax=pl.subplots(1,1,figsize=(3,3))
+donorstrvec=['S1','S2','P1','P2','Q1','Q2']
+daystrvec=['pre0','0','7','15','45']
+daylabelstrvec=['-7','0','7','15','45']
+markervec=('o','s','v','^','d','P')
+sns.set_context("paper",rc={"font.size":10})
+pl.rc('font',size = 10)
+handles = []
+null_col =pl.rcParams['axes.prop_cycle'].by_key()['color']
+
+    
+for dit,donorstr in enumerate(donorstrvec):
+    flag=True
+    for yit,day in enumerate(daystrvec):
+        for rep1 in ['1','2']:
+            for rep2 in ['1','2']:
+            #     day='15'
+                startind=0
+            #     donorstr='S2'
+                runname='v4_ct_1_mt_2_st_'+Ps_type+'_min0_maxinf'
+                output_path='../../../output/'
+                null_pair=donorstr+'_0_F1_'+donorstr+'_0_F2'
+                diff_pair=donorstr+'_0_F'+rep1+'_'+donorstr+'_'+str(day)+'_F'+rep2
+                run_name='diffexpr_pair_'+null_pair+'_'+runname
+                outpath=output_path+diff_pair+'/'+run_name+'/'
+                try:
+                    success=np.load(outpath+'diffexpr_success.npy').item()
+                    if success:
+                        diff_paras=np.load(outpath+'opt_diffexpr_paras.npy')#.item().x
+                        if rep1=='1' and rep2=='2' and day=='15':
+                            print(donorstr+' '+str(diff_paras[0]))
+                        if flag:
+                            flag=False
+#                             sc=ax.scatter([np.log10(diff_paras[1])],[np.log10(diff_paras[0])],facecolors='none',linewidth=1,marker=markervec[dit],s=50,color=null_col[yit],label=donorstrvec[dit])
+                            sc=ax.scatter([diff_paras[1]],[diff_paras[0]],facecolors='none',linewidth=1,marker=markervec[dit],s=50,color=null_col[yit],label=donorstrvec[dit])
+                            handles.append(copy.copy(sc))
+                        else:
+#                             ax.scatter([np.log10(diff_paras[1])],[np.log10(diff_paras[0])],facecolors='none',linewidth=1,marker=markervec[dit],s=50,color=null_col[yit])
+                            ax.scatter([diff_paras[1]],[diff_paras[0]],facecolors='none',linewidth=1,marker=markervec[dit],s=50,color=null_col[yit])
+
+                    else:
+                        print(outpath+'fail')
+                except:
+                    print(outpath)
+#                 outpath,diff_paras,ell1,ell2=plot_pair(donorstr,'v4_ct_1_mt_2_st_'+Ps_type+'_min0_maxinf',day,rep1,rep2,startind,pl)
+
+#                 if dit==yit and rep1=='1' and rep2=='1':
+#                     sc=ax.scatter([np.log10(diff_paras[1])],[np.log10(diff_paras[0])],facecolors='none',linewidth=1,marker=markervec[yit],s=50,color=null_col[dit],label=daystrvec[yit])
+#                     handles.append(copy.copy(sc))
+#                 else:
+#                     ax.scatter([np.log10(diff_paras[1])],[np.log10(diff_paras[0])],facecolors='none',linewidth=1,marker=markervec[yit],s=50,color=null_col[dit])
+        #         try:
+        #             ell_axis1=np.load(outpath+'ellaxis1.npy')
+        #             ell_axis2=np.load(outpath+'ellaxis2.npy')
+        #             y_axis=ell_axis2[:2]
+        #             x_axis=ell_axis1[:2]
+        #             theta = np.degrees(np.arctan2(x_axis[0],x_axis[1]))#/np.linalg.norm(ell_axis1[:2]),ell_axis2[:2]/np.linalg.norm(ell_axis2[:2])))
+        #             major_axis=np.linalg.norm(x_axis)
+        #             minor_axis=np.linalg.norm(y_axis)
+        #             print(minor_axis)
+        #             print(major_axis)
+        # #             ell = mpl.patches.Ellipse(xy=(np.log10(diff_paras[1]),np.log10(diff_paras[0])),
+        # #                           width=2*major_axis, height=2*minor_axis,
+        # #                           angle=theta, color='black',linewidth=2,linestyle='-',zorder=10)
+        # #             ell.set_facecolor('None')
+        # #             ax.add_artist(ell)
+        #             data=[]
+        #             for t in np.linspace(0,2*np.pi,500):
+        #                 data.append((np.log10(diff_paras[1]+np.cos(t)*np.cos(theta*np.pi/180)*major_axis-np.sin(t)*np.sin(theta*np.pi/180)*minor_axis),\
+        #                              np.log10(diff_paras[0]+np.cos(t)*np.sin(theta*np.pi/180)*major_axis+np.sin(t)*np.cos(theta*np.pi/180)*minor_axis)))
+        #             x,y=zip(*data)
+        #             ax.plot(x,y,'-',lw=1)
+        #         except:
+        #             print(donorstr+' '+day)
+
+            #         ax.text(np.log10(diff_paras[1]),np.log10(diff_paras[0]),day)
+        #         if ell1:
+        #             ax.scatter([np.log10(diff_paras[1])],[np.log10(diff_paras[0])]) 
+# ypos=np.linspace(-1.95,-1.05,6)[::-1]
+ypos=np.linspace(0.5,0.93,6)[::-1]
+for dit,daystr in enumerate(daylabelstrvec):
+    ax.text(1.2, ypos[dit],daystr,color= null_col[dit],weight='bold',fontsize=10)
+ax.text(1.2, 1.0,r'\underline{day}',color= 'k',fontsize=10)
+
+# ax.set_xticks((-1,0))
+# ax.set_yticks((-2,-1,0))
+# ax.set_xticklabels((r'$10^{-1}$',r'$10^0$'))
+# ax.set_yticklabels((r'$10^{-2}$',r'$10^{-1}$',r'$10^0$'))
 ax.set_ylabel(r'$\alpha$')
 ax.set_xlabel(r'$\bar{s}$')
-ax.set_ylim(-2,0.1)
+ax.set_xlim(0,1.1)
+# ax.set_ylim(-2,0.1)
+
+for h in handles:
+    h.set_color("k")
+ax.legend(handles=handles,frameon=False,loc='upper left',bbox_to_anchor=(1.2,1.0),borderaxespad=0,fontsize=8,handletextpad=0.1)
 # -
 
 # r stuff
@@ -351,7 +432,7 @@ for d in [S1,S2,P1,P2,Q1,Q2]:
 
 np.load(outpath+'opt_diffexpr_paras.npy')
 
-fig.savefig("sbar_alp_vals.pdf",format='pdf',dpi=500,bbox_inches='tight')
+fig.savefig("sbar_alp_vals_linscale.pdf",format='pdf',dpi=500,bbox_inches='tight')
 
 # by day (donor S2)
 

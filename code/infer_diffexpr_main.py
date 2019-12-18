@@ -87,7 +87,7 @@ def main(null_pair_1,null_pair_2,test_pair_1,test_pair_2,run_index,input_data_pa
     
     #loop: it=0 :learn null paras on specified null pair, then it=1: load test pair data
     it_label=('null_pair','diffexpr_pair')
-    for it,dataset_pair in enumerate(((null_pair_1,null_pair_2),(test_pair_1,test_pair_2))):
+    for it,dataset_pair in enumerate([(null_pair_1,null_pair_2),(test_pair_1,test_pair_2)]):
         
         donor1,day1,rep1=dataset_pair[0].split('_')
         donor2,day2,rep2=dataset_pair[1].split('_')
@@ -98,7 +98,7 @@ def main(null_pair_1,null_pair_2,test_pair_1,test_pair_2,run_index,input_data_pa
         #input path    
         datasetstr=dataset_pair[0]+'_'+dataset_pair[1] 
         
-        loadnull=False #set to True to skip 1st iteration that learns null model, once learned null model parameters, optparas.py, already exist.
+        loadnull=True #set to True to skip 1st iteration that learns null model, once learned null model parameters, optparas.py, already exist.
         if (not loadnull and it==0) or it==1:
           
             if it==0:
@@ -177,6 +177,15 @@ def main(null_pair_1,null_pair_2,test_pair_1,test_pair_2,run_index,input_data_pa
                     [-2.15,        1.4,         1.15,         -9.62994141],
                     [-2.11369677,   2.47065402,   1.08416164,    -10.04874892]
                     ])
+                elif acq_model_type==3:
+                    defaultnullparasvec=np.asarray( [
+                    [-3.239919, -6.495266],
+                    [-3.239919, -6.495266],
+                    [ -3.239919, -6.495266 ],
+                    [ -3.239919, -6.495266],
+                    [-3.239919, -6.495266],
+                    [-3.239919, -6.495266]
+                    ])
                 else:
                     prtfn('not computed yet!')
                     
@@ -197,10 +206,6 @@ def main(null_pair_1,null_pair_2,test_pair_1,test_pair_2,run_index,input_data_pa
                 np.save(outpath + 'outstruct', outstruct)
 
                 null_paras=optparas  #null paras to use from here on
-                
-                sample_flag=True
-                if sample_flag:
-                    
                                 
         else:          
             datasetstr_null=datasetstr
@@ -210,7 +215,7 @@ def main(null_pair_1,null_pair_2,test_pair_1,test_pair_2,run_index,input_data_pa
             assert len(null_paras)==nparas, "loaded paras for wrong acq model!"
 
     ###############################diffexpr learning
-    diffexpr=False
+    diffexpr=True
     if diffexpr:
         logrhofvec,logfvec = get_rhof(null_paras[0],np.power(10,null_paras[-1]))
         svec,logfvec,logfvecwide,f2s_step,smax,s_step=get_fvec_and_svec(null_paras,s_step,smax)
@@ -416,7 +421,7 @@ def main(null_pair_1,null_pair_2,test_pair_1,test_pair_2,run_index,input_data_pa
                 
             pval_threshold=0.1  #make data size manageable by outputting only clones with pval below this threshold
             min_pair_sum=0
-            table=suffstats_table(pval_threshold,svec,logPsvec,subset.loc[subset.Clone_count_1+subset.Clone_count_2>=min_pair_sum],sparse_rep,logPn1n2_s)
+            table=suffstats_table(pval_threshold,svec_shift,logPsvec,subset.loc[subset.Clone_count_1+subset.Clone_count_2>=min_pair_sum],sparse_rep,logPn1n2_s)
             prtfn('elapsed: '+str(time.time()-st))
             
             #select only clones whose posterior median pass the given threshold (can also be done in post-processing)

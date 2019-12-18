@@ -1,0 +1,25 @@
+\subsection*{Identifying responding clones}
+
+The posterior probability on expansion factors $\rho(s|n,n')$ (Eq.~\ref{eq:post}) can be used to
+study the fate and dynamics of particular clones. For instance, we can
+identify responding clones as having a low posterior probability of being not expanding $P_{\rm null}=\rho(s\leq 0|n,n')<0.025$. $P_{\rm null}$ is the Bayesian counterpart of a p-value but differs from it in a fundamental way: it gives the probability that expansion happened given the observations, when a p-value would give the probability of the observations in absence of expansion.  We can define a similar criterion for contracting clones.
+
+To get the expansion or contraction factor of each clone, we can compute the posterior average and median, $\<s\>_{n,n'}=\int \textrm{d}s\,s \rho(s|n,n')$ and $s_{\rm median}$ ($F(s_{\rm median}|n,n')=0.5$, for the cumulative density function, $F(s|n,n')=\int_{-\infty}^s\rho(\tilde{s}|n,n')\textrm{d}\tilde{s}$),  corresponding to our best estimate for the log fold-change.
+In \cref{fig:SM_smed_snaive}, we show how the median Bayesian estimator differs from the naive estimator $s_{\textrm{naive}}=\ln n^{\prime}/n$. While the two agree for large clones for which relative noise is smaller, the naive estimator over-estimates the magnitude of log fold-changes for small clones because of the noise. The Bayesian estimator accounts for that noise and gives a more conservative and more realistic estimate.
+
+\begin{figure*}
+\includegraphics[width=\textwidth]{fig8_volc_plus}
+\centering{}
+\caption{
+\emph{Identifying responding clones}. (A) Plot of confidence of expanded response versus average effect size. A significance threshold is placed according to $P_{\textrm{null}}=0.025$, where $P_{\textrm{null}}=P(s\leq 0)$. (B) The same threshold for significant expansion in $(n,n^\prime)$-space with identified clones highlighted in red. (C) The optimal values of $\alpha$ and $\bar{s}$ for donor S2 and day-0 day-15 comparison for 3 replicates (square markers). The background heat map is the list overlap (the size of the intersection of the two lists divided by the size of their union) between a reference list obtained at the optimal $\hat\theta_{\rm exp}$ (black dot) and lists obtained at non-optimal $\theta_{\rm exp}$. (D) Mean posterior log fold-change $\<s\>_{\rho(s|n,n')}$ as a function of precursor frequency.
+\label{fig:volcano}}
+\end{figure*}
+
+In \cref{fig:volcano}A, we show a `volcano' plot showing how both $P_{\rm null}$ and $\<s\>_{n,n'}$ vary as one scans values of the count pairs $(n,n')$. \Cref{fig:volcano}B shows the all count pairs $(n,n')$ between day $0$ and day $15$ following yellow fever vaccination, with red clones above the significance threshold line $P_{\rm null}=0.025$ being identified as responding.
+
+Given the uncertainty in the expansion model parameters $\theta_{\rm exp}=(\bar s,\alpha)$, we wondered how robust our list of responding clonotypes was to those variations. In \cref{fig:volcano}C, we show the overlap of lists of strictly expanding clones ($P(s\leq 0|n,n')<0.025$) as a function of $\theta_{\rm exp}$, relative to the optimal value $\hat\theta_{\rm exp}$ (black circle). The ridge of high overlap values exactly mirrors the ridge of high likelihood values onto which the learned parameters fall (\cref{fig:diffexpr_ex2}). Values of $\hat \theta_{\rm exp}$ obtained for other replicate pairs (square symbols) fall onto the same ridge, meaning that these parameters lead to virtually identical lists of candidates for response.
+
+The list of identified responding clones can be used to test hypotheses about the structure of the response. For example, recent work has highlighted a power law relationship between the initial clone size and clones subsequent fold change response in a particular experimental setting \cite{Mayer2019}. We can plot the relationship in our data as the posterior mean log fold change versus the posterior initial frequency, $f$ (\cref{fig:volcano}D). While the relationship is very noisy, emphasizing the diversity of the response, it is consistent with a decreasing dependency of the fold change with the clone size prior to the immune response.
+
+The robustness of our candidate lists rests on their insensitivity to the details of how the model explains typical expansion. In \cref{fig:posteriors}, we show how the posterior belief varies significantly for count pairs $(0,n^\prime)$, $n^\prime>0$, across a range of values of $\bar{s}$ and $\alpha$ passing along the ridge of plausible models (\cref{fig:volcano}C). A transition from a low to high value of the most probable estimate for $s$ characterizes their shapes and arises as $\bar{s}$ becomes large enough that expansion from frequencies near $f_\textrm{min}$ is plausible, and the dominant mass of clones there makes this the dominate posterior belief. Thus, these posteriors are shaped by $\rho_s(s)$ at low $\bar{s}$, and $\rho(f)$ at high $\bar{s}$. Our lists vary negligibly over this transition, and thus are robust to it.
+

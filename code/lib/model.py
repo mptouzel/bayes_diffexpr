@@ -210,7 +210,7 @@ def get_logPn_f(unicounts,Nreads,logfvec,acq_model_type,paras):
             NBvec=NegBinPar(mean_m[f_it],var_m[f_it],mvec)
             for n_it,n in enumerate(unicounts):
                 Pn_f[f_it,n_it]=np.dot(NBvec[m_low[n_it]:m_high[n_it]+1],Poisvec[m_low[n_it]:m_high[n_it]+1,n_it]) 
-    elif acq_model_type==1:
+    elif acq_model_type==1:  #incorrect! Not a convolution of m Negative binomials is not a Negative binomial with mean multiplied by m (as it was in the NegBin->Poisson case)!
         Poisvec=PoisPar(m_total*np.exp(logfvec),mvec)
         mean_n=r_c*mvec
         NBmtr=NegBinParMtr(mean_n,mean_n+beta_mv*np.power(mean_m,alpha_mv),unicounts)

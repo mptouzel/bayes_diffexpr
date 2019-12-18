@@ -1,0 +1,159 @@
+\documentclass[pre,twocolumn,english,longbibliography]{revtex4} %twocolumn,
+
+%\usepackage[latin9]{inputenc}
+\setcounter{secnumdepth}{3}
+\usepackage{babel}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{graphicx} 
+\usepackage{epstopdf} %add for pdflatex, nut don^{\prime}t compile because of invisible character copied from .bbl file?
+\usepackage[T1]{fontenc}
+\usepackage[utf8x]{inputenc} 
+\usepackage{esint}
+\usepackage{verbatim}
+%\usepackage[hyphens]{url}
+\usepackage[unicode=true]{hyperref}
+\usepackage[capitalize,nameinlink]{cleveref}
+\creflabelformat{equation}{#2\textup{#1}#3}
+\usepackage[table]{xcolor}
+\newcommand{\re}[1]{\textcolor{magenta}{#1}}
+%\loadpackage{url}
+%\usepackage[unicode=true]{hyperref}
+%\setcounter{biburllcpenalty}{7000}
+%\setcounter{biburlucpenalty}{8000}
+%\usepackage{breakurl}
+%\hypersetup{breaklinks=true}
+%\usepackage[hyperref,eprint=false]{biblatex}
+\makeatletter
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% LyX specific LaTeX commands.
+\pdfpageheight\paperheight
+\pdfpagewidth\paperwidth
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% User specified LaTeX commands.
+\usepackage{bbold}
+\newcommand{\overbar}[1]{\mkern 1.5mu\overline{\mkern-1.5mu#1\mkern-1.5mu}\mkern 1.5mu}
+\usepackage{xcolor}
+\hypersetup{
+    colorlinks,
+    linkcolor={red!50!black},
+    citecolor={blue!50!black},
+    urlcolor={blue!80!black}
+}
+
+\usepackage{amsmath}
+\DeclareMathOperator*{\argmax}{argmax}
+\DeclareMathOperator*{\argmin}{argmin}
+
+\newcommand{\beginsupplement}{%
+        \setcounter{table}{0}
+        \renewcommand{\thetable}{S\arabic{table}}%
+        \setcounter{figure}{0}
+        \renewcommand{\thefigure}{S\arabic{figure}}%
+     }
+
+\newcommand{\beqn}{\begin{eqnarray}}
+\newcommand{\eeqn}{\end{eqnarray}}
+\newcommand{\beq}{\begin{equation}}
+\newcommand{\eeq}{\end{equation}}
+\newcommand{\av}[1]{\langle{#1}\rangle{}}
+\newcommand{\abs}[1]{|#1|}
+\newcommand{\<}{\langle}
+\renewcommand{\>}{\rangle}
+\newcommand{\AW}[1]{{\color[rgb]{0,0,1}#1}}
+     
+\makeatother
+
+\begin{document}
+
+\title{Inferring the immune response from repertoire sequencing}
+
+\author{Maximilian Puelma Touzel}
+%\email[]{puelma@lpt.ens.fr}
+
+\affiliation{Laboratoire de physique de l'\'Ecole normale sup\'erieure
+  (PSL University), CNRS, Sorbonne  Universit\'e, Universit\'e de
+  Paris, 75005 Paris, France}
+\affiliation{Mila, Université de Montréal, Montreal, Canada}
+
+\author{Aleksandra M. Walczak}
+\thanks{Corresponding authors. These authors contributed equally.}
+\affiliation{Laboratoire de physique de l'\'Ecole normale sup\'erieure
+  (PSL University), CNRS, Sorbonne  Universit\'e, Universit\'e de
+  Paris, 75005 Paris, France}
+
+\author{Thierry Mora}
+\thanks{Corresponding authors. These authors contributed equally.}
+\affiliation{Laboratoire de physique de l'\'Ecole normale sup\'erieure
+  (PSL University), CNRS, Sorbonne  Universit\'e, Universit\'e de
+  Paris, 75005 Paris, France}
+
+\vspace{0.5cm}
+
+\begin{abstract}
+  \input{abstract}
+%\re{Good, but need to add new, main takeaways.} High-throughput sequencing provides access to expression-level detail of cell populations. Identifying signal in this data is nevertheless a challenge: intrinsic variability, vast sub-sampling, and indirect access together make difficult the reliable and accurate inference of the changes in population size due to environmental perturbations. Here, in the context of antigen-perturbed immune cell repertoires, we formulate access to the unobserved repertoire using a generative model of observed sequence count pairs from a reference and differentially-expressed condition. When applied to pairs of replicates, our model captures the natural variability in the system, giving reproducible behavior across donors and, in spite of sub-sampling, provides plausible parameter estimates for the underlying repertoire. Using this replicate model as a baseline, we then formulate the differentially expressed condition using a prior distribution on the ratio of a clone’s frequency pair for pairs of repertoires sampled at different time points. The posterior distribution of this ratio for each observed clone is then obtained and used to characterize if and how strongly it participates in the response. Applying our approach to yellow fever vaccination as a model of acute infection in humans, we identify candidate clones participating in the response.   
+
+\end{abstract}
+
+\maketitle
+
+\input{intro}
+
+\section*{Results}
+
+\input{definitions}
+
+\input{nullmodel}
+
+\input{expansion}
+
+\input{responding}
+
+\section*{Discussion}
+
+\input{discussion}
+
+
+
+
+\section*{Methods}
+
+
+%\appendix
+
+\input{appendix}
+
+
+
+\section*{Acknowledgements}
+MPT would like to thank M. Pogorelly for providing the R code used to obtain the EdgeR estimates in \citep{Pogorelyy2018c}.  This work was supported by the European Research Council Consolidator Grant n. 724208.
+
+
+
+
+\bibliographystyle{pnas}
+\bibliography{thierry,diffexpr,max_response}
+
+\newpage
+
+%\section*{Appendices}
+
+
+\beginsupplement
+
+\input{sifigs}
+
+\end{document}  
+
+
+
+
+
+
+
+
+
+
+
+
