@@ -1,6 +1,11 @@
 # bayes_diffexpr
 ## Bayesian Inference of Differential Expression
 
+This is the repository for the research associated with the publication:
+Puelma Touzel M, Walczak AM, Mora T (2020) Inferring the immune response from repertoire sequencing. PLOS Computational Biology 16(4): e1007873. https://doi.org/10.1371/journal.pcbi.1007873 
+
+The `master` branch is an initial, compact version of the codebase. The `depaper` branch is has the files used the publication. This includes a more elaborate codebase with analysis in `jupyter` notebooks converted into `.py` files using `jpuytext`, as well the `.tex` files used to generate the initial submission and, finally, some short `EdgeR` code, used for comparison with some results in Pogorelyy, M et al.PNAS 2018. Example datasets used in with this code can be found in the repository I set up for that paper https://github.com/mptouzel/pogorelyy_et_al_2018.
+
 # Main files
 `infer_diffexpr_main.py` takes 2 pairs of `.txt` files as input. 
 
