@@ -1,6 +1,9 @@
 # bayes_diffexpr
 ## Bayesian Inference of Differential Expression
 
+This branch has a compact version of the code used in Puelma Touzel M, Walczak AM, Mora T (2020) Inferring the immune response from repertoire sequencing. PLOS Computational Biology 16(4): e1007873. https://doi.org/10.1371/journal.pcbi.1007873
+Please refer to the `depaper` branch for the actual codebase associated with paper.
+
 `infer_diffexpr_main.py` takes 2 pairs of `.txt` files as input. 
 
 Each file is a table with each row referring to one observed clone. What is pulled from these files is the nucleotide and amino acid sequence as well as the observed clone count (n.b. file header information, e.g. column order, as well as the paths to these files, has been hard-coded to work with a particular dataset; any application to another dataset with require changing this information). Each pair is merged into a data set of pair counts, one sample for each observed clone.
